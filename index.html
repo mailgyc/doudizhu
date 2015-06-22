@@ -1,0 +1,43 @@
+<!doctype html> 
+<html lang="en"> 
+<head> 
+	<meta charset="UTF-8" />
+    <title>poker</title>
+    
+    <link rel="stylesheet" href="static/css/stylesheet.css"/>
+	<script type="text/javascript" src="static/src/phaser.min.js"></script>
+	<script type="text/javascript" src="static/src/Boot.js"></script>
+	<script type="text/javascript" src="static/src/Preloader.js"></script>
+	<script type="text/javascript" src="static/src/MainMenu.js"></script>
+	<script type="text/javascript" src="static/src/Player.js"></script>
+	<script type="text/javascript" src="static/src/Rule.js"></script>
+	<script type="text/javascript" src="static/src/Poker.js"></script>
+	<script type="text/javascript" src="static/src/Game.js"></script>
+    <script type="text/javascript" src="static/src/Socket.js"></script>
+    <style type="text/css">
+        body {
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="game"></div>
+    <div id="orientation"></div>
+
+<script type="text/javascript">
+
+(function () {
+    var game = new Phaser.Game(800, 480, Phaser.AUTO, 'game');
+
+    game.state.add('Boot', PokerGame.Boot);
+    game.state.add('Preloader', PokerGame.Preloader);
+    game.state.add('MainMenu', PokerGame.MainMenu);
+    game.state.add('Game', PokerGame.Game);
+
+    game.state.start('Boot');
+
+})();
+</script>
+
+</body>
+</html>
