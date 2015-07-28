@@ -1,12 +1,17 @@
 import logging
+import os.path
 import tornado.escape
 import tornado.ioloop
 import tornado.web
 import tornado.websocket
-import os.path
-import uuid
+from table import Table, Player
 
 from tornado.options import define, options
+
+logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)
+
 
 define('port', default=8000, help='run on the given port', type=int)
 define('debug', default=True, help='run in debug mode')
@@ -18,7 +23,7 @@ class Application(tornado.web.Application):
             (r"/socket", SocketHandler),
         ]
         settings = dict(
-            cookie_secret = "poker-601743bb-3c82-4fe6-b27f-a1159f04c4f",
+            cookie_secret = "ddz-601743bb-3c82-4fe6-b27f-a1159f04c4f",
             static_path  = os.path.join(os.path.dirname(__file__), 'static'),
             xsrf_cookies = True,
         )
@@ -31,40 +36,54 @@ class MainHandler(tornado.web.RequestHandler):
 
 
 class SocketHandler(tornado.websocket.WebSocketHandler):
-    waiters = set()
-    cache = []
-    cache_size = 200
+    tableList = []
+
+    def __init__(self, *args, **kwargs):
+        #tornado.websocket.WebSocketHandler.__init__(self, *args, **kwargs)
+        super().__init__(*args, **kwargs)
+        t = SocketHandler.find_wait_table()
+        self.player = Player(t)
+        t.add(self.player)
 
     def get_compression_options(self):
         return {}
 
     def open(self):
-        SocketHandler.waiters.add(self)
+        logger.info('player[%d] open', self.player.pid)
+        self.player.open(self)
+
+    def on_message(self, message):
+        logger.info('got message %s', message)
+        packet = tornado.escape.json_decode(message)
+        if packet[0] == 11:
+
+        self.player.recv(message)
+        #SocketHandler.send_updates(message)
 
     def on_close(self):
-        SocketHandler.waiters.remove(self)
+        logger.info('player[%d] close', self.player.pid)
+
+        if self.player.table.remove(self.player):
+            logger.info('table[%d] close', self.player.table.pid)
+            SocketHandler.tableList.remove(self.player.table)
 
     @classmethod
-    def update_cache(cls, chat):
-        cls.cache.append(chat)
-        if len(cls.cache) > cls.cache_size:
-            cls.cache = cls.cache[-cls.cache_size:]
+    def find_wait_table(cls):
+        for t in cls.tableList:
+            if t.size() < 3:
+               return t
+        t = Table()
+        cls.tableList.append(t)
+        return t
 
     @classmethod
     def send_updates(cls, chat):
-        logging.info('sending message to %d waiters', len(cls.waiters))
+        logger.info('sending message to %d waiters', len(cls.waiters))
         for waiter in cls.waiters:
             try:
                 waiter.write_message('tornado:' + chat)
             except:
                 logging.error('Error sending message', exc_info=True)
-
-    def on_message(self, message):
-        logging.info('got message %r', message)
-        #parsed = tornado.escapt.json_decode(message)
-
-        SocketHandler.update_cache(message)
-        SocketHandler.send_updates(message)
 
 
 def main():

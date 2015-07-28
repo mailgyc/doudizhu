@@ -9,7 +9,7 @@ PokerGame.Socket.connect = function() {
     this.websocket = new WebSocket(this.wsUri);
     this.websocket.onopen = function(evt) {
         console.log("CONNECTED");
-        PokerGame.Socket.write('hello world');
+        PokerGame.Socket.write('["hello world"]');
     };
     this.websocket.onclose = function(evt) {
         console.log("DISCONNECTED"); 
