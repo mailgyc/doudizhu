@@ -34,13 +34,12 @@ class MainHandler(tornado.web.RequestHandler):
     def get(self):
         self.render('index.html')
 
-
 class SocketHandler(tornado.websocket.WebSocketHandler):
     tableList = []
 
     def __init__(self, *args, **kwargs):
-        #tornado.websocket.WebSocketHandler.__init__(self, *args, **kwargs)
-        super().__init__(*args, **kwargs)
+        tornado.websocket.WebSocketHandler.__init__(self, *args, **kwargs)
+        #super().__init__(*args, **kwargs)
         t = SocketHandler.find_wait_table()
         self.player = Player(t)
         t.add(self.player)
@@ -54,10 +53,23 @@ class SocketHandler(tornado.websocket.WebSocketHandler):
 
     def on_message(self, message):
         logger.info('got message %s', message)
-        packet = tornado.escape.json_decode(message)
-        if packet[0] == 11:
-
-        self.player.recv(message)
+        request = tornado.escape.json_decode(message)
+        if request[0] == 11: # request table list
+            response = [12, []]
+            for t in SocketHandler.tableList:
+                response[1].append(t.pid)
+            self.write_message(tornado.escape.json_encode(response))
+        elif request[0] == 13: # request join table
+            t = SocketHandler.find_table_by_id(request[1])
+            if not t:
+                self.player.join_table(t)
+                logger.info('Player[%d] create Table[%d]', self.player.pid, self.player.seat, t.pid)
+            
+            response = [14, t.pid, [p.pid for p in t.players]]
+            self.write_message(tornado.escape.json_encode(response))
+            logger.info('player[%d] join table[%d]', self.player.pid, t.pid)
+        else:
+            self.player.recv(request)
         #SocketHandler.send_updates(message)
 
     def on_close(self):
@@ -67,6 +79,13 @@ class SocketHandler(tornado.websocket.WebSocketHandler):
             logger.info('table[%d] close', self.player.table.pid)
             SocketHandler.tableList.remove(self.player.table)
 
+    @classmethod
+    def find_table_by_id(cls, pid):
+        for t in cls.tableList:
+            if t.pid == pid:
+                return t
+        return None
+        
     @classmethod
     def find_wait_table(cls):
         for t in cls.tableList:
