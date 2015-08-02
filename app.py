@@ -55,9 +55,9 @@ class SocketHandler(tornado.websocket.WebSocketHandler):
         logger.info('got message %s', message)
         request = tornado.escape.json_decode(message)
         if request[0] == 11: # request table list
-            response = [12, []]
+            response = [12, self.player.pid, []]
             for t in SocketHandler.tableList:
-                response[1].append(t.pid)
+                response[2].append(t.pid)
             self.write_message(tornado.escape.json_encode(response))
         elif request[0] == 13: # request join table
             t = SocketHandler.find_table_by_id(request[1])

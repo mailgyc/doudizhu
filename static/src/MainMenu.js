@@ -37,13 +37,16 @@ PokerGame.MainMenu.prototype = {
 	},
 	
 	gotoRoom: function () {
-		var style = { font: "22px Arial", fill: "#ffffff", align: "center" };
-		var text = this.add.text(0, 0, "ha ha ha ha", style);
-		var tween = this.add.tween(text).to( { x: 600, y: 450 }, 2000, "Linear", true);
-		function destroy() {
-			text.destroy();
-		}
-		tween.onComplete.add(destroy, this);
+
+		this.state.start('Game')
+		
+		// var style = { font: "22px Arial", fill: "#ffffff", align: "center" };
+		// var text = this.add.text(0, 0, "ha ha ha ha", style);
+		// var tween = this.add.tween(text).to( { x: 600, y: 450 }, 2000, "Linear", true);
+		// function destroy() {
+		// 	text.destroy();
+		// }
+		// tween.onComplete.add(destroy, this);
 	},
 	
 	gotoReg: function () {

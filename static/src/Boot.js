@@ -37,7 +37,6 @@ PokerGame.Boot.prototype = {
 
         this.state.start('Preloader');
         
-        PokerGame.Socket.connect();
     },
 
     gameResized: function (width, height) {

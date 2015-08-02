@@ -18,7 +18,7 @@ PokerGame.Preloader.prototype = {
 		this.preloadBar = this.add.sprite(120, 200, 'preloaderBar');
 		this.load.setPreloadSprite(this.preloadBar);
 		
-		// this.load.audio('bg_music', 'static/assets/bgmusic.ogg');
+		// this.load.audio('bg_music', 'static/assets/bgmusic.mp3');
 		this.load.spritesheet('icon', 'static/assets/icon.png', 82, 84);
 		this.load.spritesheet('poker', 'static/assets/poker.png', 90, 120);
 		this.load.json('rule', 'static/assets/rule.json');
