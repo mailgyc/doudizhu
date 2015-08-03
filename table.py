@@ -27,11 +27,13 @@ class Player(object):
 
     def recv(self, request):
         if request[0] == 101: # request deal poker
-            self.ready = True
-            self.table.ready()
+            if self.table.state == 2:
+                self.ready = True
+                self.table.ready()
             return
             
         if self.seat != self.table.whoseTurn:
+            logger.warning('Player[%d] turn cheat', self.pid)
             return
             
         if request[0] == 103: # request call score
@@ -39,26 +41,7 @@ class Player(object):
             if score > 0 and score < self.table.callscore:
                 logger.warning('Player[%d] callscore cheat', self.pid)
                 return
-            response = [104, self.pid, score]
-            message = tornado.escape.json_encode(packet)
-            for p in self.table.players:
-                p.send(message)
-            
-            nextseat = (self.seat + 1) % 3
-            if score < 3 and not self.table.players[nextseat].iscalled:
-                self.table.whoseTurn = nextseat
-                return 
-            
-            if score == 0:
-                self.table.ready()
-            else:
-                self.rank = 2
-                self.table.callscore = score 
-                response = [106, self.pid, [p for p in self.table.pokers]]
-                message = tornado.escape.json_encode(response)
-                for p in self.table.players:
-                    p.send(message)
-            
+            self.handleCallScore(score) 
         elif request[0] == 107: # request play poker
             shotPoker = request[1]
             if len(shotPoker) > 0:
@@ -72,28 +55,54 @@ class Player(object):
                     
                 self.table.lastShotPoker = shotPoker
             
-            response = [108, self.pid, shotPoker]
-            message = tornado.escape.json_encode(packet)
-            for p in self.table.players:
-                p.send(message)
-            for p in shotPoker:
-                self.pokers.remove(p)
-                
-            if len(self.pokers) == 0:
-                response = [110, self.table.calcCoin(self)]
-                for p in self.table.players:
-                    p.send(response) 
+            self.handleShotPoker(shotPoker)
             
-            
+
     def dealPoker(self):
-        response = [102, self.table.whoseTurn, []]
+        player = self.table.players[self.table.whoseTurn]
+        response = [102, player.pid, []]
         for p in self.pokers:
-            response[1].append(p)
+            response[2].append(p)
         logger.info('Player[%d] dealPoker[%s]', self.pid, ','.join(response[1]))
         self.send(response)
-         
+        
+    def handleCallScore(self, score):
+        response = [104, self.pid, score]
+        message = tornado.escape.json_encode(response)
+        for p in self.table.players:
+            p.send(message)
+        
+        nextseat = (self.seat + 1) % 3
+        if score < 3 and not self.table.players[nextseat].iscalled:
+            self.table.whoseTurn = nextseat
+            return 
+        
+        if score == 0:
+            self.table.ready()
+        else:
+            self.rank = 2
+            self.table.callscore = score 
+            response = [106, self.pid, [p for p in self.table.pokers]]
+            message = tornado.escape.json_encode(response)
+            for p in self.table.players:
+                p.send(message)
+                
+    def handleShotPoker(self, shotPoker):
+        response = [108, self.pid, shotPoker]
+        message = tornado.escape.json_encode(response)
+        for p in self.table.players:
+            p.send(message)
+        for p in shotPoker:
+            self.pokers.remove(p)
+            
+        if len(self.pokers) == 0:
+            response = [110, self.table.calcCoin(self)]
+            for p in self.table.players:
+                p.send(response) 
+                
     def join_table(self, t):
         t.add(self)
+        self.ready = True
         self.table = t
         
     def open(self, socket):
@@ -110,7 +119,7 @@ class Table(object):
     def __init__(self):
         self.pid = Table.gen_id()
         self.players = [None, None, None]
-        self.closed = False
+        self.state = 0  # 0 waiting  1 playing 2 end 3 closed
         self.pokers = [] 
         self.multiple = 1
         self.callscore = 0
@@ -121,15 +130,16 @@ class Table(object):
         tornado.ioloop.IOLoop.current().add_callback(self.update)
 
     def calcCoin(self, winner):
+        self.state = 2
         coins = []
-        recycle = 100 
+        tax = 100 
         for p in self.players:
             p.ready = f
             coin = self.room * p.rank * self.callscore * self.multiple
             if p.rank == winner.rank:
-                coins.append(coin - recycle)
+                coins.append(coin - tax)
             else:
-                coins.append(-coin - recycle)
+                coins.append(-coin - tax)
         return coins     
         
     def update(self):
@@ -152,7 +162,7 @@ class Table(object):
             logger.error('Player[%d] not in Table[%d]', player.pid, self.pid)
             
         if all(p == None for p in self.players):
-            self.closed = True
+            self.state = 3
             logger.error('Table[%d] close', self.pid)
             return True
         return False
@@ -162,6 +172,7 @@ class Table(object):
     
     def ready(self):
         if all(p and p.ready for p in self.players):
+            self.state = 1
             self.dealPoker()
 
     def dealPoker(self):

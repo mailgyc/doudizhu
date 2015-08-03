@@ -54,24 +54,52 @@ class SocketHandler(tornado.websocket.WebSocketHandler):
     def on_message(self, message):
         logger.info('got message %s', message)
         request = tornado.escape.json_decode(message)
-        if request[0] == 11: # request table list
-            response = [12, self.player.pid, []]
-            for t in SocketHandler.tableList:
-                response[2].append(t.pid)
+        
+        if request[0] == 1: # player info
+            response = [2, self.player.pid]
             self.write_message(tornado.escape.json_encode(response))
+        elif request[0] == 11: # request table list
+            self.sendTableList()
         elif request[0] == 13: # request join table
-            t = SocketHandler.find_table_by_id(request[1])
-            if not t:
-                self.player.join_table(t)
-                logger.info('Player[%d] create Table[%d]', self.player.pid, self.player.seat, t.pid)
-            
-            response = [14, t.pid, [p.pid for p in t.players]]
-            self.write_message(tornado.escape.json_encode(response))
-            logger.info('player[%d] join table[%d]', self.player.pid, t.pid)
+            table_id = request[1]
+            self.sendJoinTable(table_id)
+        elif request[0] == 15: # fast join table
+            self.sendFastJoinTable()
         else:
             self.player.recv(request)
         #SocketHandler.send_updates(message)
+        
+    def sendTableList(self):
+        response = [12, []]
+        for t in SocketHandler.tableList:
+            response[1].append(t.pid)
+        self.write_message(tornado.escape.json_encode(response))
+        
+    def sendJoinTable(self, table_id):
+        t = SocketHandler.find_table_by_id(table_id)
+        if not t:
+            self.player.join_table(t)
+            logger.info('Player[%d] create Table[%d]', self.player.pid, self.player.seat, t.pid)
+        
+        self.syncTable(t, 14) 
+        
+        logger.info('Player[%d] join table[%d]', self.player.pid, t.pid)
 
+    def sendFastJoinTable(self):
+        t = SocketHandler.find_wait_table(); 
+        self.player.join_table(t)
+        
+        self.syncTable(t, 16)
+        
+        logger.info('player[%d] fast join table[%d]', self.player.pid, t.pid)
+        
+    def syncTable(self, t, opcode):
+        response = [opcode, t.pid, [p.pid for p in t.players]]
+        for p in t.players:
+            p.send(response)
+        if t.size() == 3:
+            t.ready()
+            
     def on_close(self):
         logger.info('player[%d] close', self.player.pid)
 

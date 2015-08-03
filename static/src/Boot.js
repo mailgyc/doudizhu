@@ -1,5 +1,6 @@
 PokerGame = {
 
+    gameType:0, // 0 single  1 network
     score: 0,
     music: null,
     orientated: false
