@@ -87,7 +87,7 @@ PokerGame.AIPlayer.prototype = Object.create(PokerGame.Player.prototype);
 PokerGame.AIPlayer.prototype.constructor = PokerGame.AIPlayer;
 
 PokerGame.AIPlayer.prototype.startCallScore = function (minscore) {
-    var millisTime = this.game.rnd.integerInRange(10, 50);
+    var millisTime = this.game.rnd.integerInRange(1000, 2000);
     var score = this.game.rnd.integerInRange(minscore + 1, 3);
     this.hasCalled = true;
     this.game.time.events.add(millisTime, this.game.finishCallScore, this.game, score);

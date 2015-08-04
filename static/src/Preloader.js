@@ -28,6 +28,7 @@ PokerGame.Preloader.prototype = {
 	create: function () {
 
 		this.state.start('MainMenu');
+		//this.state.start('Game');
 		PokerGame.Rule.ruleList = this.cache.getJSON('rule');
 
 	},

@@ -120,6 +120,9 @@ PokerGame.Rule.compare = function(cardsA, cardsB) {
     if (valueA.type == '') {
         return -10000;
     }
+    if (cardsB.length == 0) {
+        return 1;
+    }
     var valueB = this.cardsValue(cardsB);
     if (valueA.type == valueB.type) {
         return valueA.value - valueB.value;
