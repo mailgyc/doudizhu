@@ -18,6 +18,17 @@ with open('static/assets/rule.json', 'r') as f:
 def sortfunc(a):
     return '34567890JQKA2wW'.index(a)
 
+def toCards(pokers):
+    cards = []
+    for p in pokers:
+        if p == 52:
+            cards.append('W')
+        elif p == 53:
+            cards.append('w')
+        else:
+            cards.append('A234567890JQK'[p%13])
+    return cards
+
 def cardsValue(cards):
 
     def find(array, ele):
@@ -28,6 +39,8 @@ def cardsValue(cards):
                 return i
         return -1
 
+    if isinstance(cards, list):
+        cards = toCards(cards)
     cards = ''.join(sorted(cards, key=sortfunc))
 
     if cards == 'wW':

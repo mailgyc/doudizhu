@@ -32,9 +32,9 @@ PokerGame.Socket.connect = function(onopen_callback, onerror_callback) {
     };
 
     this.websocket.onmessage = function(evt) {
-        console.log('RESPONSE: ' + evt);
-        if (this.onmessage) {
-            this.onmessage(evt.data);
+        console.log('RESPONSE: ' + evt.data);
+        if (PokerGame.Socket.onmessage) {
+            PokerGame.Socket.onmessage(JSON.parse(evt.data));
         }
     }; 
 }  

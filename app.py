@@ -40,9 +40,7 @@ class SocketHandler(tornado.websocket.WebSocketHandler):
     def __init__(self, *args, **kwargs):
         tornado.websocket.WebSocketHandler.__init__(self, *args, **kwargs)
         #super().__init__(*args, **kwargs)
-        t = SocketHandler.find_wait_table()
-        self.player = Player(t)
-        t.add(self.player)
+        self.player = Player()
 
     def get_compression_options(self):
         return {}
@@ -54,7 +52,7 @@ class SocketHandler(tornado.websocket.WebSocketHandler):
     def on_message(self, message):
         logger.info('got message %s', message)
         request = tornado.escape.json_decode(message)
-        
+
         if request[0] == 1: # player info
             response = [2, self.player.pid]
             self.write_message(tornado.escape.json_encode(response))
@@ -68,43 +66,44 @@ class SocketHandler(tornado.websocket.WebSocketHandler):
         else:
             self.player.recv(request)
         #SocketHandler.send_updates(message)
-        
+
     def sendTableList(self):
         response = [12, []]
         for t in SocketHandler.tableList:
             response[1].append(t.pid)
         self.write_message(tornado.escape.json_encode(response))
-        
+
     def sendJoinTable(self, table_id):
         t = SocketHandler.find_table_by_id(table_id)
         if not t:
             self.player.join_table(t)
             logger.info('Player[%d] create Table[%d]', self.player.pid, self.player.seat, t.pid)
-        
-        self.syncTable(t, 14) 
-        
+
+        self.syncTable(t, 14)
+
         logger.info('Player[%d] join table[%d]', self.player.pid, t.pid)
 
     def sendFastJoinTable(self):
-        t = SocketHandler.find_wait_table(); 
+        t = SocketHandler.find_wait_table();
         self.player.join_table(t)
-        
-        self.syncTable(t, 16)
-        
-        logger.info('player[%d] fast join table[%d]', self.player.pid, t.pid)
-        
-    def syncTable(self, t, opcode):
-        response = [opcode, t.pid, [p.pid for p in t.players]]
-        for p in t.players:
-            p.send(response)
-        if t.size() == 3:
-            t.ready()
-            
-    def on_close(self):
-        logger.info('player[%d] close', self.player.pid)
 
-        if self.player.table.remove(self.player):
-            logger.info('table[%d] close', self.player.table.pid)
+        self.syncTable(t, 16)
+
+        logger.info('Player[%d] fast join table[%d]', self.player.pid, t.pid)
+
+    def syncTable(self, t, opcode):
+        response = [opcode, t.pid, [p.pid if p else -1 for p in t.players]]
+        for p in t.players:
+            if p:
+                p.send(response)
+        if t.size() == 3:
+            t.dealPoker()
+
+    def on_close(self):
+        logger.info('Player[%d] close', self.player.pid)
+
+        if self.player.table and self.player.table.remove(self.player):
+            logger.info('Table[%d] close', self.player.table.pid)
             SocketHandler.tableList.remove(self.player.table)
 
     @classmethod
@@ -113,7 +112,7 @@ class SocketHandler(tornado.websocket.WebSocketHandler):
             if t.pid == pid:
                 return t
         return None
-        
+
     @classmethod
     def find_wait_table(cls):
         for t in cls.tableList:

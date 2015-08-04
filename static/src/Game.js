@@ -45,31 +45,43 @@ PokerGame.Game.prototype = {
         if (PokerGame.gameType == 0) {
             this.sendmessage([15]); 
         } else {
-            PokerGame.Socket.connect(this.onopen, this.onerror);
+            PokerGame.Socket.connect(this.onopen.bind(this), this.onerror.bind(this));
         }
 	},
 	
 	onopen: function() {
-	    PokerGame.Socket.onmessage = this.onmessage;
+	    PokerGame.Socket.onmessage = this.onmessage.bind(this);
 	    this.sendmessage([1]);
 	},
 	
 	sendmessage: function(request) {
-	    if (this.gameType == 1) {
+	    if (PokerGame.gameType == 1) {
 	        PokerGame.Socket.send(request);
 	    } else {
 	        var opcode = request[0];
 	        switch(opcode) {
             case 15:     // fast join table
-            case 101:    // request deal poker
-                this.whoseTurn = this.rnd.integerInRange(0, 2);
-                var packet = [102, this.players[this.whoseTurn].pid, this.shufflePoker()]
-                this.onmessage(packet) 
+                this.onmessage([16, 1, [this.players[0].pid, this.players[1].pid, this.players[2].pid ]]);
+                var turn = this.rnd.integerInRange(0, 2);
+                this.onmessage([100, this.players[turn].pid, this.shufflePoker()]);
+                if (this.whoseTurn != 0) {
+                    this.startCallScore();
+                }
                 break;
-            case 103:   // call score
-                var callend =  (this.callscore == 3 || this.players[(this.whoseTurn+1)%3].hasCalled);
-                var packet = [104, this.players[this.whoseTurn].pid, this.callscore, callend ? this.lastThreePoker : []];
+            case 101:    // request call score
+                this.callscore = request[1];
+                var packet = [102, this.players[this.whoseTurn].pid, this.callscore];
                 this.onmessage(packet);
+
+                if (this.callscore == 3 || this.players[(this.whoseTurn+1)%3].hasCalled) {
+                    var packet = [104, this.lastThreePoker];
+                    this.onmessage(packet);
+                } else {
+                    this.whoseTurn = (this.whoseTurn + 1) % 3;
+                    if (this.whoseTurn != 0) {
+                        this.startCallScore();
+                    }
+                }
                 break;
             case 105:   // shot poker
                 var pokers = request[1]; 
@@ -83,8 +95,6 @@ PokerGame.Game.prototype = {
                     }
                 }
                 break;
-            case 107:
-                break;
 	        }
 	    }
 	},
@@ -92,18 +102,22 @@ PokerGame.Game.prototype = {
 	onmessage: function(packet) {
 	    var opcode = packet[0];
 	    switch(opcode) {
-	       case 2:
+	        case 2:
                 this.players[0].pid = packet[1]; 
                 this.sendmessage([15]);
                 break;
-	       case 16:
+	        case 16:     // fast join
                 this.pid = packet[1];
-                var ids = packet[2];
-                for (var i = 0; i < ids.length; i++) {
-                    this.players[i + 1].pid = ids[i]; 
+                var playerIds = packet[2];
+                for (var i = 0; i < playerIds.length; i++) {
+                    if (playerIds[i] == this.players[0].pid) {
+                        this.players[1].pid = playerIds[(i+1)%3]; 
+                        this.players[2].pid = playerIds[(i+2)%3]; 
+                        break;
+                    }
                 }
                 break;
-           case 102:   // deal poker
+            case 100:   // deal poker
                 var playerId = packet[1];
                 var pokers = packet[2];
                 for (var i = pokers.length; i < 54; i++) {
@@ -112,21 +126,29 @@ PokerGame.Game.prototype = {
                 
                 this.dealPoker(pokers);
                 this.whoseTurn = this.pidToSeat(playerId);
-                this.startCallScore();
+                if (this.whoseTurn == 0) {
+                    this.whoseTurn = 0;
+                    this.startCallScore();
+                }
                 break;
-            case 104:   // call score
+            case 102:   // call score
                 var playerId = packet[1];
                 var score = packet[2];
-                if (packet[3].length == 0) {
-                    this.whoseTurn = (this.whoseTurn + 1) % 3;
+                
+                this.whoseTurn = this.pidToSeat(playerId);
+                var hanzi = ['不叫', "一分", "两分", "三分"];
+                this.playerSay(hanzi[score]); 
+                if ((this.whoseTurn + 1) % 3 == 0) {
+                    this.whoseTurn = 0;
                     this.startCallScore();
-                } else {
-                    this.lastThreePoker = packet[3];
-                    this.whoseTurn = this.pidToSeat(playerId); 
-                    this.players[this.whoseTurn].isLandlord = true;
-                    this.players[this.whoseTurn].head.frame = 2;
-                    this.showLastThreePoker();
                 }
+
+                break
+            case 104: // show last three poker
+                this.lastThreePoker = packet[1];
+                this.players[this.whoseTurn].isLandlord = true;
+                this.players[this.whoseTurn].head.frame = 2;
+                this.showLastThreePoker();
                 break;
             case 106: // shot poker
                 var pokers = packet[1];
@@ -262,13 +284,8 @@ PokerGame.Game.prototype = {
         this.players[this.whoseTurn].startCallScore(this.callscore);
     },
     
-    finishCallScore: function(score) {
-        this.callscore = score;
-       
-        var hanzi = ['不叫', "一分", "两分", "三分"];
-        this.playerSay(hanzi[score]); 
-        
-        this.sendmessage([103, score]);
+    finishCallScore: function(score) { 
+        this.sendmessage([101, score]);
     },
     
     showLastThreePoker: function() {

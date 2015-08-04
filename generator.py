@@ -59,7 +59,7 @@ def permutation(seq):
     return all
 
 def sort_cards(cards):
-    c = sorted(cards, key = lambda card: '34567890JQKA2wW'.find(card))
+    c = sorted(cards, key = lambda card: '34567890JQKA2Ww'.find(card))
     return ''.join(c)
 
 def generate():

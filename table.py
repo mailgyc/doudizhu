@@ -11,7 +11,7 @@ logger = logging.getLogger()
 class Player(object):
 
     def __init__(self):
-        self.pid = next(Player.gen_id())
+        self.pid = Player.gen_id()
         self.socket = None
         self.table = None
         self.ready = False
@@ -26,85 +26,83 @@ class Player(object):
         self.socket.write_message(message)
 
     def recv(self, request):
-        if request[0] == 101: # request deal poker
+        if request[0] == 110: # request deal poker
             if self.table.state == 2:
                 self.ready = True
                 self.table.ready()
             return
-            
+
         if self.seat != self.table.whoseTurn:
             logger.warning('Player[%d] turn cheat', self.pid)
             return
-            
-        if request[0] == 103: # request call score
+
+        if request[0] == 101: # request call score
             score = request[1]
             if score > 0 and score < self.table.callscore:
                 logger.warning('Player[%d] callscore cheat', self.pid)
                 return
-            self.handleCallScore(score) 
-        elif request[0] == 107: # request play poker
+            self.handleCallScore(score)
+        elif request[0] == 105: # request shot poker
             shotPoker = request[1]
             if len(shotPoker) > 0:
                 if not rule.containsAll(self.poker, shotPoker):
-                    logger.warning('Player[%d] play non-exist poker', self.pid) 
+                    logger.warning('Player[%d] play non-exist poker', self.pid)
                     return
-               
+
                 if self.table.lastShotSeat != self.seat and rule.compare(shotPoker, self.table.lastShotPoker) < 0:
-                    logger.warning('Player[%d] play less than poker', self.pid) 
+                    logger.warning('Player[%d] play less than poker', self.pid)
                     return
-                    
+
                 self.table.lastShotPoker = shotPoker
-            
+
             self.handleShotPoker(shotPoker)
-            
+
 
     def dealPoker(self):
         player = self.table.players[self.table.whoseTurn]
-        response = [102, player.pid, []]
-        for p in self.pokers:
-            response[2].append(p)
-        logger.info('Player[%d] dealPoker[%s]', self.pid, ','.join(response[1]))
+        response = [100, player.pid, self.pokers]
+        logger.info('Player[%d] dealPoker[%s]', self.pid, ','.join(str(x) for x in response[2]))
         self.send(response)
-        
+
     def handleCallScore(self, score):
-        response = [104, self.pid, score]
+        response = [102, self.pid, score]
         message = tornado.escape.json_encode(response)
         for p in self.table.players:
             p.send(message)
-        
+
         nextseat = (self.seat + 1) % 3
         if score < 3 and not self.table.players[nextseat].iscalled:
             self.table.whoseTurn = nextseat
-            return 
-        
+            return
+
         if score == 0:
-            self.table.ready()
+            self.table.dealPoker()
         else:
             self.rank = 2
-            self.table.callscore = score 
-            response = [106, self.pid, [p for p in self.table.pokers]]
+            self.table.callscore = score
+            response = [104, self.table.pokers]
             message = tornado.escape.json_encode(response)
             for p in self.table.players:
                 p.send(message)
-                
+
     def handleShotPoker(self, shotPoker):
-        response = [108, self.pid, shotPoker]
+        response = [106, shotPoker]
         message = tornado.escape.json_encode(response)
         for p in self.table.players:
             p.send(message)
         for p in shotPoker:
             self.pokers.remove(p)
-            
+
         if len(self.pokers) == 0:
-            response = [110, self.table.calcCoin(self)]
+            response = [108, self.pid, self.table.calcCoin(self)]
             for p in self.table.players:
-                p.send(response) 
-                
+                p.send(response)
+
     def join_table(self, t):
         t.add(self)
         self.ready = True
         self.table = t
-        
+
     def open(self, socket):
         self.socket = socket
 
@@ -120,7 +118,7 @@ class Table(object):
         self.pid = Table.gen_id()
         self.players = [None, None, None]
         self.state = 0  # 0 waiting  1 playing 2 end 3 closed
-        self.pokers = [] 
+        self.pokers = []
         self.multiple = 1
         self.callscore = 0
         self.whoseTurn = 0
@@ -132,7 +130,7 @@ class Table(object):
     def calcCoin(self, winner):
         self.state = 2
         coins = []
-        tax = 100 
+        tax = 100
         for p in self.players:
             p.ready = f
             coin = self.room * p.rank * self.callscore * self.multiple
@@ -140,8 +138,8 @@ class Table(object):
                 coins.append(coin - tax)
             else:
                 coins.append(-coin - tax)
-        return coins     
-        
+        return coins
+
     def update(self):
         logger.info('table[%d] update', self.pid)
 
@@ -150,17 +148,18 @@ class Table(object):
             if not p:
                 player.seat = i
                 self.players[i] = player
+                logger.info('Table[%d] add Player[%d]', self.pid, player.pid)
                 return True
         logger.error('Player[%d] join a full Table[%d]', player.pid, self.pid)
         return False
 
     def remove(self, player):
         for i, p in enumerate(self.players):
-            if p.pid == player.pid:
+            if p and p.pid == player.pid:
                 self.players[i] = None
         else:
             logger.error('Player[%d] not in Table[%d]', player.pid, self.pid)
-            
+
         if all(p == None for p in self.players):
             self.state = 3
             logger.error('Table[%d] close', self.pid)
@@ -169,22 +168,21 @@ class Table(object):
 
     def size(self):
         return 3 - self.players.count(None)
-    
-    def ready(self):
-        if all(p and p.ready for p in self.players):
-            self.state = 1
-            self.dealPoker()
 
     def dealPoker(self):
+        if not all(p and p.ready for p in self.players):
+            return
+
+        self.state = 1
         self.pokers = [0 for i in range(54)]
         random.shuffle(self.pokers)
         for i in range(51):
             self.players[i % 3].pokers.append(self.pokers.pop())
-            
+
         self.whoseTurn = random.randint(0, 2)
         for p in self.players:
             p.dealPoker()
-    
+
     counter = 0
     @classmethod
     def gen_id(cls):
