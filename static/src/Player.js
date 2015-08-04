@@ -73,6 +73,9 @@ PokerGame.NetPlayer.prototype.playPoker = function(lastTurnPoker) {
     this.game.time.events.add(millisTime, this.game.finishPlay, this.game, pokers);
 }
 
+PokerGame.NetPlayer.prototype.removeAPoker = function (pokerid) {
+    this.pokerInHand.pop();
+}
 
 PokerGame.AIPlayer = function(pid, game) {
     
