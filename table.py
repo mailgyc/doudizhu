@@ -65,13 +65,16 @@ class Player(object):
         self.send(response)
 
     def handleCallScore(self, score):
-        response = [102, self.pid, score]
+
+        nextseat = (self.seat + 1) % 3
+        callend = !( score < 3 and not self.table.players[nextseat].iscalled)
+
+        response = [102, self.pid, score, callend]
         message = tornado.escape.json_encode(response)
         for p in self.table.players:
             p.send(message)
 
-        nextseat = (self.seat + 1) % 3
-        if score < 3 and not self.table.players[nextseat].iscalled:
+        if
             self.table.whoseTurn = nextseat
             return
 
@@ -86,14 +89,16 @@ class Player(object):
                 p.send(message)
 
     def handleShotPoker(self, shotPoker):
-        response = [106, shotPoker]
+        for p in shotPoker:
+            self.pokers.remove(p)
+        shotend = len(self.pokers) == 0
+
+        response = [106, self.pid, shotPoker, shotend]
         message = tornado.escape.json_encode(response)
         for p in self.table.players:
             p.send(message)
-        for p in shotPoker:
-            self.pokers.remove(p)
 
-        if len(self.pokers) == 0:
+        if shotend:
             response = [108, self.pid, self.table.calcCoin(self)]
             for p in self.table.players:
                 p.send(response)

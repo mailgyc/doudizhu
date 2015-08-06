@@ -70,28 +70,26 @@ PokerGame.Game.prototype = {
                 break;
             case 101:    // request call score
                 this.callscore = request[1];
-                var packet = [102, this.players[this.whoseTurn].pid, this.callscore];
+                var callend =  (this.callscore == 3 || this.players[(this.whoseTurn+1)%3].hasCalled);
+                var packet = [102, this.players[this.whoseTurn].pid, this.callscore, callend];
                 this.onmessage(packet);
 
-                if (this.callscore == 3 || this.players[(this.whoseTurn+1)%3].hasCalled) {
+                if (callend)
                     var packet = [104, this.lastThreePoker];
                     this.onmessage(packet);
-                } else {
-                    this.whoseTurn = (this.whoseTurn + 1) % 3;
-                    if (this.whoseTurn != 0) {
-                        this.startCallScore();
-                    }
                 }
                 break;
             case 105:   // shot poker
                 var pokers = request[1]; 
-                this.onmessage([106, pokers]);
 
-                var coin = 100;
-                for (var i = 0; i < 3; i++) {
-                    if (this.players[i].pokerInHand.length == 0) {
-                        this.onmessage([108, this.players[i].pid, coin]);
-                        break;
+                var total = this.players[this.whoseTurn].pokerInHand.length;
+                var shotend = (total - pokers.length) == 0;
+                this.onmessage([106, this.players[this.whoseTurn].pid, pokers, shotend]);
+
+                if (shotend) {
+                    var coin = 100;
+                    for (var i = 0; i < 3; i++) {
+                        this.onmessage([108, this.players[this.whoseTurn].pid, coin]);
                     }
                 }
                 break;
@@ -134,12 +132,13 @@ PokerGame.Game.prototype = {
             case 102:   // call score
                 var playerId = packet[1];
                 var score = packet[2];
-                
+                var callend = packet[3];
                 this.whoseTurn = this.pidToSeat(playerId);
+                
                 var hanzi = ['不叫', "一分", "两分", "三分"];
                 this.playerSay(hanzi[score]); 
-                if ((this.whoseTurn + 1) % 3 == 0) {
-                    this.whoseTurn = 0;
+                if (! callend) {
+                    this.whoseTurn = (this.whoseTurn + 1) % 3;
                     this.startCallScore();
                 }
 
@@ -151,7 +150,10 @@ PokerGame.Game.prototype = {
                 this.showLastThreePoker();
                 break;
             case 106: // shot poker
-                var pokers = packet[1];
+                var playerId = packet[1];
+                var pokers = packet[2];
+                var shotend = packet[3];
+                this.whoseTurn = this.pidToSeat(playerId);
                 if (pokers.length == 0) {
                     this.playerSay("不出");
                 } else {
@@ -182,8 +184,10 @@ PokerGame.Game.prototype = {
                     this.lastShotPoker = pokers;
                 }
                 
-                this.whoseTurn = (this.whoseTurn + 1) % 3;
-                this.startPlay(); 
+                if (!shotend) {
+                    this.whoseTurn = (this.whoseTurn + 1) % 3;
+                    this.startPlay(); 
+                }
                 break;
             case 108: // game over
                 var playerId = packet[1];

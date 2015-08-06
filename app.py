@@ -49,7 +49,7 @@ class SocketHandler(tornado.websocket.WebSocketHandler):
         logger.info('player[%d] open', self.player.pid)
         self.player.open(self)
 
-    def on_message(self, message):
+    def on_message(self, message)
         logger.info('got message %s', message)
         request = tornado.escape.json_decode(message)
 

@@ -60,17 +60,9 @@ PokerGame.NetPlayer.prototype = Object.create(PokerGame.Player.prototype);
 PokerGame.NetPlayer.prototype.constructor = PokerGame.NetPlayer;
 
 PokerGame.NetPlayer.prototype.startCallScore = function (minscore) {
-    var millisTime = this.game.rnd.integerInRange(10, 50);
-    var score = this.game.rnd.integerInRange(minscore + 1, 3);
-    this.hasCalled = true;
-    this.game.time.events.add(millisTime, this.game.finishCallScore, this.game, score);
 }
 
 PokerGame.NetPlayer.prototype.playPoker = function(lastTurnPoker) {
-    
-    var pokers = this.hint(lastTurnPoker);
-    var millisTime = this.game.rnd.integerInRange(100, 1000);
-    this.game.time.events.add(millisTime, this.game.finishPlay, this.game, pokers);
 }
 
 PokerGame.NetPlayer.prototype.removeAPoker = function (pokerid) {
