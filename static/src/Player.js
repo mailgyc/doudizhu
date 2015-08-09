@@ -3,7 +3,10 @@ PokerGame.Player = function(pid, game) {
     this.seat = pid;
     this.game = game;
     
+    // store poker id
     this.pokerInHand = [];
+    // store poker sprite
+    this.pokers = [];
     this.isLandlord = false;
     this.hasCalled = false;
     
@@ -41,13 +44,34 @@ PokerGame.Player.prototype.playPoker = function(lastTurnPoker) {
     this.game.playerPlayPoker(lastTurnPoker);
 }
 
-PokerGame.Player.prototype.removeAPoker = function (pokerid) {
-    for(var i = 0; i < this.pokerInHand.length; i++){
-       if(this.pokerInHand[i] == pokerid){
+PokerGame.Player.prototype.findPoker = function(pid) {
+    var length = this.pokers;
+    for (var i = 0; i < length; i++) {
+        if (this.pokers[i].id == pid) {
+            return this.pokers[i];
+        }
+    }
+    // net player
+    return this.pokers[0];
+}
+
+PokerGame.Player.prototype.removeAPoker = function (pid) {
+    var length = this.pokerInHand.length;
+    for(var i = 0; i < length; i++){
+       if(this.pokerInHand[i] == pid){
             this.pokerInHand.splice(i, 1);
             break;
        }
+    }
+    
+    length = this.pokers.length;
+    for(var i = 0; i < length; i++){
+       if(this.pokers[i].id == pid){
+            this.pokers.splice(i, 1);
+            break;
+       }
     }  
+
 }
 
 PokerGame.NetPlayer = function(pid, game) {
@@ -65,7 +89,7 @@ PokerGame.NetPlayer.prototype.startCallScore = function (minscore) {
 PokerGame.NetPlayer.prototype.playPoker = function(lastTurnPoker) {
 }
 
-PokerGame.NetPlayer.prototype.removeAPoker = function (pokerid) {
+PokerGame.NetPlayer.prototype.removeAPoker = function (pid) {
     this.pokerInHand.pop();
 }
 
