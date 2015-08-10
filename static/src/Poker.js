@@ -12,6 +12,13 @@ PokerGame.Poker.prototype = Object.create(Phaser.Sprite.prototype);
 PokerGame.Poker.prototype.constructor = PokerGame.Poker;
 
 PokerGame.Poker.comparePoker = function(a, b) {
+
+    if (a instanceof Array) {
+        a = a[0];
+        b = b[0];
+    }
+
+
     if (a >=52 || b >= 52) {
         return -(a - b);
     }
@@ -30,12 +37,12 @@ PokerGame.Poker.toCards = function(pokers) {
 
     var cards = [];
     for (var i = 0; i < pokers.length; i++) {
-        if (pokers[i] == 52) {
+        if (pokers[i][0] == 52) {
             cards.push('W');
         } else if (pokers[i] == 53) {
             cards.push('w');
         } else {
-            cards.push("A234567890JQK"[pokers[i]%13]);
+            cards.push("A234567890JQK"[pokers[i][0]%13]);
         }
     }
     return cards;

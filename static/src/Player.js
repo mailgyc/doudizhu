@@ -3,16 +3,35 @@ PokerGame.Player = function(pid, game) {
     this.seat = pid;
     this.game = game;
     
-    // store poker id
     this.pokerInHand = [];
-    // store poker sprite
-    this.pokers = [];
     this.isLandlord = false;
     this.hasCalled = false;
     
 }
 
-PokerGame.Player.prototype.startCallScore = function (minscore) {
+PokerGame.Player.prototype.fetchAPoker = function(pid, poker) {
+    this.pokerInHand.push([pid, poker]);
+}
+
+PokerGame.Player.prototype.getPoker = function(index) {
+    return this.pokerInHand[index];
+}
+
+PokerGame.Player.prototype.findPoker = function(pid) {
+    var length = this.pokerInHand.length;
+    for (var i = 0; i < length; i++) {
+        if (this.pokerInHand[i][0] == pid) {
+            return this.pokerInHand[i][1];
+        }
+    }
+    return this.pokerInHand[0][1];
+}
+
+PokerGame.Player.prototype.sortPoker = function() {
+    this.pokerInHand.sort(PokerGame.Poker.comparePoker);
+}
+
+PokerGame.Player.prototype.startCallScore = function(minscore) {
     this.game.playerCallScore(minscore);
 }
 
@@ -44,34 +63,14 @@ PokerGame.Player.prototype.playPoker = function(lastTurnPoker) {
     this.game.playerPlayPoker(lastTurnPoker);
 }
 
-PokerGame.Player.prototype.findPoker = function(pid) {
-    var length = this.pokers;
-    for (var i = 0; i < length; i++) {
-        if (this.pokers[i].id == pid) {
-            return this.pokers[i];
-        }
-    }
-    // net player
-    return this.pokers[0];
-}
-
 PokerGame.Player.prototype.removeAPoker = function (pid) {
     var length = this.pokerInHand.length;
     for(var i = 0; i < length; i++){
-       if(this.pokerInHand[i] == pid){
+       if(this.pokerInHand[i][0] == pid){
             this.pokerInHand.splice(i, 1);
             break;
        }
     }
-    
-    length = this.pokers.length;
-    for(var i = 0; i < length; i++){
-       if(this.pokers[i].id == pid){
-            this.pokers.splice(i, 1);
-            break;
-       }
-    }  
-
 }
 
 PokerGame.NetPlayer = function(pid, game) {
