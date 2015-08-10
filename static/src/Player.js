@@ -37,6 +37,16 @@ PokerGame.Player.prototype.startCallScore = function(minscore) {
 
 PokerGame.Player.prototype.hint = function(lastTurnPoker) {
     
+    function contains(arr, ele) {
+        var length = arr.length;
+        for (var i = 0; i < length; i++) {
+            if (arr[i][0] == ele) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     var cards, handCards = PokerGame.Poker.toCards(this.pokerInHand);
     if (lastTurnPoker.length == 0) {
         cards = PokerGame.Rule.bestShot(handCards);
@@ -44,7 +54,21 @@ PokerGame.Player.prototype.hint = function(lastTurnPoker) {
         cards = PokerGame.Rule.cardsAbove(handCards, PokerGame.Poker.toCards(lastTurnPoker));
     }
     
-    return PokerGame.Poker.toPokers(this.pokerInHand, cards);
+    var pokers = [];
+    for (var i = 0; i < cards.length; i++) {
+        var options = PokerGame.Poker.toPoker(cards[i]);
+        for (var j = 0; j < options.length; j++) {
+            if ( !contains(pokers, options[j]) && contains(this.pokerInHand, options[j])) {
+                pokers.push([options[j], this.findPoker(options[j])]);
+                break;
+            }
+        }
+        if (j == options.length) {
+            alert('not found ' + cards[i]);
+        }
+    }
+
+    return pokers;
     
 }
 

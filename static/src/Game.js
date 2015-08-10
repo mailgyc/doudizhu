@@ -229,9 +229,9 @@ PokerGame.Game.prototype = {
     
     dealPoker: function(pokers) {
         for (var i = 0; i < 3; i++) {
-            var p = new PokerGame.Poker(this, 0, 54);
+            var p = new PokerGame.Poker(this, pokers.pop(), 54);
             this.world.add(p);
-            this.tablePoker[i] = 0;
+            this.tablePoker[i] = p.id;
             this.tablePoker[i + 3] = p;
         }
 
@@ -271,7 +271,7 @@ PokerGame.Game.prototype = {
                     headX[0] = this.world.width/2 + gap * (i - 8.5);
                 }
                 this.add.tween(p).to({ x: headX[turn], y: headY[turn] }, 500, Phaser.Easing.Default, true, (turn == 0 ? 0 : 25) + i * 50);
-                this.players[turn].pokerInHand[1] = p;
+                this.players[turn].pokerInHand[i][1] = p;
             }
         }
     },
@@ -316,6 +316,7 @@ PokerGame.Game.prototype = {
         }
         
         if (this.whoseTurn == 0) {
+            this.arrangePoker();
             for (var i = 0; i < 3; i++) {
                 var p = this.tablePoker[i + 3];
                 var tween = this.add.tween(p).to({y: this.world.height - PokerGame.PH * 0.8 }, 400, Phaser.Easing.Default, true);
@@ -324,9 +325,8 @@ PokerGame.Game.prototype = {
                 };
                 tween.onComplete.add(adjust, this, p);
             }
-            this.arrangePoker();
         } else {
-            var first = this.players[this.whoseTurn].pokers[0];
+            var first = this.players[this.whoseTurn].pokerInHand[0][1];
             for (var i = 0; i < 3; i++) {
                 var p = this.tablePoker[i + 3];
                 p.frame = 54;
@@ -377,6 +377,13 @@ PokerGame.Game.prototype = {
     },
     
     finishPlay: function(pokers) {
+        if (pokers.length > 0 && pokers[0] instanceof Array) {
+            var p = [];
+            for (var i = 0; i < pokers.length; i++) {
+                p.push(pokers[i][0]);
+            }
+            pokers = p;
+        }
         this.sendmessage([105, pokers]); 
     },
     
@@ -418,17 +425,23 @@ PokerGame.Game.prototype = {
     },
     
     selectPoker: function(poker, pointer) {
-        if (this.hintPoker.indexOf(poker.id) == -1) {
+        function contains(arr, ele) {
+            var length = arr.length;
+            for (var i = 0; i < length; i++) {
+                if (arr[i][0] == ele) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        var index = contains(this.hintPoker, poker.id);
+        if ( index == -1) {
             poker.y = this.world.height - PokerGame.PH * 0.8;
-            this.hintPoker.push(poker.id);
+            this.hintPoker.push([poker.id, poker]);
         } else {
             poker.y = this.world.height - PokerGame.PH * 0.5;
-             for(var i = 0; i < this.hintPoker.length; i++){
-               if(this.hintPoker[i] == poker.id){
-                    this.hintPoker.splice(i, 1);
-                    break;
-               }
-            }   
+            this.hintPoker.splice(index, 1);
         }
     },
     
@@ -447,7 +460,7 @@ PokerGame.Game.prototype = {
                 this.hintPoker = lastTurnPoker;
             } else {
                 for (var i = 0; i < this.hintPoker.length; i++) {
-                    var p = this.players[this.whoseTurn].findPoker(this.hintPoker[i]);
+                    var p = this.hintPoker[i][1];
                     p.y = this.world.height - PokerGame.PH/2;
                 }
             }
@@ -457,14 +470,12 @@ PokerGame.Game.prototype = {
                     this.playerSay("没有能大过的牌");
                 } else{
                     for (var i = 0; i < this.hintPoker.length; i++) {
-                       var p = this.players[this.whoseTurn].findPoker(this.hintPoker[i]);
-                       p = this.world.height - PokerGame.PH/2;
+                        this.hintPoker[i][1].y = this.world.height - PokerGame.PH/2;
                     }
                 }
             } else {
                 for (var i = 0; i < bigger.length; i++) {
-                    var p = this.players[this.whoseTurn].findPoker(this.bigger[i]);
-                    p = this.world.height - PokerGame.PH * 0.8;
+                    bigger[i][1].y = this.world.height - PokerGame.PH * 0.8;
                 }
             }
             this.hintPoker = bigger;
@@ -500,7 +511,7 @@ PokerGame.Game.prototype = {
         
         var length = this.players[0].pokerInHand.length;
         for (var i = 0; i < length; i++) {
-            this.players[0].pokers[i].inputEnabled = true;
+            this.players[0].pokerInHand[i][1].inputEnabled = true;
         }
     },
 

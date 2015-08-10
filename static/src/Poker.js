@@ -37,12 +37,16 @@ PokerGame.Poker.toCards = function(pokers) {
 
     var cards = [];
     for (var i = 0; i < pokers.length; i++) {
-        if (pokers[i][0] == 52) {
+        var pid = pokers[i];
+        if (pid instanceof Array) {
+            pid = pid[0];
+        }
+        if (pid== 52) {
             cards.push('W');
-        } else if (pokers[i] == 53) {
+        } else if (pid == 53) {
             cards.push('w');
         } else {
-            cards.push("A234567890JQK"[pokers[i][0]%13]);
+            cards.push("A234567890JQK"[pid%13]);
         }
     }
     return cards;
@@ -66,22 +70,3 @@ PokerGame.Poker.toPoker = function(card) {
     
 }
 
-PokerGame.Poker.toPokers = function(existPokers, cards) {
-
-    var pokers = [];
-    var i, j;
-    for (i = 0; i < cards.length; i++) {
-        var options = PokerGame.Poker.toPoker(cards[i]);
-        for (j = 0; j < options.length; j++) {
-            if (pokers.indexOf(options[j]) == -1 && existPokers.indexOf(options[j]) != -1) {
-                pokers.push(options[j]);
-                break;
-            }
-        }
-        if (j == options.length) {
-            alert('not found ' + cards[i]);
-        }
-    }
-    return pokers;
-
-}
