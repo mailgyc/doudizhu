@@ -24,8 +24,8 @@ PokerGame.Boot.prototype = {
         this.stage.disableVisibilityChange = true;
 
         this.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
-        this.scale.minWidth = 800;
-        this.scale.minHeight = 480;
+        this.scale.minWidth = 80;
+        this.scale.minHeight = 48;
         this.scale.maxWidth = window.innerWidth * window.innerHeight/480;
         this.scale.maxHeight = window.innerHeight;
         this.scale.pageAlignHorizontally = true;

@@ -8,8 +8,8 @@ PokerGame.Game = function(game) {
     
     this.callscore = 0;
 
+    this.pokerDB = {};
     this.tablePoker = [];
-    this.tablePokerSprite = [];
     
     this.lastShotPlayer = null;
 
@@ -121,10 +121,14 @@ PokerGame.Game.prototype = {
                 var playerId = packet[1];
                 var pokers = packet[2];
                 if (pokers.length < 54) {
-                    for (var i = 0; i < 54; i++) {
-                        if (pokers.indexOf(i) == -1) {
-                            pokers.push(i)
-                        }
+                    for (var i = 0; i < 17; i++) {
+                        pokers.push(55)
+                    }
+                    for (var i = 0; i < 17; i++) {
+                        pokers.push(56)
+                    }
+                    for (var i = 0; i < 3; i++) {
+                        pokers.push(54)
                     }
                 }
                 
@@ -150,7 +154,9 @@ PokerGame.Game.prototype = {
 
                 break
             case 104: // show last three poker
-                this.tablePoker = packet[1];
+                this.tablePoker[0] = packet[1][0];
+                this.tablePoker[1] = packet[1][1];
+                this.tablePoker[2] = packet[1][2];
                 this.players[this.whoseTurn].isLandlord = true;
                 this.players[this.whoseTurn].head.frame = 2;
                 this.showLastThreePoker();
@@ -164,30 +170,30 @@ PokerGame.Game.prototype = {
                     this.playerSay("不出");
                 } else {
                     
-                    for (var i = 0; i < this.tablePoker.length; i++) {
-                        this.tablePokerSprite[i].kill();
-                    }
 
                     pokers.sort(PokerGame.Poker.comparePoker); 
                     
                     var count= pokers.length;
                     var gap = Math.min((this.world.width - PokerGame.PW * 2) / count, PokerGame.PW * 0.36);
                     for (var i = 0; i < count; i++) {
-                        var p = this.players[this.whoseTurn].findPoker(pokers[i]);
+                        var p = this.findInDB(pokers[i]);
                         p.frame = pokers[i];
                         p.bringToTop();
                         this.add.tween(p).to({ x: this.world.width/2 + (i - count/2) * gap, y: this.world.height * 0.4}, 500, Phaser.Easing.Default, true);
                         
                         this.players[this.whoseTurn].removeAPoker(pokers[i]);
-                        this.tablePokerSprite.push(p);
                     }
                 
                     if (this.players[this.whoseTurn].leftPoker) {
                         this.players[this.whoseTurn].leftPoker.text = this.players[this.whoseTurn].pokerInHand.length + "";
                     }
                     
-                    this.lastShotPlayer = this.players[this.whoseTurn];
+                    for (var i = 0; i < this.tablePoker.length; i++) {
+                        var p = this.removeInDB(this.tablePoker[i]);
+                        p.kill();
+                    }
                     this.tablePoker = pokers;
+                    this.lastShotPlayer = this.players[this.whoseTurn];
                 }
                 
                 if (!shotend) {
@@ -230,12 +236,12 @@ PokerGame.Game.prototype = {
     
     dealPoker: function(pokers) {
         for (var i = 0; i < 3; i++) {
-            var pid = pokers.pop();
-            var p = new PokerGame.Poker(this, pid, 54);
+            var p = new PokerGame.Poker(this, pokers.pop(), 54);
             this.world.add(p);
-            this.tablePoker.push(pid);
-            this.tablePokerSprite.push(p);
+            this.tablePoker[i] = p.id;
+            this.tablePoker[i + 3] = p;
         }
+
         for (var i = 0; i < 17; i++) {
             this.players[2].pokerInHand.push(pokers.pop());
         }
@@ -246,50 +252,41 @@ PokerGame.Game.prototype = {
             this.players[0].pokerInHand.push(pokers.pop());
         }
         
-        this.players[0].pokerInHand.sort(PokerGame.Poker.comparePoker);
-        this.players[1].pokerInHand.sort(PokerGame.Poker.comparePoker);
-        this.players[2].pokerInHand.sort(PokerGame.Poker.comparePoker);
+        this.players[0].sortPoker();
         
         //to(properties, duration, ease, autoStart, delay, repeat, yoyo)
+        var headX = [
+            0,
+            this.world.width - PokerGame.PW/2,
+            PokerGame.PW/2
+        ];
+
+        var headY = [
+            this.world.height - PokerGame.PH/2,
+            this.players[1].head.y + this.players[1].head.height + PokerGame.PH/2 + 10,
+            this.players[1].head.y + this.players[1].head.height + PokerGame.PH/2 + 10
+        ];
+
+        var copy = this.whoseTurn;
         var gap = Math.min(this.world.width/17, PokerGame.PW * 0.36);
         for (var i = 0; i < 17; i++) {
-            var p = new PokerGame.Poker(this, this.players[0].pokerInHand[i], this.players[0].pokerInHand[i]);
-            this.world.add(p);
-            this.players[0].pokers.push(p);
-            this.add.tween(p).to({ x: this.world.width/2 + gap * (i - 8.5), y: this.world.height - PokerGame.PH/2 }, 500, Phaser.Easing.Default, true, i * 50);
-            
-            var right = new PokerGame.Poker(this, this.players[1].pokerInHand[i], 54);
-            this.world.add(right);
-            this.players[1].pokers.push(right);
-            this.add.tween(right).to({ x: this.world.width - PokerGame.PW/2, y: this.players[1].head.y + this.players[1].head.height + PokerGame.PH/2 + 10 },
-                                        500, Phaser.Easing.Default, true, 25 + i * 50);
-            
-            var left = new PokerGame.Poker(this, this.players[2].pokerInHand[i], 54);
-            this.world.add(left);
-            this.players[2].pokers.push(left);
-            this.add.tween(left).to({ x: PokerGame.PW/2, y: this.players[2].head.y + this.players[2].head.height + PokerGame.PH/2 + 10 }, 
-                                        500, Phaser.Easing.Default, true, 25 + i * 50);
+            for (var turn = 0; turn < 3; turn++) {
+                var pid = this.players[turn].pokerInHand[i];
+                var p = new PokerGame.Poker(this, pid, turn == 0 ? pid : 54); 
+                this.world.add(p);
+
+                if (turn == 0) {
+                    headX[0] = this.world.width/2 + gap * (i - 8.5);
+                }
+                this.add.tween(p).to({ x: headX[turn], y: headY[turn] }, 500, Phaser.Easing.Default, true, (turn == 0 ? 0 : 25) + i * 50);
+                
+                this.whoseTurn = turn;
+                this.pushInDB(p.id, p);
+            }
         }
+        this.whoseTurn = copy;
     },
-    
-    shufflePoker: function() {
-        var pokers = [];
-        for (var i = 0; i < 54; i++) {
-            pokers.push(i);
-        }
-        
-        var currentIndex = pokers.length, temporaryValue, randomIndex ;
-        while (0 !== currentIndex) {
-            randomIndex = Math.floor(Math.random() * currentIndex);
-            currentIndex -= 1;
-            
-            temporaryValue = pokers[currentIndex];
-            pokers[currentIndex] = pokers[randomIndex];
-            pokers[randomIndex] = temporaryValue;
-        }
-        return pokers;
-    },
-    
+     
     startCallScore: function () {
         this.players[this.whoseTurn].startCallScore(this.callscore);
     },
@@ -301,7 +298,8 @@ PokerGame.Game.prototype = {
     showLastThreePoker: function() {
         for (var i = 0; i < 3; i++) {
             var pokerid = this.tablePoker[i];
-            var p = this.tablePokerSprite[i];
+            var p = this.tablePoker[i + 3];
+            p.id = pokerid;
             p.frame = pokerid;
             this.add.tween(p).to({ x: this.world.width/2 + (i - 1) * 60}, 600, Phaser.Easing.Default, true);
         }
@@ -310,13 +308,12 @@ PokerGame.Game.prototype = {
     },
     
     arrangePoker: function() {
-        this.players[this.whoseTurn].pokerInHand.sort(PokerGame.Poker.comparePoker);
+        this.players[this.whoseTurn].sortPoker();
         
         var count = this.players[0].pokerInHand.length;
         var gap = Math.min(this.world.width / count, PokerGame.PW * 0.36);
         for (var i = 0; i < count; i++) { 
-            var pokerid = this.players[0].pokerInHand[i];
-            var p = this.players[0].findPoker(pokerid);
+            var p = this.players[0].pokerInHand[i][1];
             p.bringToTop();
             this.add.tween(p).to({ x: this.world.width/2 + (i - count/2) * gap}, 600, Phaser.Easing.Default, true);
         }
@@ -324,15 +321,16 @@ PokerGame.Game.prototype = {
     
     dealLastThreePoker: function() {
         for (var i = 0; i < 3; i++) {
-            var pokerid = this.tablePoker.pop();
-            this.players[this.whoseTurn].pokerInHand.push(pokerid);
+            var pid = this.tablePoker[i];
+            var poker = this.tablePoker[i + 3];
+            this.players[this.whoseTurn].pokerInHand.push(pid);
+            this.pushInDB(pid, poker);
         }
         
         if (this.whoseTurn == 0) {
             this.arrangePoker();
             for (var i = 0; i < 3; i++) {
-                var p = this.tablePokerSprite.pop();
-                this.players[0].pokers.push(p);
+                var p = this.tablePoker[i + 3];
                 var tween = this.add.tween(p).to({y: this.world.height - PokerGame.PH * 0.8 }, 400, Phaser.Easing.Default, true);
                 function adjust(p) {
                     this.add.tween(p).to({y: this.world.height - PokerGame.PH /2}, 400, Phaser.Easing.Default, true, 400);
@@ -340,24 +338,26 @@ PokerGame.Game.prototype = {
                 tween.onComplete.add(adjust, this, p);
             }
         } else {
-            var first = this.players[this.whoseTurn].pokers[0];
+            var first = this.findInDB(this.players[this.whoseTurn].pokerInHand[0]);
             for (var i = 0; i < 3; i++) {
-                var p = this.tablePokerSprite.pop();
-                this.players[this.whoseTurn].pokers.push(p);
+                var p = this.tablePoker[i + 3];
                 p.frame = 54;
                 this.add.tween(p).to({ x: first.x, y: first.y}, 60, Phaser.Easing.Default, true);
             }
-            this.players[this.whoseTurn].pokerInHand.sort(PokerGame.Poker.comparePoker);
+            this.players[this.whoseTurn].sortPoker();
             this.players[this.whoseTurn].leftPoker.text = "20";
         }
         
         var length = this.players[0].pokerInHand.length;
         for (var i = 0; i < length;  i++) {
-            this.players[0].pokers[i].events.onInputDown.add(this.onInputDown, this);
-            this.players[0].pokers[i].events.onInputUp.add(this.onInputUp, this);
-            this.players[0].pokers[i].events.onInputOver.add(this.onInputOver, this);
+            var pokerid = this.players[0].pokerInHand[i];
+            var p = this.findInDB(pokerid);
+            p.events.onInputDown.add(this.onInputDown, this);
+            p.events.onInputUp.add(this.onInputUp, this);
+            p.events.onInputOver.add(this.onInputOver, this);
         }
         
+        this.tablePoker = [];
         this.lastShotPlayer = this.players[this.whoseTurn];
         this.startPlay();
     },
@@ -390,9 +390,10 @@ PokerGame.Game.prototype = {
     },
     
     finishPlay: function(pokers) {
+
         this.sendmessage([105, pokers]); 
+
     },
-    
     
     // function about ui
     playerSay: function(str) {
@@ -431,18 +432,16 @@ PokerGame.Game.prototype = {
     },
     
     selectPoker: function(poker, pointer) {
-        if (this.hintPoker.indexOf(poker.id) == -1) {
+
+        var index = this.hintPoker.indexOf(poker.id);
+        if ( index == -1) {
             poker.y = this.world.height - PokerGame.PH * 0.8;
             this.hintPoker.push(poker.id);
         } else {
             poker.y = this.world.height - PokerGame.PH * 0.5;
-             for(var i = 0; i < this.hintPoker.length; i++){
-               if(this.hintPoker[i] == poker.id){
-                    this.hintPoker.splice(i, 1);
-                    break;
-               }
-            }   
+            this.hintPoker.splice(index, 1);
         }
+
     },
     
     playerPlayPoker: function(lastTurnPoker) {
@@ -460,7 +459,7 @@ PokerGame.Game.prototype = {
                 this.hintPoker = lastTurnPoker;
             } else {
                 for (var i = 0; i < this.hintPoker.length; i++) {
-                    var p = this.players[this.whoseTurn].findPoker(this.hintPoker[i]);
+                    var p = this.findInDB(this.hintPoker[i]);
                     p.y = this.world.height - PokerGame.PH/2;
                 }
             }
@@ -470,14 +469,14 @@ PokerGame.Game.prototype = {
                     this.playerSay("没有能大过的牌");
                 } else{
                     for (var i = 0; i < this.hintPoker.length; i++) {
-                       var p = this.players[this.whoseTurn].findPoker(this.hintPoker[i]);
-                       p = this.world.height - PokerGame.PH/2;
+                        var p = this.findInDB(this.hintPoker[i]);
+                        p.y = this.world.height - PokerGame.PH/2;
                     }
                 }
             } else {
                 for (var i = 0; i < bigger.length; i++) {
-                    var p = this.players[this.whoseTurn].findPoker(this.bigger[i]);
-                    p = this.world.height - PokerGame.PH * 0.8;
+                    var p = this.findInDB(this.bigger[i]);
+                    p.y = this.world.height - PokerGame.PH * 0.8;
                 }
             }
             this.hintPoker = bigger;
@@ -513,8 +512,66 @@ PokerGame.Game.prototype = {
         
         var length = this.players[0].pokerInHand.length;
         for (var i = 0; i < length; i++) {
-            this.players[0].pokers[i].inputEnabled = true;
+            var p = this.findInDB(this.players[0].pokerInHand[i]);
+            p.inputEnabled = true;
         }
+    },
+
+    pushInDB: function(pid, poker) {
+        if (pid < 54) {
+            this.pokerDB[pid] = poker;
+        } else {
+            if (this.pokerDB[this.whoseTurn + 54]) {
+                this.pokerDB[this.whoseTurn + 54].push(poker);
+            } else {
+                this.pokerDB[this.whoseTurn + 54] = [poker];
+            }
+        }
+    },
+
+    findInDB: function(pid) {
+        
+        if (pid < 54) {
+            var poker = this.pokerDB[pid];
+            if (poker) {
+                return poker;
+            }
+        }
+        // 54 table poker
+        // 55 56 player poker
+        return this.pokerDB[this.whoseTurn + 54][0];
+    },
+
+    removeInDB: function(pid) {
+        if (pid < 54) {
+            var poker = this.pokerDB[pid];
+            if (poker) {
+                delete this.pokerDB[pid];
+                return poker;
+            }
+        }
+        // 54 table poker
+        // 55 56 player poker
+        var pokers = this.pokerDB[this.whoseTurn + 54].splice(0, 1);
+        return pokers[0];
+    },
+
+    shufflePoker: function() {
+        var pokers = [];
+        for (var i = 0; i < 54; i++) {
+            pokers.push(i);
+        }
+        
+        var currentIndex = pokers.length, temporaryValue, randomIndex ;
+        while (0 !== currentIndex) {
+            randomIndex = Math.floor(Math.random() * currentIndex);
+            currentIndex -= 1;
+            
+            temporaryValue = pokers[currentIndex];
+            pokers[currentIndex] = pokers[randomIndex];
+            pokers[randomIndex] = temporaryValue;
+        }
+        return pokers;
     }
     
 };
