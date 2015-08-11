@@ -93,6 +93,6 @@ PokerGame.AIPlayer.prototype.startCallScore = function (minscore) {
 PokerGame.AIPlayer.prototype.playPoker = function(lastTurnPoker) {
     
     var pokers = this.hint(lastTurnPoker);
-    var millisTime = this.game.rnd.integerInRange(100, 1000);
+    var millisTime = this.game.rnd.integerInRange(500, 1000);
     this.game.time.events.add(millisTime, this.game.finishPlay, this.game, pokers);
 }

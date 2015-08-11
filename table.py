@@ -81,6 +81,7 @@ class Player(object):
             else:
                 self.rank = 2
                 self.table.callscore = score
+                self.pokers = self.pokers + self.table.pokers
                 response = [104, self.table.pokers]
                 message = tornado.escape.json_encode(response)
                 for p in self.table.players:
