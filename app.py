@@ -4,7 +4,7 @@ import tornado.escape
 import tornado.ioloop
 import tornado.web
 import tornado.websocket
-from table import Table, Player
+from game import Table, Player
 
 from tornado.options import define, options
 

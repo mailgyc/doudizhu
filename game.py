@@ -92,15 +92,19 @@ class Player(object):
 
 
     def handleShotPoker(self, shotPoker):
-        logger.info('Player[%d] shotPoker[%s]', self.pid, ','.join(str(x) for x in shotPoker))
+
         for p in shotPoker:
             self.pokers.remove(p)
+
+        nextseat = (self.seat + 1) % 3
         shotend = len(self.pokers) == 0
 
         response = [106, self.pid, shotPoker, shotend]
         message = tornado.escape.json_encode(response)
         for p in self.table.players:
             p.send(message)
+
+        logger.info('Player[%d] shotPoker[%s]', self.pid, ','.join(str(x) for x in shotPoker))
 
         if shotend:
             response = [108, self.pid, self.table.calcCoin(self)]
