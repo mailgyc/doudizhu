@@ -33,7 +33,7 @@ class Player(object):
             return
 
         if self.seat != self.table.whoseTurn:
-            logger.warning('Player[%d] turn cheat', self.pid)
+            logger.warning('Player[%d] turn[%d,%d] cheat', self.pid, self.seat, self.table.whoseTurn)
             return
 
         if request[0] == 101: # request call score
@@ -104,12 +104,16 @@ class Player(object):
         for p in self.table.players:
             p.send(message)
 
+        if len(shotPoker) > 0:
+            self.table.lastShotSeat = self.seat
         logger.info('Player[%d] shotPoker[%s]', self.pid, ','.join(str(x) for x in shotPoker))
 
         if shotend:
             response = [108, self.pid, self.table.calcCoin(self)]
             for p in self.table.players:
                 p.send(response)
+        else:
+            self.table.whoseTurn = nextseat
 
     def join_table(self, t):
         t.add(self)
@@ -145,7 +149,7 @@ class Table(object):
         coins = []
         tax = 100
         for p in self.players:
-            p.ready = f
+            p.ready = False
             coin = self.room * p.rank * self.callscore * self.multiple
             if p.rank == winner.rank:
                 coins.append(coin - tax)
