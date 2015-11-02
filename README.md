@@ -1,4 +1,7 @@
 # doudizhu
 斗地主游戏
 html5 + python 实现
-目前可以单机游戏，联网正在进行中
+
+运行
+python app.py 
+浏览器访问即可,端口默认8000
