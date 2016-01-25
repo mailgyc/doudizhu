@@ -27,7 +27,9 @@
 <script type="text/javascript">
 
 (function () {
-    var game = new Phaser.Game(800, 480, Phaser.AUTO, 'game');
+    var h = window.innerHeight * 960/window.innerWidth;
+    if (h > 640) h = 640;
+    var game = new Phaser.Game(960, h, Phaser.AUTO, 'game');
 
     game.state.add('Boot', PokerGame.Boot);
     game.state.add('Preloader', PokerGame.Preloader);

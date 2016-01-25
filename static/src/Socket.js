@@ -1,6 +1,7 @@
 
 PokerGame.Socket = {
-    wsUri: "ws://127.0.0.1:8000/socket",
+    wsUri: "ws://m.enjoygame.net:8000/socket",
+    //wsUri: "ws://127.0.0.1:8000/socket",
     websocket: null,
     onmessage: null
 }

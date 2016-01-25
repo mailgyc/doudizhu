@@ -1,8 +1,5 @@
 
 PokerGame.MainMenu = function (game) {
-
-	this.music = null;
-
 };
 
 PokerGame.MainMenu.prototype = {
@@ -10,19 +7,21 @@ PokerGame.MainMenu.prototype = {
 	create: function () {
 
 		this.stage.backgroundColor = '#182d3b';
-
-		//this.music = this.add.audio('bg_music');
-		//this.music.play();
 		
-		var start = new PokerGame.TextButton(this, this.world.width/2, this.world.height/4, 'Start Game', this.startGame, this);
+		var bg = this.add.sprite(this.game.width/2, 0, 'bg_1');
+		bg.anchor.set(0.5, 0);
+		
+		var start = this.add.button(this.world.width/2, this.world.height/4, 'button', this.startGame, this, 'start.png', 'start.png', 'start.png');
+		start.anchor.set(0.5);
 		this.world.add(start);
 		
-		var room = new PokerGame.TextButton(this, this.world.width/2, this.world.height/2, 'Play With People', this.gotoRoom, this);
+		var room = this.add.button(this.world.width/2, this.world.height/2, 'button', this.gotoRoom, this, 'settings.png', 'settings.png', 'settings.png');
+		room.anchor.set(0.5);
 		this.world.add(room);
 		
-		var reg = new PokerGame.TextButton(this, this.world.width/2, this.world.height * 3/4, 'Anything Else', this.gotoReg, this);
+		var reg = this.add.button(this.world.width/2, this.world.height * 3/4, 'button', this.gotoReg, this, 'intro.png', 'intro.png', 'intro.png');
+		reg.anchor.set(0.5);
 		this.world.add(reg);
-		
 	},
 
 	update: function () {
