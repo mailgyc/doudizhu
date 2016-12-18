@@ -8,6 +8,11 @@ __pycache__/
 # Distribution / packaging
 .Python
 env/
+mongodb-3.2.10/
+redis-3.2.6/
+server/static/audio/
+server/static/explode/
+server/static/PokerM/
 build/
 develop-eggs/
 dist/

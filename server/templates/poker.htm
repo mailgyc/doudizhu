@@ -1,0 +1,44 @@
+<!doctype html> 
+<html lang="en"> 
+<head>
+	<meta charset="UTF-8"></meta>
+    <title>poker</title>
+    
+	<script type="text/javascript" src="{{ static_url('js/phaser.min.js') }}" ></script>
+	<script type="text/javascript" src="{{ static_url('js/Boot.js') }}" ></script>
+	<script type="text/javascript" src="{{ static_url('js/Preloader.js') }}" ></script>
+	<script type="text/javascript" src="{{ static_url('js/MainMenu.js') }}" ></script>
+    <script type="text/javascript" src="{{ static_url('js/Player.js') }}" ></script>
+    <script type="text/javascript" src="{{ static_url('js/Rule.js') }}" ></script>
+    <script type="text/javascript" src="{{ static_url('js/Poker.js') }}" ></script>
+    <script type="text/javascript" src="{{ static_url('js/Game.js') }}" ></script>
+    <script type="text/javascript" src="{{ static_url('js/Socket.js') }}" ></script>
+    <style type="text/css">
+        body {
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="game"></div>
+    <div id="orientation"></div>
+
+<script type="text/javascript">
+
+(function () {
+    var h = window.innerHeight * 960/window.innerWidth;
+    if (h > 640) h = 640;
+    var game = new Phaser.Game(960, h, Phaser.AUTO, 'game');
+
+    game.state.add('Boot', PokerGame.Boot);
+    game.state.add('Preloader', PokerGame.Preloader);
+    game.state.add('MainMenu', PokerGame.MainMenu);
+    game.state.add('Game', PokerGame.Game);
+
+    game.state.start('Boot');
+
+})();
+</script>
+
+</body>
+</html>
