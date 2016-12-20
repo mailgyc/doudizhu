@@ -41,5 +41,7 @@ PokerGame.Socket.connect = function(onopen_callback, onerror_callback) {
 }  
 
 PokerGame.Socket.send = function(msg) {
-    this.websocket.send(JSON.stringify(msg));
+    var json = JSON.stringify(msg);
+    console.log('REQUEST: ' + json);
+    this.websocket.send(json);
 }
