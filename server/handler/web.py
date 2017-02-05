@@ -4,13 +4,20 @@ import tornado.httpserver
 import tornado.ioloop
 import tornado.options
 import tornado.web
+import tornado.web
 from tornado import gen
 
-from base import BaseHandler
+from handler.base import BaseHandler
+
+
+class WebHandler(BaseHandler):
+
+    @tornado.web.authenticated
+    def get(self):
+        self.render('poker.htm')
 
 
 class AuthCreateHandler(BaseHandler):
-
     def get(self):
         self.render("auth_register.htm")
 
@@ -24,7 +31,7 @@ class AuthCreateHandler(BaseHandler):
             bcrypt.hashpw, tornado.escape.utf8(self.get_argument("password")),
             bcrypt.gensalt())
 
-        result = self.db.account.insert_one({
+        result = yield self.db.account.insert_one({
             'email': self.get_argument("email"),
             'from': 'WEB',
             'hashed_password': hashed_password, })
@@ -35,7 +42,7 @@ class AuthCreateHandler(BaseHandler):
             'coin': self.settings.get('init_coin', 1000),
             'nickname': self.get_argument('name'),
         })
-        
+
         self.redirect(self.get_argument("next", "/"))
 
 
@@ -68,5 +75,3 @@ class AuthLogoutHandler(BaseHandler):
     def get(self):
         self.clear_cookie("uid")
         self.redirect(self.get_argument("next", "/"))
-
-

@@ -6,6 +6,7 @@
 import tornado.web
 import extends.torndsession.session
 
+
 class SessionBaseHandler(tornado.web.RequestHandler, extends.torndsession.session.SessionMixin):
     """
     This is a tornado web request handler which is base on torndsession.

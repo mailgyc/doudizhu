@@ -1,23 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright @ 2014 Mitchell Chu
-# 
 
 from uuid import uuid4
 import datetime
 
-from extends.torndsession.driver import SessionDriverFactory
-
-try:
-    import pickle as pickle #py2
-except ImportError:
-    import pickle #py3
-
 
 class SessionManager(object):
-    '''
-    '''
     SESSION_ID = 'PYSESSID'
     DEFAULT_SESSION_LIFETIME = 3600 # seconds
     
@@ -240,20 +229,18 @@ class SessionManager(object):
     #     if session_id:return session_id
     #     return self.__generate_session_id()
 
+
 class SessionMixin(object):
-    '''
-    '''
-    
+
     @property
     def session(self):
-        '''
-        '''
         return self._create_mixin(self, '__session_manager', SessionManager)
 
     def _create_mixin(self, context, inner_property_name, session_handler):
         if not hasattr(context, inner_property_name):
             setattr(context, inner_property_name, session_handler(context))
         return getattr(context, inner_property_name)
+
 
 class SessionConfigurationError(Exception):
     pass

@@ -15,7 +15,7 @@ class Table(object):
         self.state = 0  # 0 waiting  1 playing 2 end 3 closed
         self.pokers = []
         self.multiple = 1
-        self.callscore = 0
+        self.call_score = 0
         self.whoseTurn = 0
         self.last_shot_seat = 0;
         self.last_shot_poker = [];
@@ -28,7 +28,7 @@ class Table(object):
         tax = 100
         for p in self.players:
             p.ready = False
-            coin = self.room * p.rank * self.callscore * self.multiple
+            coin = self.room * p.rank * self.call_score * self.multiple
             if p.rank == winner.rank:
                 coins.append(coin - tax)
             else:

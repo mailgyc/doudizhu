@@ -1,18 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-#
-# Copyright @ 2014 Mitchell Chu
 
 import datetime
-
 from .driver import SessionDriver
-from extends.torndsession.session import SessionConfigurationError
 
 
 class MemorySession(SessionDriver):
-    '''
-    save session data in process memory
-    '''
 
     MAX_SESSION_OBJECTS = 1024
     """The max session objects save in memory.

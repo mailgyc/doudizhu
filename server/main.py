@@ -1,36 +1,28 @@
 #!/usr/bin/env python
 import concurrent.futures
-import logging
+import os.path
+
 import motor
-import redis
 import tornado.escape
 import tornado.ioloop
 import tornado.options
 import tornado.web
 import tornado.websocket
-import os.path
 
-from tornado.options import define, options
-from auth import AuthCreateHandler, AuthLoginHandler, AuthLogoutHandler
-from base import BaseHandler
-from game import SocketHandler
+from handler.game import GameHandler
+from handler.web import WebHandler, AuthCreateHandler, AuthLoginHandler, AuthLogoutHandler
 
-# import base64, uuid
-# base64.b64encode(uuid.uuid4().bytes + uuid.uuid4().bytes)
-
-# BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-print(BASE_DIR)
 
 
 class Application(tornado.web.Application):
     def __init__(self):
         handlers = [
-            (r'/', MainHandler),
+            (r'/', WebHandler),
             (r'/auth/create', AuthCreateHandler),
             (r'/auth/login', AuthLoginHandler),
             (r'/auth/logout', AuthLogoutHandler),
-            (r'/socket', SocketHandler),
+            (r'/socket', GameHandler),
         ]
         settings = dict(
             title='Tornado Poker',
@@ -44,15 +36,8 @@ class Application(tornado.web.Application):
         )
         super(Application, self).__init__(handlers, **settings)
         self.db = motor.motor_tornado.MotorClient('mongodb://localhost:27017/').poker
-        self.redis = redis.StrictRedis(host='127.0.0.1', port=6379)
-        self.executor = concurrent.futures.ThreadPoolExecutor(2),
-
-
-class MainHandler(BaseHandler):
-
-    # @tornado.web.authenticated
-    def get(self):
-        self.render('poker.htm')
+        self.executor = concurrent.futures.ThreadPoolExecutor()
+        self.session = {}
 
 
 def main():
@@ -64,4 +49,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

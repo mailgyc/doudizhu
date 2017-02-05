@@ -17,7 +17,7 @@ with open('static/rule.json', 'r') as f:
     ruleList = json.load(f)
 
 
-def sortfunc(a):
+def sort_card(a):
     return '34567890JQKA2wW'.index(a)
 
 
@@ -44,7 +44,7 @@ def cardsValue(cards):
 
     if isinstance(cards, list):
         cards = toCards(cards)
-    cards = ''.join(sorted(cards, key=sortfunc))
+    cards = ''.join(sorted(cards, key=sort_card))
 
     if cards == 'wW':
         return ('rocket', 2000)
@@ -66,7 +66,7 @@ def cardsAbove(handCards, turnCards):
     if pair[0] == '':
         return ''
 
-    handCards = sorted(handCards, keys=sortfunc)
+    handCards = sorted(handCards, keys=sort_card)
     oneRule = ruleList[pair[0]]
     for i, t in enumerate(oneRule):
         if i > pair[1] and containsAll(handCards, t):

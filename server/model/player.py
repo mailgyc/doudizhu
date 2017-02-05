@@ -26,16 +26,16 @@ class Player(object):
 
     def handle_call_score(self, score):
 
-        nextseat = (self.seat + 1) % 3
-        callend = (score == 3 or self.table.players[nextseat].iscalled)
+        next_seat = (self.seat + 1) % 3
+        call_end = score == 3 or self.table.players[next_seat].iscalled
 
-        response = [102, self.pid, score, callend]
+        response = [102, self.pid, score, call_end]
         message = tornado.escape.json_encode(response)
         for p in self.table.players:
             p.send(message)
 
-        logger.info('Player[%d] callscore[%d]', self.pid, score)
-        if callend:
+        logger.info('Player[%d] call score[%d]', self.pid, score)
+        if call_end:
             if score == 0:
                 self.table.deal_poker()
             else:
@@ -47,7 +47,7 @@ class Player(object):
                     p.send(message)
                 logger.info('Player[%d] is landlord[%s]', self.pid, ','.join(str(x) for x in self.table.pokers))
         else:
-            self.table.whoseTurn = nextseat
+            self.table.whoseTurn = next_seat
 
     def join_table(self, t):
         t.add(self)
