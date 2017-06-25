@@ -1,0 +1,34 @@
+<!doctype html> 
+<html lang="en"> 
+<head>
+<meta charset="UTF-8"/>
+<title>poker</title>
+<!--<script src="https://rawgithub.com/kawanet/msgpack-lite/master/dist/msgpack.min.js"></script>-->
+<script type="text/javascript" src="{{static_url('js/msgpack.min.js')}}"></script>
+<script type="text/javascript" src="{{static_url('js/phaser.min.js')}}"></script>
+<script type="text/javascript" src="{{static_url('js/boot.js')}}"></script>
+<script type="text/javascript" src="{{static_url('js/game.js')}}"></script>
+<script type="text/javascript" src="{{static_url('js/poker.js')}}"></script>
+<script type="text/javascript" src="{{static_url('js/player.js')}}"></script>
+<script type="text/javascript" src="{{static_url('js/net.js')}}"></script>
+<style type="text/css"> body { padding: 0; margin: 0; } </style>
+</head>
+<body>
+<div id="game"></div>
+<div id="orientation"></div>
+<script type="text/javascript">
+(function () {
+    var h = window.innerHeight * 960/window.innerWidth;
+    if (h > 640) h = 640;
+    var game = new Phaser.Game(960, h, Phaser.AUTO, 'game');
+
+    game.state.add('Boot', PG.Boot);
+    game.state.add('Preloader', PG.Preloader);
+    game.state.add('MainMenu', PG.MainMenu);
+    game.state.add('Game', PG.Game);
+
+    game.state.start('Boot');
+})();
+</script>
+</body>
+</html>
