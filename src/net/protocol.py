@@ -26,8 +26,5 @@ class Protocol(IntEnum):
     REQ_SHOT_POKER = 31
     RSP_SHOT_POKER = 32
 
-    REQ_NO_SHOT = 33
-    RSP_NO_SHOT = 34
-
     REQ_GAME_OVER = 41
     RSP_GAME_OVER = 42

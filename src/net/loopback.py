@@ -1,4 +1,5 @@
 import msgpack
+from tornado.ioloop import IOLoop
 
 from net.socket import SocketHandler
 
@@ -9,5 +10,8 @@ class LoopBackSocketHandler(SocketHandler):
         self.player = player
 
     def write_message(self, message, binary=True):
-        packet = msgpack.packb(message)
-        return self.on_message(packet)
+        IOLoop.current().add_callback(self._write_message, message)
+        return True
+
+    def _write_message(self, packet):
+        self.player.from_server(packet)

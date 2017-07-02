@@ -8,8 +8,8 @@ from PIL.ImageFont import truetype
 current_dir = dirname(realpath(__file__))
 
 
-def draw_text(image, text):
-    font = truetype(join(current_dir, 'font.ttf'), 36)
+def draw_text(image, text, font_size):
+    font = truetype(join(current_dir, 'static/font.ttf'), font_size)
     color = '#5C87B2'
 
     draw = Draw(image)
@@ -35,32 +35,31 @@ def draw_text(image, text):
 
 def generate_button(params):
 
-    width, height = 160, 60
-
-    for file, text in params:
-        image = Image.new('RGB', (width, height), (255, 255, 255))
+    for file, text, wh, fs in params:
+        image = Image.new('RGB', wh, (255, 255, 255))
 
         # background
         Draw(image).rectangle([(0, 0), image.size], fill='#eeeecc')
-
         # draw text
-        draw_text(image, text)
+        draw_text(image, text, fs)
 
         image.filter(ImageFilter.SMOOTH)
         image.save(join(current_dir, 'static/i/btn/' + file + '.png'), 'PNG', quality=75)
 
 if __name__ == '__main__':
     db = (
-        ('quick', '快速开始'),
-        ('exit', '退出游戏'),
-        ('start', '开始'),
-        ('setting', '设置'),
-        ('score_0', '不叫'),
-        ('score_1', '一分'),
-        ('score_2', '两分'),
-        ('score_3', '三分'),
-        ('pass', '不出'),
-        ('hint', '提示'),
-        ('shot', '出牌'),
+        ('quick', '快速开始', (160, 60), 36),
+        ('exit',  '退出游戏', (160, 60), 36),
+        ('start',   '开始', (160, 60), 36),
+        ('setting', '设置', (160, 60), 36),
+
+        ('score_0', '不叫', (128, 48), 28),
+        ('score_1', '一分', (128, 48), 28),
+        ('score_2', '两分', (128, 48), 28),
+        ('score_3', '三分', (128, 48), 28),
+        ('pass',    '不出', (128, 48), 28),
+        ('hint',    '提示', (128, 48), 28),
+        ('shot',    '出牌', (128, 48), 28),
     )
     generate_button(db)
+    print('generate done')

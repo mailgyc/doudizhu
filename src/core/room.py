@@ -1,10 +1,32 @@
-class Room(object):
-    def __init__(self):
-        self.waiting_tables = {}
-        self.playing_tables = {}
-        self.players = []
+import logging
 
-    @property
+from core import Singleton
+from core.table import Table
+
+logger = logging.getLogger('ddz')
+
+
+class Room(object):
+
+    def __init__(self, uid):
+        self.uid = uid
+        self.__waiting_tables = {}
+        self.__playing_tables = {}
+        logger.info('ROOM[%d] CREATED', uid)
+
+    def find_waiting_table(self, uid, default=None):
+        table = self.waiting_tables.get(uid, default)
+        if table and table == default:
+            self.waiting_tables[uid] = table
+        return table
+
+    def first_waiting_table(self):
+        for _, table in self.waiting_tables.items():
+            return table
+        t = Table()
+        self.waiting_tables[t.uid] = t
+        return t
+
     def join_tables(self, tid):
         tables = self.waiting_tables
         for table in tables:
@@ -18,25 +40,31 @@ class Room(object):
         else:
             return False
 
-    @staticmethod
-    def get(self, tid):
-        self.session.pubsub(tid)
+    @property
+    def tables(self):
+        l = []
+        l.extend(self.waiting_tables.keys())
+        l.extend(self.playing_tables.keys())
+        return l
 
+    @property
+    def waiting_tables(self):
+        return self.__waiting_tables
 
-class Singleton(type):
-    _instances = {}
-
-    def __call__(cls, *args, **kwargs):
-        if cls not in cls._instances:
-            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
-        return cls._instances[cls]
+    @property
+    def playing_tables(self):
+        return self.__playing_tables
 
 
 class RoomManager(object):
     __metaclass__ = Singleton
 
-    room_dict = {}
+    __room_dict = {}
 
     @staticmethod
-    def get_room(uid, default=None):
-        return RoomManager.room_dict.get(uid, default)
+    def find_room(uid, created=False):
+        room = RoomManager.__room_dict.get(uid)
+        if not room and created:
+            room = Room(0)
+            RoomManager.__room_dict[uid] = room
+        return room

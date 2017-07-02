@@ -4,7 +4,7 @@ from typing import List
 
 from tornado.ioloop import IOLoop
 
-from core.ai import AiPlayer
+from core.robot import AiPlayer
 from net.protocol import Protocol as Pt
 
 logger = logging.getLogger('ddz')
@@ -28,49 +28,62 @@ class Table(object):
         self.last_shot_seat = 0
         self.last_shot_poker = []
         self.room = 100
-        IOLoop.current().call_later(1, self.ai_join)
+        IOLoop.current().call_later(0.1, self.ai_join, nth=1)
 
-    def ai_join(self):
-        # for i in range(3 - self.size()):
-        p1 = AiPlayer(11, 'AI-1')
-        p1.send([Pt.REQ_JOIN_TABLE, self.uid])
+    def ai_join(self, nth=1):
+        size = self.size()
+        if size == 0 or size == 3:
+            return
 
-        p2 = AiPlayer(12, 'AI-2')
-        p2.send([Pt.REQ_JOIN_TABLE, self.uid])
-        logger.info('TABLE[%d] AI JOIN', self.uid)
+        if size == 2 and nth == 1:
+            IOLoop.current().call_later(1, self.ai_join, nth=2)
 
-        self.sync_table()
+        p1 = AiPlayer(11, 'AI-1', self.players[0])
+        p1.to_server([Pt.REQ_JOIN_TABLE, self.uid])
+
+        if size == 1:
+            p2 = AiPlayer(12, 'AI-2', self.players[0])
+            p2.to_server([Pt.REQ_JOIN_TABLE, self.uid])
 
     def sync_table(self):
         response = [Pt.RSP_JOIN_TABLE, self.uid, [g.uid if g else -1 for g in self.players]]
         for player in self.players:
             if player:
                 player.send(response)
-        if self.size() == 3:
-            self.deal_poker()
 
     def deal_poker(self):
-        if not all(p and p.ready for p in self.players):
-            return
+        # if not all(p and p.ready for p in self.players):
+        #     return
 
         self.state = 1
         self.pokers = [i for i in range(54)]
         random.shuffle(self.pokers)
         for i in range(51):
-            self.players[i % 3].pokers.append(self.pokers.pop())
+            self.players[i % 3].hand_pokers.append(self.pokers.pop())
 
         self.whose_turn = random.randint(0, 2)
-        player_id = self.players[self.whose_turn].uid
         for p in self.players:
-            response = [Pt.RSP_DEAL_POKER, player_id, p.pokers]
+            p.hand_pokers.sort()
+            response = [Pt.RSP_DEAL_POKER, self.turn_player.uid, p.hand_pokers]
             p.send(response)
-            logger.info('Player[%d] deal[%s]', p.uid, str(p.pokers))
-        logger.info("Player[%d %d]'s turn", player_id, self.whose_turn)
+
+    def call_score_end(self, score):
+        self.call_score = score
+        self.turn_player.role = 2
+        self.turn_player.hand_pokers += self.pokers
+        response = [Pt.RSP_SHOW_POKER, self.turn_player.uid, self.pokers]
+        for p in self.players:
+            p.send(response)
+        logger.info('Player[%d] IS LANDLORD[%s]', self.turn_player.uid, str(self.pokers))
 
     def go_next_turn(self):
         self.whose_turn += 1
         if self.whose_turn == 3:
             self.whose_turn = 0
+
+    @property
+    def turn_player(self):
+        return self.players[self.whose_turn]
 
     def calc_coin(self, winner):
         self.state = 2
@@ -90,9 +103,8 @@ class Table(object):
             if not p:
                 player.seat = i
                 self.players[i] = player
-                logger.info('Table[%d] add Player[%d]', self.uid, player.uid)
                 return True
-        logger.error('Player[%d] join a full Table[%d]', player.pid, self.uid)
+        logger.error('Player[%d] JOIN Table[%d] FULL', player.pid, self.uid)
         return False
 
     def remove(self, player):
@@ -100,7 +112,7 @@ class Table(object):
             if p and p.pid == player.pid:
                 self.players[i] = None
         else:
-            logger.error('Player[%d] not in Table[%d]', player.pid, self.uid)
+            logger.error('Player[%d] NOT IN Table[%d]', player.pid, self.uid)
 
         if all(p is None for p in self.players):
             self.state = 3
@@ -112,7 +124,7 @@ class Table(object):
         return sum([p is not None for p in self.players])
 
     def __str__(self):
-        return str(self.uid)
+        return '[{}: {}]'.format(self.uid, self.players)
 
     counter = 0
 

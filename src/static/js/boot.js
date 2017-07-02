@@ -70,7 +70,7 @@ PG.Preloader.prototype = {
 
 	create: function () {
 		this.state.start('MainMenu');
-		PG.Rule.ruleList = this.cache.getJSON('rule');
+		PG.RuleList = this.cache.getJSON('rule');
 		// PG.music = this.add.audio('music_bg');
 		// PG.music.loop = true;
 		// PG.music.loopFull();
@@ -122,7 +122,6 @@ PG.MainMenu.prototype = {
 		var style = { font: "22px Arial", fill: "#ffffff", align: "center" };
 		var text = this.add.text(0, 0, "hei hei hei hei", style);
 		var tween = this.add.tween(text).to( { x: 600, y: 450 }, 2000, "Linear", true);
-		//tween.onComplete.add(text.destroy, text);
 		tween.onComplete.add(Phaser.Text.prototype.destroy, text);
 	}
 

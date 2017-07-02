@@ -58,14 +58,14 @@ PG.Socket.connect = function(onopen, onmessage, onerror) {
     };
 
     this.websocket.onmessage = function(evt) {
-        console.log('RESPONSE: ' + evt.data);
+        console.log('RSP: ' + evt.data);
         // onmessage(msgpack.decode(evt.data));
         onmessage(JSON.parse(evt.data));
     };
 };
 
 PG.Socket.send = function(msg) {
-    console.log('REQUEST: ' + msg);
+    console.log('REQ: ' + msg);
     this.websocket.send(msgpack.encode(msg));
     // this.websocket.send(JSON.stringify(msg));
 };

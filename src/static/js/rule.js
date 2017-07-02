@@ -6,7 +6,7 @@ PG.Poker = function(game, id, frame) {
     this.id = id;
     
     return this;
-}
+};
 
 PG.Poker.prototype = Object.create(Phaser.Sprite.prototype);
 PG.Poker.prototype.constructor = PG.Poker;
@@ -31,7 +31,7 @@ PG.Poker.comparePoker = function(a, b) {
         b += 13;
     }
     return -(a - b);
-}
+};
 
 PG.Poker.toCards = function(pokers) {
 
@@ -41,7 +41,7 @@ PG.Poker.toCards = function(pokers) {
         if (pid instanceof Array) {
             pid = pid[0];
         }
-        if (pid== 52) {
+        if (pid == 52) {
             cards.push('W');
         } else if (pid == 53) {
             cards.push('w');
@@ -51,7 +51,27 @@ PG.Poker.toCards = function(pokers) {
     }
     return cards;
     
-}
+};
+
+PG.Poker.canCompare = function(pokersA, pokersB) {
+    var cardsA = this.toCards(pokersA);
+    var cardsB = this.toCards(pokersB);
+    return PG.Rule.cardsValue(cardsA)[0] == PG.Rule.cardsValue(cardsB)[0];
+};
+
+PG.Poker.toPokers = function(pokerInHands, cards) {
+    var pokers = [];
+    for (var i = 0; i < cards.length; i++) {
+        var candidates = this.toPoker(cards[i]);
+        for (var j = 0; j < candidates.length; j++) {
+            if (pokerInHands.indexOf(candidates[j]) != -1 && pokers.indexOf(candidates[j]) == -1) {
+                pokers.push(candidates[j]);
+                break
+            }
+        }
+    }
+    return pokers;
+};
 
 PG.Poker.toPoker = function(card) {
     
@@ -68,53 +88,47 @@ PG.Poker.toPoker = function(card) {
     }
     return [54];
     
-}
-
-// A 2 3 4 5 6 7 8 9 0 J Q K W w
-
-// 记分
-// 地主先出完所有的牌就赢了，如果没有出过炸弹或火箭，那么每个农民要把定约的分数(1分、2分或3分)付给地主。
-// 两个农民中有一个先出完所有的牌，地主就输了，那么地主要把定约的分数付给每个农民。
-// 每当任何一个玩家出了炸弹或火箭，那么分数就要翻一番。
-// 例如某局牌出了2个炸弹和1个火箭，叫3分的地主如果先出完，他就向每个农民赢得24分【总共赢得48分】，
-// 如果农民先出完，地主就向每个农民输掉24分【总共输掉48分】。
+};
 
 PG.Rule = {
-}
+};
 
 PG.Rule.cardsAbove = function(handCards, turnCards) {
 
-    var pair = this.cardsValue(turnCards);
-    if (pair.type == '')
+    var turnValue = this.cardsValue(turnCards);
+    if (turnValue[0] == '') {
         return '';
-
-    handCards.sort(this.sortfunc);
-    var oneRule = this.ruleList[pair.type];
-    for (var i = 0; i < oneRule.length; i++) {
-        if (i > pair.value && this.containsAll(handCards, oneRule[i])) {
+    }
+    handCards.sort(this.sorter);
+    var oneRule = PG.RuleList[turnValue[0]];
+    for (var i = turnValue[1] + 1; i < oneRule.length; i++) {
+        if (this.containsAll(handCards, oneRule[i])) {
             return oneRule[i];
         }
     }
-    if (pair.value < 1000) {
-        oneRule = this.ruleList['bomb'];
+
+    if (turnValue[1] < 1000) {
+        oneRule = PG.RuleList['bomb'];
         for (var i = 0; i < oneRule.length; i++) {
             if (this.containsAll(handCards, oneRule[i])) {
                 return oneRule[i];
             }
         }
-        if (this.containsAll(handCards, 'wW'))
+        if (this.containsAll(handCards, 'wW')) {
             return 'wW';
+        }
     }
+
     return '';
-}
+};
 
 PG.Rule.bestShot = function(handCards) {
 
-    handCards.sort(this.sortfunc);
+    handCards.sort(this.sorter);
     var shot = '';
     var len = this.cardsType.length;
     for (var i = 2; i < len; i++) {
-        var oneRule = this.ruleList[this.cardsType[i]];
+        var oneRule = PG.RuleList[this.cardsType[i]];
         for (var j = 0; j < oneRule.length; j++) {
             if (oneRule[j].length > shot.length && this.containsAll(handCards, oneRule[j])) {
                 shot = oneRule[j];
@@ -123,7 +137,7 @@ PG.Rule.bestShot = function(handCards) {
     }
 
     if (shot == '') {
-        oneRule = this.ruleList['bomb'];
+        oneRule = PG.RuleList['bomb'];
         for (var i = 0; i < oneRule.length; i++) {
             if (this.containsAll(handCards, oneRule[i])) {
                 return oneRule[i];
@@ -134,12 +148,7 @@ PG.Rule.bestShot = function(handCards) {
     }
 
     return shot;
-}
-
-PG.Rule.sortfunc = function(a, b) {
-    var cardstr = '34567890JQKA2wW';
-    return cardstr.indexOf(a) - cardstr.indexOf(b);
-}
+};
 
 PG.Rule.cardsType = [
     'rocket', 'bomb',
@@ -151,63 +160,22 @@ PG.Rule.cardsType = [
     'seq_trio_single2', 'seq_trio_single3', 'seq_trio_single4', 'seq_trio_single5',
     'bomb_pair', 'bomb_single' ];
 
-PG.Rule.cardsValue = function(cards) {
+PG.Rule.sorter = function(a, b) {
+    var card_str = '34567890JQKA2wW';
+    return card_str.indexOf(a) - card_str.indexOf(b);
+};
 
-    if (typeof(cards) != 'string') {
-        cards.sort(this.sortfunc);
-        cards = cards.join('');
-    }
-
-    function find(array, ele) {
-        if (array[0].length != ele.length) {
-            return -1;
-        }
-        for (var i = 0, l = array.length; i < l; i++) {
-            if (array[i] == ele) {
-                return i;
-            }
-        }
+PG.Rule.index_of = function(array, ele) {
+    if (array[0].length != ele.length) {
         return -1;
     }
-
-    if (cards == 'wW')
-        return {'type': 'rocket', 'value': 2000};
-
-    var value = find(this.ruleList['bomb'], cards);
-    if (value >= 0)
-        return {'type': 'bomb', 'value': 1000 + value};
-
-    var len = this.cardsType.length;
-    var typeName;
-    for (var i = 2; i < len; i++) {
-        typeName = this.cardsType[i];
-        value = find(this.ruleList[typeName], cards);
-        if (value >= 0)
-            return {'type': typeName, 'value': value};
+    for (var i = 0, l = array.length; i < l; i++) {
+        if (array[i] == ele) {
+            return i;
+        }
     }
-    return {'type': '', 'value': 0};
-}
-
-PG.Rule.compare = function(cardsA, cardsB) {
-
-    var valueA = this.cardsValue(cardsA);
-    if (valueA.type == '') {
-        return -10000;
-    }
-    if (cardsB.length == 0) {
-        return 1;
-    }
-    var valueB = this.cardsValue(cardsB);
-    if (valueA.type == valueB.type) {
-        return valueA.value - valueB.value;
-    }
-    if (valueA.value >= 1000) {
-        return valueA.value - valueB.value;
-    } else {
-        return 0;
-    }
-
-}
+    return -1;
+};
 
 PG.Rule.containsAll = function(parent, child) {
     var index = 0;
@@ -219,6 +187,52 @@ PG.Rule.containsAll = function(parent, child) {
         index += 1;
     }
     return true;
-}
+};
 
+PG.Rule.cardsValue = function(cards) {
+
+    if (typeof(cards) != 'string') {
+        cards.sort(this.sorter);
+        cards = cards.join('');
+    }
+
+    if (cards == 'wW')
+        return ['rocket', 2000];
+
+    var index = this.index_of(PG.RuleList['bomb'], cards);
+    if (index >= 0)
+        return ['bomb', 1000 + index];
+
+    var length = this.cardsType.length;
+    for (var i = 2; i < length; i++) {
+        var typeName = this.cardsType[i];
+        var index = this.index_of(PG.RuleList[typeName], cards);
+        if (index >= 0)
+            return [typeName, index];
+    }
+    console.log('Error: UNKNOWN TYPE ', cards);
+    return ['', 0];
+};
+
+PG.Rule.compare = function(cardsA, cardsB) {
+
+    if (cardsA.length == 0 && cardsB.length == 0) {
+        return 0;
+    }
+    if (cardsA.length == 0) {
+        return -1;
+    }
+    if (cardsB.length == 0) {
+        return 1;
+    }
+
+    var valueA = this.cardsValue(cardsA);
+    var valueB = this.cardsValue(cardsB);
+
+    if ((valueA[1] < 1000 && valueB[1] < 1000) && (valueA[0] != valueB[0])) {
+        console.log('Error: Compare ', cardsA, cardsB);
+    }
+
+    return valueA[1] - valueB[1];
+};
 
