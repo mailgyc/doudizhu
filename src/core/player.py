@@ -82,7 +82,7 @@ class Player(object):
     def handle_game_over(self):
         if self.hand_pokers:
             return
-        response = [Pt.REQ_GAME_OVER, self.uid, self.table.calc_coin(self.player)]
+        response = [Pt.REQ_GAME_OVER, self.uid, self.table.calc_coin(self)]
         for p in self.table.players:
             p.send(response)
         logger.info('Table[%d] over[%d]', self.table.uid, self.uid)

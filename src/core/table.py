@@ -92,7 +92,7 @@ class Table(object):
         for p in self.players:
             p.ready = False
             coin = self.room * p.rank * self.call_score * self.multiple
-            if p.rank == winner.rank:
+            if p == winner:
                 coins.append(coin - tax)
             else:
                 coins.append(-coin - tax)

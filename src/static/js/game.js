@@ -5,6 +5,7 @@ PG.Game = function(game) {
     this.players.push(new PG.Player(0, this));
     
     this.tableId = 0;
+    this.playUI = null;
     
     this.tablePoker = [];
     this.tablePokerPic = {};
@@ -39,6 +40,7 @@ PG.Game.prototype = {
         }
         
         this.players[1].head.scale.set(-1, 1);
+        this.createUI();
         
         PG.Socket.connect(this.onopen.bind(this), this.onmessage.bind(this), this.onerror.bind(this));
 	},
@@ -395,69 +397,94 @@ PG.Game.prototype = {
         this.send_message([PG.Protocol.REQ_SHOT_POKER, pokers]);
     },
 
-    playPoker: function(lastTurnPoker) {
-        function onPass(btn) {
-            this.finishPlay([]);
+    onPass: function(btn) {
+        this.finishPlay([]);
+        this.players[0].pokerUnSelected(this.hintPoker);
+        this.hintPoker = [];
+        // btn.parent.destroy(true);
+        // this.world.remove(btn.parent);
+        btn.parent.forEach(function(child){ child.kill(); });
+    },
+
+    onHint: function(btn) {
+        if (this.hintPoker.length == 0) {
+            this.hintPoker = this.lastTurnPoker;
+        } else {
             this.players[0].pokerUnSelected(this.hintPoker);
-            this.hintPoker = [];
-            // btn.parent.destroy(true);
-            this.world.remove(btn.parent);
+            if (!PG.Poker.canCompare(this.hintPoker, this.lastTurnPoker)) {
+                this.hintPoker = [];
+            }
         }
-        function onHint(btn) {
-            if (this.hintPoker.length == 0) {
-                this.hintPoker = lastTurnPoker;
-            } else {
+        var bigger = this.players[0].hint(this.hintPoker);
+        if (bigger.length == 0) {
+            if (this.hintPoker == this.lastTurnPoker) {
+                this.playerSay("没有能大过的牌");
+            } else{
                 this.players[0].pokerUnSelected(this.hintPoker);
-                if (!PG.Poker.canCompare(this.hintPoker, lastTurnPoker)) {
-                    this.hintPoker = [];
-                }
             }
-            var bigger = this.players[0].hint(this.hintPoker);
-            if (bigger.length == 0) {
-                if (this.hintPoker == lastTurnPoker) {
-                    this.playerSay("没有能大过的牌");
-                } else{
-                    this.players[0].pokerUnSelected(this.hintPoker);
-                }
-            } else {
-                this.players[0].pokerSelected(bigger);
-            }
-            this.hintPoker = bigger;
+        } else {
+            this.players[0].pokerSelected(bigger);
         }
-        function onShot(btn) {
-            if  (this.hintPoker.length == 0) {
-                return;
-            }
-            var code = this.players[0].canPlay(this.isLastShotPlayer() ? [] : this.tablePoker, this.hintPoker);
-            if (code == -1) {
-                this.playerSay("出牌不符合规矩");
-                return;
-            }
-            if (code == 0) {
-                this.playerSay("出牌必须大于上家的牌");
-                return;
-            }
-            this.finishPlay(this.hintPoker);
-            this.hintPoker = [];
-            // btn.parent.destroy(true);
-            this.world.remove(btn.parent);
+        this.hintPoker = bigger;
+    },
+
+    onShot: function(btn) {
+        if  (this.hintPoker.length == 0) {
+            return;
         }
-        var group = this.add.group();
+        var code = this.players[0].canPlay(this.isLastShotPlayer() ? [] : this.tablePoker, this.hintPoker);
+        if (code == -1) {
+            this.playerSay("出牌不符合规矩");
+            return;
+        }
+        if (code == 0) {
+            this.playerSay("出牌必须大于上家的牌");
+            return;
+        }
+        this.finishPlay(this.hintPoker);
+        this.hintPoker = [];
+        // btn.parent.destroy(true);
+        // this.world.remove(btn.parent);
+        btn.parent.forEach(function(child){ child.kill(); });
+    },
+
+    createUI: function() {
+        this.playUI = this.add.group();
+        var group = this.playUI;
+
+        var sy =  this.world.height * 0.6;
+        var pass = this.add.button(0, sy, "btn", this.onPass, this, 'pass.png', 'pass.png', 'pass.png');
+        pass.anchor.set(0.5, 0);
+        group.add(pass);
+        var hint = this.add.button(0, sy, "btn", this.onHint, this, 'hint.png', 'hint.png', 'hint.png');
+        hint.anchor.set(0.5, 0);
+        group.add(hint);
+        var shot = this.add.button(0, sy, "btn", this.onShot, this, 'shot.png', 'shot.png', 'shot.png');
+        shot.anchor.set(0.5, 0);
+        group.add(shot);
+
+        group.forEach(function(child){ child.kill(); });
+    },
+
+    playPoker: function(lastTurnPoker) {
+	    this.lastTurnPoker = lastTurnPoker;
+
+        var group = this.playUI;
         var step = this.world.width/6;
         var sx = this.world.width/2 - 0.5 * step;
         if (!this.isLastShotPlayer()) {
             sx -= 0.5 * step;
-            var pass = this.add.button(sx, this.world.height * 0.6, "btn", onPass, this, 'pass.png', 'pass.png', 'pass.png');
-            pass.anchor.set(0.5, 0);
-            group.add(pass);
+            var pass = group.getAt(0);
+            pass.centerX = sx;
             sx += step;
+            pass.revive();
         }
-        var hint = this.add.button(sx, this.world.height * 0.6, "btn", onHint, this, 'hint.png', 'hint.png', 'hint.png');
-        hint.anchor.set(0.5, 0);
-        group.add(hint);
-        var shot = this.add.button(sx + step, this.world.height * 0.6, "btn", onShot, this, 'shot.png', 'shot.png', 'shot.png');
-        shot.anchor.set(0.5, 0);
-        group.add(shot);
+        var hint = group.getAt(1);
+        hint.centerX = sx;
+        hint.revive();
+        var shot = group.getAt(2);
+        shot.centerX = sx + step;
+        shot.revive();
 
         this.players[0].enableInput();
     },
