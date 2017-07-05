@@ -1,8 +1,8 @@
-<!DOCTYPE html> 
+<!doctype html>
 <html lang="en"> 
 <head>
 <meta charset="utf-8"/>
-<!--<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=yes">-->
+<!--<meta name="viewport" content="width=device-width,initial-scale=1"/>-->
 <title>斗地主</title>
 <script type="text/javascript" src="{{static_url('js/msgpack.min.js')}}"></script>
 <script type="text/javascript" src="{{static_url('js/phaser.min.js')}}"></script>
@@ -10,23 +10,22 @@
 <script type="text/javascript" src="{{static_url('js/game.js')}}"></script>
 <script type="text/javascript" src="{{static_url('js/rule.js')}}"></script>
 <script type="text/javascript" src="{{static_url('js/player.js')}}"></script>
+<script type="text/javascript" src="{{static_url('js/player_net.js')}}"></script>
 <script type="text/javascript" src="{{static_url('js/net.js')}}"></script>
-<style type="text/css"> body { padding: 0; margin: 0; } </style>
+<style type="text/css">body { padding: 0; margin: 0; }</style>
 </head>
 <body>
 <div id="game"></div>
 <div id="orientation"></div>
-<script type="text/javascript">
+<script>
 (function () {
     var h = window.innerHeight * 960/window.innerWidth;
     if (h > 640) h = 640;
     var game = new Phaser.Game(960, h, Phaser.AUTO, 'game');
-
     game.state.add('Boot', PG.Boot);
     game.state.add('Preloader', PG.Preloader);
     game.state.add('MainMenu', PG.MainMenu);
     game.state.add('Game', PG.Game);
-
     game.state.start('Boot');
 })();
 </script>

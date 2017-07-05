@@ -23,15 +23,10 @@ PG.Boot.prototype = {
         this.scale.maxHeight = window.innerHeight;
         this.scale.pageAlignHorizontally = true;
         this.scale.pageAlignVertically = true;
-        this.scale.forceOrientation(true, false);
-        this.scale.setResizeCallback(this.gameResized, this);
+        this.scale.forceOrientation(true);
         this.scale.enterIncorrectOrientation.add(this.enterIncorrectOrientation, this);
         this.scale.leaveIncorrectOrientation.add(this.leaveIncorrectOrientation, this);
-        //this.scale.setScreenSize(true);
         this.state.start('Preloader');
-    },
-
-    gameResized: function (width, height) {
     },
 
     enterIncorrectOrientation: function () {
@@ -84,9 +79,7 @@ PG.MainMenu = function (game) {
 PG.MainMenu.prototype = {
 
 	create: function () {
-
 		this.stage.backgroundColor = '#182d3b';
-
 		var bg = this.add.sprite(this.game.width/2, 0, 'bg');
 		bg.anchor.set(0.5, 0);
 
@@ -101,10 +94,6 @@ PG.MainMenu.prototype = {
 		var setting = this.add.button(this.world.width/2, this.world.height * 3/4, 'btn', this.gotoSetting, this, 'setting.png', 'setting.png', 'setting.png');
 		setting.anchor.set(0.5);
 		this.world.add(setting);
-	},
-
-	update: function () {
-
 	},
 
 	startGame: function () {
@@ -124,5 +113,4 @@ PG.MainMenu.prototype = {
 		var tween = this.add.tween(text).to( { x: 600, y: 450 }, 2000, "Linear", true);
 		tween.onComplete.add(Phaser.Text.prototype.destroy, text);
 	}
-
 };

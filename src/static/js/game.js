@@ -2,10 +2,9 @@
 PG.Game = function(game) {
 
     this.players = [];
-    this.players.push(new PG.Player(0, this));
-    
+
     this.tableId = 0;
-    this.playUI = null;
+    this.uiShotBtn = null;
     
     this.tablePoker = [];
     this.tablePokerPic = {};
@@ -13,9 +12,6 @@ PG.Game = function(game) {
     this.lastShotPlayer = null;
 
     this.whoseTurn = 0;
-    this.hintPoker = [];
-
-    this.isDraging = false;
 };
 
 PG.Game.prototype = {
@@ -23,25 +19,10 @@ PG.Game.prototype = {
 	create: function () {
         this.stage.backgroundColor = '#182d3b';
 
-        this.players.push(new PG.NetPlayer(1, this));
-        this.players.push(new PG.NetPlayer(2, this));
+        this.players.push(PG.createPlay(0, this));
+        this.players.push(PG.createPlay(1, this));
+        this.players.push(PG.createPlay(2, this));
 
-        var coords = [
-            PG.PW/2, this.world.height - PG.PH - 10, 0.5, 1.0,
-            this.world.width - PG.PW/2, 0, 0.5, 0,
-            PG.PW/2, 0,                    0.5, 0
-            ];
-        var style = { font: "22px Arial", fill: "#ffffff", align: "center" };
-        for (var i = 0; i < this.players.length; i++) {
-            this.players[i].head = this.add.sprite(coords[i*4], coords[i*4+1], 'btn', 'farmer.png');
-            this.players[i].head.anchor.set(coords[i*4+2], coords[i*4+3]);
-
-            this.players[i].leftPoker = this.add.text(coords[i*4], coords[i*4+1] + PG.PH + 100, '17', style);
-        }
-        
-        this.players[1].head.scale.set(-1, 1);
-        this.createUI();
-        
         PG.Socket.connect(this.onopen.bind(this), this.onmessage.bind(this), this.onerror.bind(this));
 	},
 	
@@ -58,17 +39,18 @@ PG.Game.prototype = {
 	    var opcode = packet[0];
 	    switch(opcode) {
 	        case PG.Protocol.RSP_LOGIN:
-                this.players[0].pid = packet[1];
-                this.players[0].name = packet[2];
+                this.players[0].updateInfo(packet[1], packet[2]);
                 this.send_message([PG.Protocol.REQ_JOIN_TABLE, -1]);
                 break;
 	        case PG.Protocol.RSP_JOIN_TABLE:
                 this.tableId = packet[1];
                 var playerIds = packet[2];
                 for (var i = 0; i < playerIds.length; i++) {
-                    if (playerIds[i] == this.players[0].pid) {
-                        this.players[1].pid = playerIds[(i+1)%3]; 
-                        this.players[2].pid = playerIds[(i+2)%3]; 
+                    if (playerIds[i][0] == this.players[0].uid) {
+                        var info_1 = playerIds[(i+1)%3];
+                        var info_2 = playerIds[(i+2)%3];
+                        this.players[1].updateInfo(info_1[0], info_1[1]);
+                        this.players[2].updateInfo(info_2[0], info_2[1]);
                         break;
                     }
                 }
@@ -77,29 +59,28 @@ PG.Game.prototype = {
                 var playerId = packet[1];
                 var pokers = packet[2];
                 this.dealPoker(pokers);
-                this.whoseTurn = this.pidToSeat(playerId);
+                this.whoseTurn = this.uidToSeat(playerId);
                 this.startCallScore(0);
                 break;
             case PG.Protocol.RSP_CALL_SCORE:
                 var playerId = packet[1];
                 var score = packet[2];
                 var callend = packet[3];
-                this.whoseTurn = this.pidToSeat(playerId);
+                this.whoseTurn = this.uidToSeat(playerId);
 
                 var hanzi = ['不叫', "一分", "两分", "三分"];
-                this.playerSay(hanzi[score]);
+                this.players[this.whoseTurn].say(hanzi[score]);
                 if (!callend) {
                     this.whoseTurn = (this.whoseTurn + 1) % 3;
                     this.startCallScore(score);
                 }
                 break;
             case PG.Protocol.RSP_SHOW_POKER:
-                this.whoseTurn = this.pidToSeat(packet[1]);
+                this.whoseTurn = this.uidToSeat(packet[1]);
                 this.tablePoker[0] = packet[2][0];
                 this.tablePoker[1] = packet[2][1];
                 this.tablePoker[2] = packet[2][2];
-                this.players[this.whoseTurn].isLandlord = true;
-                this.players[this.whoseTurn].head.frameName = 'landlord.png';
+                this.players[this.whoseTurn].setLandlord();
                 this.showLastThreePoker();
                 break;
             case PG.Protocol.RSP_SHOT_POKER:
@@ -108,7 +89,7 @@ PG.Game.prototype = {
             case PG.Protocol.RSP_GAME_OVER:
                 var playerId = packet[1];
                 var coin = packet[2];
-                this.whoseTurn = this.pidToSeat(playerId);
+                this.whoseTurn = this.uidToSeat(playerId);
                 function gameOver() {
                     alert(this.players[this.whoseTurn].isLandlord ? "地主赢" : "农民赢");
                 }
@@ -129,12 +110,12 @@ PG.Game.prototype = {
 		this.state.start('MainMenu');
 	},
 	
-	pidToSeat: function (pid) {
+	uidToSeat: function (uid) {
 	    for (var i = 0; i < 3; i++) {
-	        if (pid == this.players[i].pid)
+	        if (uid == this.players[i].uid)
 	            return i;
 	    }
-	    console.log('error pid:' + pid);
+	    console.log('error uid:' + uid);
 	    return -1;
 	},
     
@@ -164,8 +145,8 @@ PG.Game.prototype = {
 
         var headY = [
             this.world.height - PG.PH/2,
-            this.players[1].head.y + this.players[1].head.height + PG.PH/2 + 10,
-            this.players[1].head.y + this.players[1].head.height + PG.PH/2 + 10
+            this.players[1].uiHead.y + PG.PH/2 + 10,
+            this.players[1].uiHead.y + PG.PH/2 + 10
         ];
 
         for (var i = 0; i < 17; i++) {
@@ -234,18 +215,8 @@ PG.Game.prototype = {
                 p.frame = 54;
                 this.add.tween(p).to({ x: first.x, y: first.y}, 200, Phaser.Easing.Default, true);
             }
-            turnPlayer.leftPoker.text = "20";
         }
-        
-        var length = this.players[0].pokerInHand.length;
-        for (var i = 0; i < length;  i++) {
-            var pid = this.players[0].pokerInHand[i];
-            var p = this.players[0].findAPoker(pid);
-            p.events.onInputDown.add(this.onInputDown, this);
-            p.events.onInputUp.add(this.onInputUp, this);
-            p.events.onInputOver.add(this.onInputOver, this);
-        }
-        
+
         this.tablePoker = [];
         this.lastShotPlayer = turnPlayer;
         if (this.whoseTurn == 0) {
@@ -256,10 +227,10 @@ PG.Game.prototype = {
     handleShotPoker: function(packet) {
         var playerId = packet[1];
         var pokers = packet[2];
-        this.whoseTurn = this.pidToSeat(playerId);
+        this.whoseTurn = this.uidToSeat(playerId);
         var turnPlayer = this.players[this.whoseTurn];
         if (pokers.length == 0) {
-            this.playerSay("不出");
+            this.players[this.whoseTurn].say("不出");
         } else {
             var pokersPic = {};
             pokers.sort(PG.Poker.comparePoker);
@@ -276,10 +247,6 @@ PG.Game.prototype = {
                 pokersPic[p.id] = p;
             }
         
-            if (turnPlayer.leftPoker) {
-                turnPlayer.leftPoker.text = turnPlayer.pokerInHand.length + "";
-            }
-            
             for (var i = 0; i < this.tablePoker.length; i++) {
                 var p = this.tablePokerPic[this.tablePoker[i]];
                 // p.kill();
@@ -310,35 +277,6 @@ PG.Game.prototype = {
         return false;
     },
 
-    onInputDown: function(poker, pointer) {
-        this.isDraging = true;
-        this.onSelectPoker(poker, pointer);
-    },
-    
-    onInputUp: function(poker, pointer) {
-        this.isDraging = false;
-        //this.onSelectPoker(poker, pointer);
-    },
-    
-    onInputOver: function(poker, pointer) {
-        if (this.isDraging) {
-            this.onSelectPoker(poker, pointer);
-        }     
-    },
-    
-    // function about ui
-    playerSay: function(str) {
-        var head = this.players[this.whoseTurn].head;
-            
-        var style = { font: "22px Arial", fill: "#ffffff", align: "center" };
-		var text = this.add.text(head.x + head.width/2 + 10, head.y + head.height * (head.anchor.y == 0 ? 0.5 : -0.5), str, style);
-		if (head.scale.x == -1) {
-		    text.x = text.x - text.width - 10;
-		}
-         this.game.time.events.add(2000, text.destroy, text);
-        // this.game.time.events.add(2000, text.parent.remove, this, text);
-    },
-    
     startCallScore: function(minscore) {
 
         function btnTouch(btn) {
@@ -372,121 +310,18 @@ PG.Game.prototype = {
         }
         
     },
-    
-    onSelectPoker: function(poker, pointer) {
-        var index = this.hintPoker.indexOf(poker.id);
-        if ( index == -1) {
-            poker.y = this.world.height - PG.PH * 0.8;
-            this.hintPoker.push(poker.id);
-        } else {
-            poker.y = this.world.height - PG.PH * 0.5;
-            this.hintPoker.splice(index, 1);
-        }
-    },
 
     startPlay: function() {
         if (this.isLastShotPlayer()) {
-            this.playPoker([]);
+            this.players[0].playPoker([]);
         } else {
-            this.playPoker(this.tablePoker);
+            this.players[0].playPoker(this.tablePoker);
         }
     },
 
     finishPlay: function(pokers) {
         console.log('finishPlay', pokers);
         this.send_message([PG.Protocol.REQ_SHOT_POKER, pokers]);
-    },
-
-    onPass: function(btn) {
-        this.finishPlay([]);
-        this.players[0].pokerUnSelected(this.hintPoker);
-        this.hintPoker = [];
-        // btn.parent.destroy(true);
-        // this.world.remove(btn.parent);
-        btn.parent.forEach(function(child){ child.kill(); });
-    },
-
-    onHint: function(btn) {
-        if (this.hintPoker.length == 0) {
-            this.hintPoker = this.lastTurnPoker;
-        } else {
-            this.players[0].pokerUnSelected(this.hintPoker);
-            if (!PG.Poker.canCompare(this.hintPoker, this.lastTurnPoker)) {
-                this.hintPoker = [];
-            }
-        }
-        var bigger = this.players[0].hint(this.hintPoker);
-        if (bigger.length == 0) {
-            if (this.hintPoker == this.lastTurnPoker) {
-                this.playerSay("没有能大过的牌");
-            } else{
-                this.players[0].pokerUnSelected(this.hintPoker);
-            }
-        } else {
-            this.players[0].pokerSelected(bigger);
-        }
-        this.hintPoker = bigger;
-    },
-
-    onShot: function(btn) {
-        if  (this.hintPoker.length == 0) {
-            return;
-        }
-        var code = this.players[0].canPlay(this.isLastShotPlayer() ? [] : this.tablePoker, this.hintPoker);
-        if (code == -1) {
-            this.playerSay("出牌不符合规矩");
-            return;
-        }
-        if (code == 0) {
-            this.playerSay("出牌必须大于上家的牌");
-            return;
-        }
-        this.finishPlay(this.hintPoker);
-        this.hintPoker = [];
-        // btn.parent.destroy(true);
-        // this.world.remove(btn.parent);
-        btn.parent.forEach(function(child){ child.kill(); });
-    },
-
-    createUI: function() {
-        this.playUI = this.add.group();
-        var group = this.playUI;
-
-        var sy =  this.world.height * 0.6;
-        var pass = this.add.button(0, sy, "btn", this.onPass, this, 'pass.png', 'pass.png', 'pass.png');
-        pass.anchor.set(0.5, 0);
-        group.add(pass);
-        var hint = this.add.button(0, sy, "btn", this.onHint, this, 'hint.png', 'hint.png', 'hint.png');
-        hint.anchor.set(0.5, 0);
-        group.add(hint);
-        var shot = this.add.button(0, sy, "btn", this.onShot, this, 'shot.png', 'shot.png', 'shot.png');
-        shot.anchor.set(0.5, 0);
-        group.add(shot);
-
-        group.forEach(function(child){ child.kill(); });
-    },
-
-    playPoker: function(lastTurnPoker) {
-	    this.lastTurnPoker = lastTurnPoker;
-
-        var group = this.playUI;
-        var step = this.world.width/6;
-        var sx = this.world.width/2 - 0.5 * step;
-        if (!this.isLastShotPlayer()) {
-            sx -= 0.5 * step;
-            var pass = group.getAt(0);
-            pass.centerX = sx;
-            sx += step;
-            pass.revive();
-        }
-        var hint = group.getAt(1);
-        hint.centerX = sx;
-        hint.revive();
-        var shot = group.getAt(2);
-        shot.centerX = sx + step;
-        shot.revive();
-
-        this.players[0].enableInput();
     },
 
     isLastShotPlayer: function() {

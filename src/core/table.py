@@ -46,7 +46,14 @@ class Table(object):
             p2.to_server([Pt.REQ_JOIN_TABLE, self.uid])
 
     def sync_table(self):
-        response = [Pt.RSP_JOIN_TABLE, self.uid, [g.uid if g else -1 for g in self.players]]
+        ps = []
+        for p in self.players:
+            if p:
+                ps.append((p.uid, p.name))
+            else:
+                ps.append((-1, ''))
+
+        response = [Pt.RSP_JOIN_TABLE, self.uid, ps]
         for player in self.players:
             if player:
                 player.send(response)
@@ -91,7 +98,7 @@ class Table(object):
         tax = 100
         for p in self.players:
             p.ready = False
-            coin = self.room * p.rank * self.call_score * self.multiple
+            coin = self.room * self.call_score * self.multiple
             if p == winner:
                 coins.append(coin - tax)
             else:
