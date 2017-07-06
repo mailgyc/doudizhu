@@ -92,6 +92,8 @@ class SocketHandler(WebSocketHandler):
 
         elif code == Pt.REQ_SHOT_POKER:
             self.handle_shot_poker(packet)
+        elif code == Pt.REQ_CHAT:
+            self.handle_chat(packet)
         else:
             logger.info('UNKNOWN PACKET: %s', code)
 
@@ -110,6 +112,10 @@ class SocketHandler(WebSocketHandler):
             return self.room.first_waiting_table()
         return self.room.find_waiting_table(table_id)
 
+    def handle_chat(self, packet):
+        if self.player and self.player.table:
+            self.player.table.handle_chat(self.player, packet[1])
+
     def write_message(self, message, binary=False):
         if self.ws_connection is None:
             raise WebSocketClosedError()
@@ -121,9 +127,8 @@ class SocketHandler(WebSocketHandler):
     def on_close(self):
         # self.session.get(self.uid).socket = None
         logger.info('socket[%s] close', self.player.uid)
-        # if self.player.table and self.player.table.remove(self.player):
-        #     logger.info('Table[%d] close', self.player.table.pid)
-        #     SocketHandler.tableList.remove(self.player.table)
+        if self.player:
+            self.player.leave_table()
 
     def send_updates(cls, chat):
         logger.info('sending message to %d waiters', len(cls.waiters))

@@ -28,3 +28,6 @@ class Protocol(IntEnum):
 
     REQ_GAME_OVER = 41
     RSP_GAME_OVER = 42
+
+    REQ_CHAT = 43
+    RSP_CHAT = 44 
