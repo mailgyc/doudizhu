@@ -1,9 +1,7 @@
 # doudizhu
-斗地主游戏
+斗地主游戏, html5 + python 实现
 
-html5 + python 实现
-
-运行
+运行:
 
 pip3 install tornado bcrypt pymysql
 
