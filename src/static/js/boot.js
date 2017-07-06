@@ -94,6 +94,21 @@ PG.MainMenu.prototype = {
 		var setting = this.add.button(this.world.width/2, this.world.height * 3/4, 'btn', this.gotoSetting, this, 'setting.png', 'setting.png', 'setting.png');
 		setting.anchor.set(0.5);
 		this.world.add(setting);
+
+        this.game.add.plugin(PhaserInput.Plugin);
+        var input = this.add.inputField(100, 90, {
+            font: '18px Arial',
+            fill: '#ff0000',
+            fontWeight: 'bold',
+            width: 150,
+            padding: 8,
+            borderWidth: 1,
+            borderColor: '#000',
+            borderRadius: 6,
+            placeHolder: 'Password',
+            type: PhaserInput.InputType.password
+        });
+        input.setText("My custom text");
 	},
 
 	startGame: function () {
