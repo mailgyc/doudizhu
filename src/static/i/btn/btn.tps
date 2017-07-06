@@ -200,8 +200,9 @@
         <key>individualSpriteSettings</key>
         <map type="IndividualSpriteSettingsMap">
             <key type="filename">alarm.png</key>
-            <key type="filename">farmer.png</key>
-            <key type="filename">landlord.png</key>
+            <key type="filename">icon_default.png</key>
+            <key type="filename">icon_farmer.png</key>
+            <key type="filename">icon_landlord.png</key>
             <struct type="IndividualSpriteSettings">
                 <key>pivotPoint</key>
                 <point_f>0.5,0.5</point_f>
