@@ -121,9 +121,8 @@ class SocketHandler(WebSocketHandler):
     def on_close(self):
         # self.session.get(self.uid).socket = None
         logger.info('socket[%s] close', self.player.uid)
-        # if self.player.table and self.player.table.remove(self.player):
-        #     logger.info('Table[%d] close', self.player.table.pid)
-        #     SocketHandler.tableList.remove(self.player.table)
+        if self.player:
+            self.player.leave_table()
 
     def send_updates(cls, chat):
         logger.info('sending message to %d waiters', len(cls.waiters))

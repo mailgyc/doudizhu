@@ -92,5 +92,11 @@ class Player(object):
         self.ready = True
         self.table = t
 
+    def leave_table(self):
+        self.ready = False
+        if self.table:
+             self.table.remove(self)
+             logger.info('Player[%d] leave Table[%d]', self.uid, self.table.uid)
+
     def __str__(self):
         return self.uid + '-' + self.name
