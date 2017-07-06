@@ -105,6 +105,11 @@ class Table(object):
                 coins.append(-coin - tax)
         return coins
 
+    def handle_chat(self, player, msg):
+        response = [Pt.RSP_CHAT, player.uid, msg]
+        for p in self.players:
+            p.send(response)
+
     def add(self, player):
         for i, p in enumerate(self.players):
             if not p:
