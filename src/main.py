@@ -8,7 +8,7 @@ import tornado.options
 import tornado.web
 import tornado.websocket
 from net.socket import SocketHandler
-from net.web import WebHandler
+from net.web import WebHandler, UpdateHandler, RegHandler
 from db import torndb
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -21,6 +21,8 @@ class Application(tornado.web.Application):
     def __init__(self):
         handlers = [
             (r'/', WebHandler),
+            (r'/update', UpdateHandler),
+            (r'/reg', RegHandler),
             (r'/ws', SocketHandler),
         ]
         settings = dict(

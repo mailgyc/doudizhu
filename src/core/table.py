@@ -17,7 +17,7 @@ class Table(object):
     END = 2
     CLOSED = 3
 
-    def __init__(self):
+    def __init__(self, room):
         self.uid = Table.gen_id()
         self.players = [None, None, None]
         self.state = 0  # 0 waiting  1 playing 2 end 3 closed
@@ -27,8 +27,9 @@ class Table(object):
         self.whose_turn = 0
         self.last_shot_seat = 0
         self.last_shot_poker = []
-        self.room = 100
-        IOLoop.current().call_later(0.1, self.ai_join, nth=1)
+        self.room = room
+        if room.allow_robot:
+            IOLoop.current().call_later(0.1, self.ai_join, nth=1)
 
     def ai_join(self, nth=1):
         size = self.size()
@@ -98,7 +99,7 @@ class Table(object):
         tax = 100
         for p in self.players:
             p.ready = False
-            coin = self.room * self.call_score * self.multiple
+            coin = self.room.entrance_fee * self.call_score * self.multiple
             if p == winner:
                 coins.append(coin - tax)
             else:

@@ -8,10 +8,12 @@ logger = logging.getLogger('ddz')
 
 class Room(object):
 
-    def __init__(self, uid):
+    def __init__(self, uid, allow_robot=True):
         self.uid = uid
         self.__waiting_tables = {}
         self.__playing_tables = {}
+        self.allow_robot = allow_robot
+        self.entrance_fee = 100
         logger.info('ROOM[%d] CREATED', uid)
 
     def find_waiting_table(self, uid, default=None):

@@ -11,8 +11,11 @@ class Protocol(IntEnum):
     REQ_TABLE_LIST = 15
     RSP_TABLE_LIST = 16
 
-    REQ_JOIN_TABLE = 17
-    RSP_JOIN_TABLE = 18
+    REQ_JOIN_ROOM = 17
+    RSP_JOIN_ROOM = 18
+
+    REQ_JOIN_TABLE = 19
+    RSP_JOIN_TABLE = 20
 
     REQ_DEAL_POKER = 21
     RSP_DEAL_POKER = 22

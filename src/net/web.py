@@ -1,3 +1,5 @@
+import json
+import subprocess
 from concurrent.futures import ThreadPoolExecutor
 
 import bcrypt
@@ -34,22 +36,29 @@ class WebHandler(BaseHandler):
         self.render('poker.html')
 
 
-def auth_reg(self):
-    email = self.get_argument('email')
-    account = self.db.get('SELECT * FROM account WHERE email="%s"', email)
-    if account:
-        raise tornado.web.HTTPError(400, "email already taken")
+class UpdateHandler(BaseHandler):
+    def get(self):
+        proc = subprocess.run(["git", "pull"], stdout=subprocess.PIPE)
+        self.head('content-type', 'text/plain; charset=UTF-8')
+        self.write(proc.stdout)
 
-    username = self.get_argument('username')
-    password = self.get_argument('password')
-    password = bcrypt.hashpw(password.encode('utf8'), bcrypt.gensalt())
 
-    uid = self.db.insert('INSERT INTO account (email, username, password) VALUES ("%s", "%s", "%s")',
-                         email, username, password)
+class RegHandler(BaseHandler):
+    def get(self):
+        email = self.get_argument('email')
+        account = self.db.get('SELECT * FROM account WHERE email="%s"', email)
+        if account:
+            raise tornado.web.HTTPError(400, "username already taken")
 
-    self.set_secure_cookie('uid', str(uid))
-    self.session.save(uid, Player(uid, username=username))
-    self.redirect(self.get_argument("next", "/"))
+        username = self.get_argument('username')
+        password = self.get_argument('password')
+        password = bcrypt.hashpw(password.encode('utf8'), bcrypt.gensalt())
+
+        uid = self.db.insert('INSERT INTO account (email, username, password) VALUES ("%s", "%s", "%s")',
+                             email, username, password)
+
+        self.head('content-type', 'application/json')
+        self.write('ok')
 
 
 def auth_login(self):

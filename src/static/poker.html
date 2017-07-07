@@ -25,6 +25,7 @@
     var game = new Phaser.Game(960, h, Phaser.AUTO, 'game');
     game.state.add('Boot', PG.Boot);
     game.state.add('Preloader', PG.Preloader);
+    game.state.add('Login', PG.Login);
     game.state.add('MainMenu', PG.MainMenu);
     game.state.add('Game', PG.Game);
     game.state.start('Boot');

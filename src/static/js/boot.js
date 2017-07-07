@@ -1,8 +1,12 @@
 PG = {
     score: 0,
     music: null,
+    playerInfo: {},
     orientated: false
 };
+
+PG.PW = 90;
+PG.PH = 120;
 
 PG.Boot = function (game) {
 };
@@ -27,6 +31,11 @@ PG.Boot.prototype = {
         this.scale.enterIncorrectOrientation.add(this.enterIncorrectOrientation, this);
         this.scale.leaveIncorrectOrientation.add(this.leaveIncorrectOrientation, this);
         this.state.start('Preloader');
+
+        if (!this.storageAvailable('localStorage')) {
+            window.localStorage = {};
+            console.log('unsupported localStorage');
+        }
     },
 
     enterIncorrectOrientation: function () {
@@ -37,15 +46,25 @@ PG.Boot.prototype = {
     leaveIncorrectOrientation: function () {
        PG.orientated = true;
        document.getElementById('orientation').style.display = 'none';
+    },
+
+    storageAvailable: function(type) {
+        try {
+            var storage = window[type],
+                x = '__storage_test__';
+            storage.setItem(x, x);
+            storage.removeItem(x);
+            return true;
+        }catch(e) {
+            return false;
+        }
     }
+
 };
 
 PG.Preloader = function (game) {
 	this.preloadBar = null;
 };
-
-PG.PW = 90;
-PG.PH = 120;
 
 PG.Preloader.prototype = {
 	preload: function () {
@@ -64,8 +83,12 @@ PG.Preloader.prototype = {
 	},
 
 	create: function () {
-		this.state.start('MainMenu');
-		PG.RuleList = this.cache.getJSON('rule');
+        PG.RuleList = this.cache.getJSON('rule');
+	    if (localStorage['username']) {
+            this.state.start('MainMenu');
+        } else {
+	        this.state.start('Login');
+        }
 		// PG.music = this.add.audio('music_bg');
 		// PG.music.loop = true;
 		// PG.music.loopFull();
@@ -74,11 +97,14 @@ PG.Preloader.prototype = {
 };
 
 PG.MainMenu = function (game) {
+    this.netstat = null;
 };
 
 PG.MainMenu.prototype = {
 
 	create: function () {
+        PG.Socket.connect(this.onopen.bind(this), this.onmessage.bind(this), this.onerror.bind(this));
+
 		this.stage.backgroundColor = '#182d3b';
 		var bg = this.add.sprite(this.game.width/2, 0, 'bg');
 		bg.anchor.set(0.5, 0);
@@ -95,26 +121,38 @@ PG.MainMenu.prototype = {
 		setting.anchor.set(0.5);
 		this.world.add(setting);
 
-        this.game.add.plugin(PhaserInput.Plugin);
-        var input = this.add.inputField(100, 90, {
-            font: '18px Arial',
-            fill: '#ff0000',
-            fontWeight: 'bold',
-            width: 150,
-            padding: 8,
-            borderWidth: 1,
-            borderColor: '#000',
-            borderRadius: 6,
-            placeHolder: 'Password',
-            type: PhaserInput.InputType.password
-        });
-        input.setText("My custom text");
+		this.netstat = this.add.sprite(this.world.width - 4, 4, 'wifi_error.png');
+		this.netstat.anchor.set(1, 0);
 	},
 
-	startGame: function () {
-		PG.gameType = 0;
-		this.state.start('Game');
-		//this.music.stop();
+    onopen: function() {
+	    this.netstat.frameName = 'wifi.png';
+        this.send_message([PG.Protocol.REQ_LOGIN]);
+    },
+
+    onmessage: function(packet) {
+        var opcode = packet[0];
+        switch (opcode) {
+            case PG.Protocol.RSP_LOGIN:
+                PG.playerInfo['uid'] = packet[1];
+                PG.playerInfo['name'] = packet[2];
+                this.send_message([PG.Protocol.REQ_JOIN_TABLE, -1]);
+                break;
+        }
+    },
+
+    onerror: function() {
+        this.netstat.frameName = 'wifi_error.png';
+    },
+
+    startGame: function () {
+	    if (this.netstat.frameName == 'wifi.png') {
+            PG.gameType = 0;
+            this.state.start('Game');
+            //this.music.stop();
+        } else {
+	        alert('请检查网络连接');
+        }
 	},
 
 	gotoRoom: function () {
@@ -128,4 +166,69 @@ PG.MainMenu.prototype = {
 		var tween = this.add.tween(text).to( { x: 600, y: 450 }, 2000, "Linear", true);
 		tween.onComplete.add(Phaser.Text.prototype.destroy, text);
 	}
+};
+
+PG.Login = function (game) {
+    this.username = null;
+    this.password = null;
+    this.passwordAgain = null;
+};
+
+PG.Login.prototype = {
+
+	create: function () {
+		this.stage.backgroundColor = '#182d3b';
+		var bg = this.add.sprite(this.game.width/2, 0, 'bg');
+		bg.anchor.set(0.5, 0);
+
+		var style = {
+            font: '24px Arial', fill: '#000', width: 300, padding: 12,
+            borderWidth: 1, borderColor: '#000', borderRadius: 2,
+            textAlign: 'center', placeHolder: '姓名'
+            // type: PhaserInput.InputType.password
+        };
+        this.game.add.plugin(PhaserInput.Plugin);
+        this.username = this.add.inputField((this.world.width-300)/2, this.world.height/2 - 130, style);
+        style.placeHolder = '密码';
+        this.password = this.add.inputField((this.world.width-300)/2, this.world.height/2 - 65, style);
+        style.placeHolder = '再次输入密码';
+        this.passwordAgain = this.add.inputField((this.world.width-300)/2, this.world.height/2, style);
+
+		var login = this.add.button(this.world.width/2, this.world.height * 3/4, 'btn', this.onLogin, this, 'register.png', 'register.png', 'register.png');
+		login.anchor.set(0.5);
+	},
+
+	onLogin: function () {
+        var req = {
+            email: this.username.value,
+            username: this.username.value,
+            password: this.password.value,
+            password_again: this.passwordAgain.value
+        };
+        if (!req['username']) { alert('请输入用户名'); }
+        if (!req['password']) { alert('请输入密码'); }
+        if (!req['password_again']) { alert('请再次输入密码'); }
+
+        var httpRequest = new XMLHttpRequest();
+        httpRequest.onreadystatechange = function(){
+            if (httpRequest.readyState === XMLHttpRequest.DONE) {
+                if (httpRequest.status === 200) {
+                    this.state.start('MainMenu');
+                    console.log(httpRequest.responseText);
+                } else {
+                    console.log('Error:' + httpRequest.status);
+                    alert(httpRequest.responseText);
+                }
+            }
+        };
+        httpRequest.open('POST', '/reg', true);
+        httpRequest.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+        httpRequest.send(JSON.stringify(req) + '&_xsrf=' + this.getCookie("_xsrf"));
+	},
+
+	getCookie: function(name) {
+        var r = document.cookie.match("\\b" + name + "=([^;]*)\\b");
+        return r ? r[1] : undefined;
+    }
+
 };

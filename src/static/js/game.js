@@ -30,7 +30,11 @@ PG.Game.prototype = {
 	    console.log('onopen');
 	    this.send_message([11]);
 	},
-	
+
+    onerror: function() {
+        console.log('connect server fail');
+    },
+
 	send_message: function(request) {
         PG.Socket.send(request);
 	},
@@ -38,10 +42,6 @@ PG.Game.prototype = {
 	onmessage: function(packet) {
 	    var opcode = packet[0];
 	    switch(opcode) {
-	        case PG.Protocol.RSP_LOGIN:
-                this.players[0].updateInfo(packet[1], packet[2]);
-                this.send_message([PG.Protocol.REQ_JOIN_TABLE, -1]);
-                break;
 	        case PG.Protocol.RSP_JOIN_TABLE:
                 this.tableId = packet[1];
                 var playerIds = packet[2];
@@ -98,10 +98,6 @@ PG.Game.prototype = {
 	    }
 	},
 	
-	onerror: function() {
-	    console.log('connect server fail');
-	},
-
 	update: function () {
         
 	},

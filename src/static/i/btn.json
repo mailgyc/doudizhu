@@ -2,7 +2,7 @@
 
 {
 	"filename": "alarm.png",
-	"frame": {"x":160,"y":156,"w":84,"h":84},
+	"frame": {"x":296,"y":112,"w":84,"h":84},
 	"rotated": false,
 	"trimmed": false,
 	"spriteSourceSize": {"x":0,"y":0,"w":84,"h":84},
@@ -10,7 +10,7 @@
 },
 {
 	"filename": "exit.png",
-	"frame": {"x":320,"y":96,"w":160,"h":60},
+	"frame": {"x":0,"y":196,"w":160,"h":60},
 	"rotated": false,
 	"trimmed": false,
 	"spriteSourceSize": {"x":0,"y":0,"w":160,"h":60},
@@ -18,7 +18,7 @@
 },
 {
 	"filename": "hint.png",
-	"frame": {"x":256,"y":48,"w":128,"h":48},
+	"frame": {"x":384,"y":64,"w":128,"h":48},
 	"rotated": false,
 	"trimmed": false,
 	"spriteSourceSize": {"x":0,"y":0,"w":128,"h":48},
@@ -26,7 +26,7 @@
 },
 {
 	"filename": "icon_default.png",
-	"frame": {"x":412,"y":156,"w":84,"h":84},
+	"frame": {"x":380,"y":112,"w":84,"h":84},
 	"rotated": false,
 	"trimmed": false,
 	"spriteSourceSize": {"x":0,"y":0,"w":84,"h":84},
@@ -34,7 +34,7 @@
 },
 {
 	"filename": "icon_farmer.png",
-	"frame": {"x":328,"y":156,"w":84,"h":84},
+	"frame": {"x":128,"y":112,"w":84,"h":84},
 	"rotated": false,
 	"trimmed": false,
 	"spriteSourceSize": {"x":0,"y":0,"w":84,"h":84},
@@ -42,7 +42,7 @@
 },
 {
 	"filename": "icon_landlord.png",
-	"frame": {"x":244,"y":156,"w":84,"h":84},
+	"frame": {"x":212,"y":112,"w":84,"h":84},
 	"rotated": false,
 	"trimmed": false,
 	"spriteSourceSize": {"x":0,"y":0,"w":84,"h":84},
@@ -50,7 +50,7 @@
 },
 {
 	"filename": "pass.png",
-	"frame": {"x":0,"y":0,"w":128,"h":48},
+	"frame": {"x":0,"y":112,"w":128,"h":48},
 	"rotated": false,
 	"trimmed": false,
 	"spriteSourceSize": {"x":0,"y":0,"w":128,"h":48},
@@ -58,7 +58,15 @@
 },
 {
 	"filename": "quick.png",
-	"frame": {"x":160,"y":96,"w":160,"h":60},
+	"frame": {"x":320,"y":196,"w":160,"h":60},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":160,"h":60},
+	"sourceSize": {"w":160,"h":60}
+},
+{
+	"filename": "register.png",
+	"frame": {"x":0,"y":256,"w":160,"h":60},
 	"rotated": false,
 	"trimmed": false,
 	"spriteSourceSize": {"x":0,"y":0,"w":160,"h":60},
@@ -66,7 +74,7 @@
 },
 {
 	"filename": "score_0.png",
-	"frame": {"x":256,"y":0,"w":128,"h":48},
+	"frame": {"x":256,"y":64,"w":128,"h":48},
 	"rotated": false,
 	"trimmed": false,
 	"spriteSourceSize": {"x":0,"y":0,"w":128,"h":48},
@@ -74,7 +82,7 @@
 },
 {
 	"filename": "score_1.png",
-	"frame": {"x":128,"y":0,"w":128,"h":48},
+	"frame": {"x":0,"y":64,"w":128,"h":48},
 	"rotated": false,
 	"trimmed": false,
 	"spriteSourceSize": {"x":0,"y":0,"w":128,"h":48},
@@ -82,7 +90,7 @@
 },
 {
 	"filename": "score_2.png",
-	"frame": {"x":384,"y":0,"w":128,"h":48},
+	"frame": {"x":192,"y":0,"w":128,"h":48},
 	"rotated": false,
 	"trimmed": false,
 	"spriteSourceSize": {"x":0,"y":0,"w":128,"h":48},
@@ -90,7 +98,7 @@
 },
 {
 	"filename": "score_3.png",
-	"frame": {"x":0,"y":48,"w":128,"h":48},
+	"frame": {"x":128,"y":64,"w":128,"h":48},
 	"rotated": false,
 	"trimmed": false,
 	"spriteSourceSize": {"x":0,"y":0,"w":128,"h":48},
@@ -98,7 +106,7 @@
 },
 {
 	"filename": "setting.png",
-	"frame": {"x":0,"y":96,"w":160,"h":60},
+	"frame": {"x":160,"y":196,"w":160,"h":60},
 	"rotated": false,
 	"trimmed": false,
 	"spriteSourceSize": {"x":0,"y":0,"w":160,"h":60},
@@ -106,7 +114,7 @@
 },
 {
 	"filename": "shot.png",
-	"frame": {"x":128,"y":48,"w":128,"h":48},
+	"frame": {"x":320,"y":0,"w":128,"h":48},
 	"rotated": false,
 	"trimmed": false,
 	"spriteSourceSize": {"x":0,"y":0,"w":128,"h":48},
@@ -114,19 +122,43 @@
 },
 {
 	"filename": "start.png",
-	"frame": {"x":0,"y":156,"w":160,"h":60},
+	"frame": {"x":160,"y":256,"w":160,"h":60},
 	"rotated": false,
 	"trimmed": false,
 	"spriteSourceSize": {"x":0,"y":0,"w":160,"h":60},
 	"sourceSize": {"w":160,"h":60}
+},
+{
+	"filename": "wifi.png",
+	"frame": {"x":0,"y":0,"w":64,"h":50},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":64,"h":50},
+	"sourceSize": {"w":64,"h":50}
+},
+{
+	"filename": "wifi2.png",
+	"frame": {"x":128,"y":0,"w":64,"h":64},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":64,"h":64},
+	"sourceSize": {"w":64,"h":64}
+},
+{
+	"filename": "wifi_error.png",
+	"frame": {"x":64,"y":0,"w":64,"h":59},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":64,"h":59},
+	"sourceSize": {"w":64,"h":59}
 }],
 "meta": {
 	"app": "http://www.codeandweb.com/texturepacker",
 	"version": "1.0",
 	"image": "btn.png",
 	"format": "RGBA8888",
-	"size": {"w":512,"h":240},
+	"size": {"w":512,"h":316},
 	"scale": "1",
-	"smartupdate": "$TexturePacker:SmartUpdate:33c3e6781a11ad0318b7666691a80aac:83075ff6fe0bdcbe0c4b4936a47080e4:382bbd42eff5a2b763aa915dc00d7597$"
+	"smartupdate": "$TexturePacker:SmartUpdate:4687d78a281eb5943ad2ab4d9945155b:9a2a98b8cd832e0e03cf3cb29d8da7a8:382bbd42eff5a2b763aa915dc00d7597$"
 }
 }
