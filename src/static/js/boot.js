@@ -1,9 +1,15 @@
-PG = {
+﻿PG = {
     score: 0,
     music: null,
     playerInfo: {},
     orientated: false
 };
+
+
+PG.getCookie = function(name) {
+    var r = document.cookie.match("\\b" + name + "=([^;]*)\\b");
+    return r ? r[1] : undefined;
+}
 
 PG.PW = 90;
 PG.PH = 120;
@@ -172,6 +178,7 @@ PG.Login = function (game) {
     this.username = null;
     this.password = null;
     this.passwordAgain = null;
+    this.error = null;
 };
 
 PG.Login.prototype = {
@@ -188,26 +195,27 @@ PG.Login.prototype = {
             // type: PhaserInput.InputType.password
         };
         this.game.add.plugin(PhaserInput.Plugin);
+
         this.username = this.add.inputField((this.world.width-300)/2, this.world.height/2 - 130, style);
+
         style.placeHolder = '密码';
         this.password = this.add.inputField((this.world.width-300)/2, this.world.height/2 - 65, style);
+
         style.placeHolder = '再次输入密码';
         this.passwordAgain = this.add.inputField((this.world.width-300)/2, this.world.height/2, style);
+
+        var style = {font: "22px Arial", fill: "#f00", align: "center"};
+        this.error = this.add.text(this.world.width/2, this.world.height/2 + 20, '', style);
 
 		var login = this.add.button(this.world.width/2, this.world.height * 3/4, 'btn', this.onLogin, this, 'register.png', 'register.png', 'register.png');
 		login.anchor.set(0.5);
 	},
 
 	onLogin: function () {
-        var req = {
-            email: this.username.value,
-            username: this.username.value,
-            password: this.password.value,
-            password_again: this.passwordAgain.value
-        };
-        if (!req['username']) { alert('请输入用户名'); }
-        if (!req['password']) { alert('请输入密码'); }
-        if (!req['password_again']) { alert('请再次输入密码'); }
+        if (!this.username.value) { this.username.startFocus(); return; }
+        if (!this.password.value) { this.password.startFocus(); return; }
+        if (!this.passwordAgain.value) { this.passwordAgain.startFocus(); return; }
+        if (this.password.value != this.passwordAgain.value) { this.error.text="两次输入的密码不一致"; return; }
 
         var httpRequest = new XMLHttpRequest();
         httpRequest.onreadystatechange = function(){
@@ -217,18 +225,15 @@ PG.Login.prototype = {
                     console.log(httpRequest.responseText);
                 } else {
                     console.log('Error:' + httpRequest.status);
-                    alert(httpRequest.responseText);
+                    this.error.text = httpRequest.responseText;
                 }
             }
         };
         httpRequest.open('POST', '/reg', true);
         httpRequest.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-        httpRequest.send(JSON.stringify(req) + '&_xsrf=' + this.getCookie("_xsrf"));
-	},
+        httpRequest.setRequestHeader('X-Csrftoken', PG.getCookie("_xsrf"))
 
-	getCookie: function(name) {
-        var r = document.cookie.match("\\b" + name + "=([^;]*)\\b");
-        return r ? r[1] : undefined;
-    }
-
+        var req = 'username=' + encodeURIComponent(this.username.value) + '&password=' + encodeURIComponent(this.password.value);
+        httpRequest.send(req);
+	}
 };
