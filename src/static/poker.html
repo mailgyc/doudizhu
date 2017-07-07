@@ -18,6 +18,7 @@
 <body>
 <div id="game"></div>
 <div id="orientation"></div>
+{% module xsrf_form_html() %}
 <script>
 (function () {
     var h = window.innerHeight * 960/window.innerWidth;

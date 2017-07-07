@@ -26,13 +26,16 @@ class BaseHandler(RequestHandler):
     def data_received(self, chunk):
         pass
 
-    # def on_finish(self):
+    def on_finish(self):
         # self.session.flush()
+        pass
 
 
 class WebHandler(BaseHandler):
     # @tornado.web.authenticated
     def get(self):
+        if not self.get_cookie("_csrf"):
+            self.set_cookie("_csrf", self.xsrf_token)
         self.render('poker.html')
 
 
@@ -44,8 +47,9 @@ class UpdateHandler(BaseHandler):
 
 
 class RegHandler(BaseHandler):
-    def get(self):
-        email = self.get_argument('email')
+
+    def post(self):
+        email = self.get_argument('email', self.get_argument('username'))
         account = self.db.get('SELECT * FROM account WHERE email="%s"', email)
         if account:
             raise tornado.web.HTTPError(400, "username already taken")
@@ -57,24 +61,28 @@ class RegHandler(BaseHandler):
         uid = self.db.insert('INSERT INTO account (email, username, password) VALUES ("%s", "%s", "%s")',
                              email, username, password)
 
-        self.head('content-type', 'application/json')
+        self.set_secure_cookie("uid", str(account.get('id')))
         self.write('ok')
 
 
-def auth_login(self):
-    account = self.db.get('SELECT * FROM account WHERE email="%s"', self.get_argument('email'))
-    password = self.get_argument("password")
-    password = bcrypt.hashpw(password.encode('utf8'), account.get('password'))
+class LoginHandler(BaseHandler):
 
-    if password == account.get('password'):
-        self.set_secure_cookie("uid", str(account.get('id')))
+    def post(self):
+        username = self.get_argument('email')
+        password = self.get_argument("password")
+        account = self.db.get('SELECT * FROM account WHERE email="%s"', self.get_argument('email'))
+        password = bcrypt.hashpw(password.encode('utf8'), account.get('password'))
+
+        self.head('content-type', 'application/json')
+        if password == account.get('password'):
+            self.set_secure_cookie("uid", str(account.get('id')))
+            self.redirect(self.get_argument("next", "/"))
+
+
+class LoginoutHandler(BaseHandler):
+
+    def post(self):
+        uid = self.get_secure_cookie("uid")
+        self.clear_cookie("uid")
+        self.session.remove(int(uid))
         self.redirect(self.get_argument("next", "/"))
-        return True
-    return False
-
-
-def auth_logout(self):
-    uid = self.get_secure_cookie("uid")
-    self.clear_cookie("uid")
-    self.session.remove(int(uid))
-    self.redirect(self.get_argument("next", "/"))
