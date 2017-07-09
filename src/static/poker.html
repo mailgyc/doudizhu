@@ -22,7 +22,7 @@
 <script>
 (function () {
     var h = window.innerHeight * 960/window.innerWidth;
-    if (h > 640) h = 640;
+    if (h > 540) h = 540;
     var game = new Phaser.Game(960, h, Phaser.AUTO, 'game');
     game.state.add('Boot', PG.Boot);
     game.state.add('Preloader', PG.Preloader);

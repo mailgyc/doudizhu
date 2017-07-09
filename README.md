@@ -3,11 +3,13 @@
 
 运行:
 
-pip3 install tornado bcrypt pymysql msgpack
+pip3 install tornado bcrypt pymysql msgpack-python
 
 python3 main.py
 
 浏览器访问即可,端口默认8080
+
+在线体验 <http://ddz.ihouser.com/>
 
 运行截图
 

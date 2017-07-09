@@ -27,14 +27,14 @@ PG.Boot = {
     },
     onSizeChange: function () {
         this.scale.minWidth = 480;
-        this.scale.minHeight = 320;
+        this.scale.minHeight = 270;
         var device = this.game.device;
         if (device.android || device.iOS) {
             this.scale.maxWidth = window.innerWidth;
             this.scale.maxHeight = window.innerHeight;
         } else {
             this.scale.maxWidth = 960;
-            this.scale.maxHeight = 640;
+            this.scale.maxHeight = 540;
         }
         this.scale.pageAlignHorizontally = true;
         this.scale.pageAlignVertically = true;
@@ -72,23 +72,22 @@ PG.Preloader = {
         var jsonVal = document.getElementById("user").value;
         if (jsonVal) {
             PG.playerInfo = JSON.parse(jsonVal);
-            if (PG.playerInfo['uid']) {
-                this.state.start('MainMenu');
-            } else {
+            // if (PG.playerInfo['uid']) {
+            //     this.state.start('MainMenu');
+            // } else {
                 this.state.start('Login');
-            }
+            // }
         } else {
             this.state.start('Login');
         }
         PG.music = this.game.add.audio('music_bg');
         PG.music.loop = true;
-        PG.music.loopFull();
-        PG.music.play();
+        // PG.music.loopFull();
+        // PG.music.play();
     }
 };
 
 PG.MainMenu = {
-
     create: function () {
         this.stage.backgroundColor = '#182d3b';
         var bg = this.game.add.sprite(this.game.width / 2, 0, 'bg');
@@ -144,19 +143,19 @@ PG.Login = {
         };
         this.game.add.plugin(PhaserInput.Plugin);
 
-        this.username = this.game.add.inputField((this.game.world.width - 300) / 2, this.game.world.height / 2 - 130, style);
+        this.username = this.game.add.inputField((this.game.world.width - 300) / 2, this.game.world.centerY - 150, style);
 
         style.placeHolder = '密码';
-        this.password = this.game.add.inputField((this.game.world.width - 300) / 2, this.game.world.height / 2 - 65, style);
+        this.password = this.game.add.inputField((this.game.world.width - 300) / 2, this.game.world.centerY - 85, style);
 
         style.placeHolder = '再次输入密码';
-        this.passwordAgain = this.game.add.inputField((this.game.world.width - 300) / 2, this.game.world.height / 2, style);
+        this.passwordAgain = this.game.add.inputField((this.game.world.width - 300) / 2, this.game.world.centerY - 20, style);
 
         var style = {font: "22px Arial", fill: "#f00", align: "center"};
-        this.errorText = this.game.add.text(this.game.world.centerX, this.game.world.height / 2 + 65, '', style);
+        this.errorText = this.game.add.text(this.game.world.centerX, this.game.world.centerY + 45, '', style);
         this.errorText.anchor.set(0.5, 0);
 
-        var login = this.game.add.button(this.game.world.centerX, this.game.world.height * 3 / 4, 'btn', this.onLogin, this, 'register.png', 'register.png', 'register.png');
+        var login = this.game.add.button(this.game.world.centerX, this.game.world.centerY + 80, 'btn', this.onLogin, this, 'register.png', 'register.png', 'register.png');
         login.anchor.set(0.5);
     },
 
