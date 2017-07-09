@@ -4,8 +4,10 @@ PG.Game = function(game) {
     this.roomId = 1;
     this.players = [];
 
+    this.titleBar = null;
+    this.tableLayer = null;
     this.tableId = 0;
-    this.uiShotBtn = null;
+    this.shotLayer = null;
     
     this.tablePoker = [];
     this.tablePokerPic = {};
@@ -30,12 +32,13 @@ PG.Game.prototype = {
 
         this.players[0].updateInfo(PG.playerInfo.uid, PG.playerInfo.username);
         PG.Socket.connect(this.onopen.bind(this), this.onmessage.bind(this), this.onerror.bind(this));
+
+        this.createTitleBar();
 	},
 	
 	onopen: function() {
 	    console.log('onopen');
         PG.Socket.send([PG.Protocol.REQ_JOIN_ROOM, this.roomId]);
-        // PG.Socket.send([PG.Protocol.REQ_LOGIN]);
 	},
 
     onerror: function() {
@@ -50,10 +53,22 @@ PG.Game.prototype = {
 	    var opcode = packet[0];
 	    switch(opcode) {
             case PG.Protocol.RSP_JOIN_ROOM:
-                PG.Socket.send([PG.Protocol.REQ_JOIN_TABLE, -1]);
+                if (this.roomId == 1) {
+                    PG.Socket.send([PG.Protocol.REQ_JOIN_TABLE, -1]);
+                } else {
+                    this.createTableLayer(packet[1]);
+                }
+                break;
+            case PG.Protocol.RSP_TABLE_LIST:
+                this.createTableLayer(packet[1]);
+                break;
+            case PG.Protocol.RSP_NEW_TABLE:
+                this.tableId = packet[1];
+                this.titleBar.text = '房间:' + this.tableId;
                 break;
 	        case PG.Protocol.RSP_JOIN_TABLE:
                 this.tableId = packet[1];
+                this.titleBar.text = '房间:' + this.tableId;
                 var playerIds = packet[2];
                 for (var i = 0; i < playerIds.length; i++) {
                     if (playerIds[i][0] == this.players[0].uid) {
@@ -129,7 +144,7 @@ PG.Game.prototype = {
 
         for (var i = 0; i < 3; i++) {
             var p = new PG.Poker(this, 54, 54);
-            this.world.add(p);
+            this.game.world.add(p);
             this.tablePoker[i] = p.id;
             this.tablePoker[i + 3] = p;
         }
@@ -143,9 +158,9 @@ PG.Game.prototype = {
         this.players[0].sortPoker();
         
         //to(properties, duration, ease, autoStart, delay, repeat, yoyo)
-        var headX = [ 0, this.world.width - PG.PW/2, PG.PW/2 ];
+        var headX = [ 0, this.game.world.width - PG.PW/2, PG.PW/2 ];
         var headY = [
-            this.world.height - PG.PH/2,
+            this.game.world.height - PG.PH/2,
             this.players[1].uiHead.y + PG.PH/2 + 10,
             this.players[1].uiHead.y + PG.PH/2 + 10
         ];
@@ -154,10 +169,10 @@ PG.Game.prototype = {
             for (var turn = 0; turn < 3; turn++) {
                 var pid = this.players[turn].pokerInHand[i];
                 var p = new PG.Poker(this, pid, pid);
-                this.world.add(p);
+                this.game.world.add(p);
                 this.players[turn].pushAPoker(p);
-                if (turn == 0) { headX[0] = this.world.width/2 + PG.PW * 0.44 * (i - 8.5); }
-                this.add.tween(p).to({ x: headX[turn], y: headY[turn] }, 500, Phaser.Easing.Default, true, (turn == 0 ? 0 : 25) + i * 50);
+                if (turn == 0) { headX[0] = this.game.world.width/2 + PG.PW * 0.44 * (i - 8.5); }
+                this.game.add.tween(p).to({ x: headX[turn], y: headY[turn] }, 500, Phaser.Easing.Default, true, (turn == 0 ? 0 : 25) + i * 50);
             }
         }
     },
@@ -168,7 +183,7 @@ PG.Game.prototype = {
             var p = this.tablePoker[i + 3];
             p.id = pokerId;
             p.frame = pokerId;
-            this.add.tween(p).to({ x: this.world.width/2 + (i - 1) * 60}, 600, Phaser.Easing.Default, true);
+            this.game.add.tween(p).to({ x: this.game.world.width/2 + (i - 1) * 60}, 600, Phaser.Easing.Default, true);
         }
         
          this.game.time.events.add(1500, this.dealLastThreePoker, this);
@@ -177,12 +192,12 @@ PG.Game.prototype = {
     arrangePoker: function() {
         this.players[0].sortPoker();
         var count = this.players[0].pokerInHand.length;
-        var gap = Math.min(this.world.width / count, PG.PW * 0.36);
+        var gap = Math.min(this.game.world.width / count, PG.PW * 0.36);
         for (var i = 0; i < count; i++) {
             var pid = this.players[0].pokerInHand[i];
             var p = this.players[0].findAPoker(pid);
             p.bringToTop();
-            this.add.tween(p).to({ x: this.world.width/2 + (i - count/2) * gap}, 600, Phaser.Easing.Default, true);
+            this.game.add.tween(p).to({ x: this.game.world.width/2 + (i - count/2) * gap}, 600, Phaser.Easing.Default, true);
         }
     },
     
@@ -200,9 +215,9 @@ PG.Game.prototype = {
             this.arrangePoker();
             for (var i = 0; i < 3; i++) {
                 var p = this.tablePoker[i + 3];
-                var tween = this.add.tween(p).to({y: this.world.height - PG.PH * 0.8 }, 400, Phaser.Easing.Default, true);
+                var tween = this.game.add.tween(p).to({y: this.game.world.height - PG.PH * 0.8 }, 400, Phaser.Easing.Default, true);
                 function adjust(p) {
-                    this.add.tween(p).to({y: this.world.height - PG.PH /2}, 400, Phaser.Easing.Default, true, 400);
+                    this.game.add.tween(p).to({y: this.game.world.height - PG.PH /2}, 400, Phaser.Easing.Default, true, 400);
                 };
                 tween.onComplete.add(adjust, this, p);
             }
@@ -211,7 +226,7 @@ PG.Game.prototype = {
             for (var i = 0; i < 3; i++) {
                 var p = this.tablePoker[i + 3];
                 p.frame = 54;
-                this.add.tween(p).to({ x: first.x, y: first.y}, 200, Phaser.Easing.Default, true);
+                this.game.add.tween(p).to({ x: first.x, y: first.y}, 200, Phaser.Easing.Default, true);
             }
         }
 
@@ -233,13 +248,13 @@ PG.Game.prototype = {
             var pokersPic = {};
             pokers.sort(PG.Poker.comparePoker);
             var count= pokers.length;
-            var gap = Math.min((this.world.width - PG.PW * 2) / count, PG.PW * 0.36);
+            var gap = Math.min((this.game.world.width - PG.PW * 2) / count, PG.PW * 0.36);
             for (var i = 0; i < count; i++) {
                 var p = turnPlayer.findAPoker(pokers[i]);
                 p.id = pokers[i];
                 p.frame = pokers[i];
                 p.bringToTop();
-                this.add.tween(p).to({ x: this.world.width/2 + (i - count/2) * gap, y: this.world.height * 0.4}, 500, Phaser.Easing.Default, true);
+                this.game.add.tween(p).to({ x: this.game.world.width/2 + (i - count/2) * gap, y: this.game.world.height * 0.4}, 500, Phaser.Easing.Default, true);
 
                 turnPlayer.removeAPoker(pokers[i]);
                 pokersPic[p.id] = p;
@@ -279,17 +294,16 @@ PG.Game.prototype = {
 
         function btnTouch(btn) {
             this.send_message([PG.Protocol.REQ_CALL_SCORE, btn.score]);
-            //FIXME: delay to next frame
             btn.parent.destroy();
         };
 
         if (this.whoseTurn == 0) {
-            var step = this.world.width/6;
+            var step = this.game.world.width/6;
             var ss = [1.5, 1, 0.5, 0];
-            var sx = this.world.width/2 - step * ss[minscore];
-            var sy = this.world.height * 0.6;
-            var group = this.add.group();
-            var pass = this.add.button(sx, sy, "btn", btnTouch, this, 'score_0.png', 'score_0.png', 'score_0.png');
+            var sx = this.game.world.width/2 - step * ss[minscore];
+            var sy = this.game.world.height * 0.6;
+            var group = this.game.add.group();
+            var pass = this.game.make.button(sx, sy, "btn", btnTouch, this, 'score_0.png', 'score_0.png', 'score_0.png');
             pass.anchor.set(0.5, 0);
             pass.score = 0;
             group.add(pass);
@@ -297,7 +311,7 @@ PG.Game.prototype = {
 
             for (var i = minscore + 1; i <= 3; i++) {
                 var tn = 'score_' + i + '.png';
-                var call = this.add.button(sx, sy, "btn", btnTouch, this, tn, tn, tn);
+                var call = this.game.make.button(sx, sy, "btn", btnTouch, this, tn, tn, tn);
                 call.anchor.set(0.5, 0);
                 call.score = i;
                 group.add(call);
@@ -326,24 +340,50 @@ PG.Game.prototype = {
         return this.players[this.whoseTurn] == this.lastShotPlayer;
     },
 
-    shufflePoker: function() {
-        var pokers = [];
-        for (var i = 0; i < 54; i++) {
-            pokers.push(i);
+    createTableLayer: function (tables) {
+        tables.push([-1, 0]);
+
+        this.tableLayer = this.game.add.group();
+        var group = this.tableLayer;
+        this.game.world.bringToTop(group);
+        var gc = this.game.make.graphics(0, 0);
+        gc.beginFill(0x00000080);
+        gc.endFill();
+        group.add(gc);
+        var style = {font: "22px Arial", fill: "#fff", align: "center"};
+
+        for (var i = 0; i < tables.length; i++) {
+            var sx = this.game.world.width * (i%6 + 1)/(6 + 1);
+            var sy = this.game.world.height * (Math.floor(i/6) + 1)/(4 + 1);
+
+            var table = this.game.make.button(sx, sy, 'btn', this.onJoin, this, 'table.png', 'table.png', 'table.png');
+            table.anchor.set(0.5, 1);
+            table.tableId = tables[i][0];
+            group.add(table);
+
+            var text = this.game.make.text(sx, sy, '房间:' + tables[i][0] + '人数:' + tables[i][1], style);
+            text.anchor.set(0.5, 0);
+            group.add(text);
+
+            if (i == tables.length - 1) {
+                text.text = '新建房间';
+            }
         }
-        
-        var currentIndex = pokers.length, temporaryValue, randomIndex ;
-        while (0 != currentIndex) {
-            randomIndex = Math.floor(Math.random() * currentIndex);
-            currentIndex -= 1;
-            
-            temporaryValue = pokers[currentIndex];
-            pokers[currentIndex] = pokers[randomIndex];
-            pokers[randomIndex] = temporaryValue;
+    },
+
+    createTitleBar: function() {
+        var style = {font: "22px Arial", fill: "#fff", align: "center"};
+        this.titleBar = this.game.add.text(this.game.world.centerX, 0, '房间:', style);
+    },
+
+    onJoin: function (btn) {
+        if (btn.tableId == -1) {
+            this.send_message([PG.Protocol.REQ_NEW_TABLE]);
+        } else {
+            this.send_message([PG.Protocol.REQ_JOIN_TABLE, btn.tableId]);
         }
-        return pokers;
+        btn.parent.destroy();
     }
-    
 };
 
 

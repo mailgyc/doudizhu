@@ -1,17 +1,17 @@
-PG.Poker = function(game, id, frame) {
-    
-    Phaser.Sprite.call(this, game, game.world.width/2, game.world.height * 0.4, 'poker', frame);
+PG.Poker = function (game, id, frame) {
+
+    Phaser.Sprite.call(this, game, game.world.width / 2, game.world.height * 0.4, 'poker', frame);
 
     this.anchor.set(0.5);
     this.id = id;
-    
+
     return this;
 };
 
 PG.Poker.prototype = Object.create(Phaser.Sprite.prototype);
 PG.Poker.prototype.constructor = PG.Poker;
 
-PG.Poker.comparePoker = function(a, b) {
+PG.Poker.comparePoker = function (a, b) {
 
     if (a instanceof Array) {
         a = a[0];
@@ -19,7 +19,7 @@ PG.Poker.comparePoker = function(a, b) {
     }
 
 
-    if (a >=52 || b >= 52) {
+    if (a >= 52 || b >= 52) {
         return -(a - b);
     }
     a = a % 13;
@@ -33,7 +33,7 @@ PG.Poker.comparePoker = function(a, b) {
     return -(a - b);
 };
 
-PG.Poker.toCards = function(pokers) {
+PG.Poker.toCards = function (pokers) {
 
     var cards = [];
     for (var i = 0; i < pokers.length; i++) {
@@ -46,20 +46,20 @@ PG.Poker.toCards = function(pokers) {
         } else if (pid == 53) {
             cards.push('w');
         } else {
-            cards.push("A234567890JQK"[pid%13]);
+            cards.push("A234567890JQK"[pid % 13]);
         }
     }
     return cards;
-    
+
 };
 
-PG.Poker.canCompare = function(pokersA, pokersB) {
+PG.Poker.canCompare = function (pokersA, pokersB) {
     var cardsA = this.toCards(pokersA);
     var cardsB = this.toCards(pokersB);
     return PG.Rule.cardsValue(cardsA)[0] == PG.Rule.cardsValue(cardsB)[0];
 };
 
-PG.Poker.toPokers = function(pokerInHands, cards) {
+PG.Poker.toPokers = function (pokerInHands, cards) {
     var pokers = [];
     for (var i = 0; i < cards.length; i++) {
         var candidates = this.toPoker(cards[i]);
@@ -73,8 +73,8 @@ PG.Poker.toPokers = function(pokerInHands, cards) {
     return pokers;
 };
 
-PG.Poker.toPoker = function(card) {
-    
+PG.Poker.toPoker = function (card) {
+
     var cards = "A234567890JQK";
     for (var i = 0; i < 13; i++) {
         if (card == cards[i]) {
@@ -87,13 +87,12 @@ PG.Poker.toPoker = function(card) {
         return [53];
     }
     return [54];
-    
+
 };
 
-PG.Rule = {
-};
+PG.Rule = {};
 
-PG.Rule.cardsAbove = function(handCards, turnCards) {
+PG.Rule.cardsAbove = function (handCards, turnCards) {
 
     var turnValue = this.cardsValue(turnCards);
     if (turnValue[0] == '') {
@@ -122,7 +121,7 @@ PG.Rule.cardsAbove = function(handCards, turnCards) {
     return '';
 };
 
-PG.Rule.bestShot = function(handCards) {
+PG.Rule.bestShot = function (handCards) {
 
     handCards.sort(this.sorter);
     var shot = '';
@@ -158,14 +157,14 @@ PG.Rule.cardsType = [
     'seq_trio2', 'seq_trio3', 'seq_trio4', 'seq_trio5', 'seq_trio6',
     'seq_trio_pair2', 'seq_trio_pair3', 'seq_trio_pair4', 'seq_trio_pair5',
     'seq_trio_single2', 'seq_trio_single3', 'seq_trio_single4', 'seq_trio_single5',
-    'bomb_pair', 'bomb_single' ];
+    'bomb_pair', 'bomb_single'];
 
-PG.Rule.sorter = function(a, b) {
+PG.Rule.sorter = function (a, b) {
     var card_str = '34567890JQKA2wW';
     return card_str.indexOf(a) - card_str.indexOf(b);
 };
 
-PG.Rule.index_of = function(array, ele) {
+PG.Rule.index_of = function (array, ele) {
     if (array[0].length != ele.length) {
         return -1;
     }
@@ -177,7 +176,7 @@ PG.Rule.index_of = function(array, ele) {
     return -1;
 };
 
-PG.Rule.containsAll = function(parent, child) {
+PG.Rule.containsAll = function (parent, child) {
     var index = 0;
     for (var i = 0, l = child.length; i < l; i++) {
         index = parent.indexOf(child[i], index);
@@ -189,7 +188,7 @@ PG.Rule.containsAll = function(parent, child) {
     return true;
 };
 
-PG.Rule.cardsValue = function(cards) {
+PG.Rule.cardsValue = function (cards) {
 
     if (typeof(cards) != 'string') {
         cards.sort(this.sorter);
@@ -214,7 +213,7 @@ PG.Rule.cardsValue = function(cards) {
     return ['', 0];
 };
 
-PG.Rule.compare = function(cardsA, cardsB) {
+PG.Rule.compare = function (cardsA, cardsB) {
 
     if (cardsA.length == 0 && cardsB.length == 0) {
         return 0;
@@ -235,4 +234,23 @@ PG.Rule.compare = function(cardsA, cardsB) {
 
     return valueA[1] - valueB[1];
 };
+
+PG.Rule.shufflePoker = function () {
+    var pokers = [];
+    for (var i = 0; i < 54; i++) {
+        pokers.push(i);
+    }
+
+    var currentIndex = pokers.length, temporaryValue, randomIndex;
+    while (0 != currentIndex) {
+        randomIndex = Math.floor(Math.random() * currentIndex);
+        currentIndex -= 1;
+
+        temporaryValue = pokers[currentIndex];
+        pokers[currentIndex] = pokers[randomIndex];
+        pokers[randomIndex] = temporaryValue;
+    }
+    return pokers;
+}
+;
 

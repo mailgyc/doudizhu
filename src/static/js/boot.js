@@ -4,7 +4,7 @@
     orientated: false
 };
 
-PG.getCookie = function(name) {
+PG.getCookie = function (name) {
     var r = document.cookie.match("\\b" + name + "=([^;]*)\\b");
     return r ? r[1] : undefined;
 };
@@ -41,33 +41,33 @@ PG.Boot = {
         this.scale.forceOrientation(true);
     },
     enterIncorrectOrientation: function () {
-       PG.orientated = false;
-       document.getElementById('orientation').style.display = 'block';
+        PG.orientated = false;
+        document.getElementById('orientation').style.display = 'block';
     },
     leaveIncorrectOrientation: function () {
-       PG.orientated = true;
-       document.getElementById('orientation').style.display = 'none';
+        PG.orientated = true;
+        document.getElementById('orientation').style.display = 'none';
     }
 };
 
 PG.Preloader = {
 
-	preload: function () {
-		this.preloadBar = this.add.sprite(120, 200, 'preloaderBar');
-		this.load.setPreloadSprite(this.preloadBar);
+    preload: function () {
+        this.preloadBar = this.game.add.sprite(120, 200, 'preloaderBar');
+        this.load.setPreloadSprite(this.preloadBar);
 
-		this.load.audio('music_bg',   'static/s/bg3.ogg');
-		this.load.audio('music_deal', 'static/s/deal.ogg');
-		this.load.audio('music_game', 'static/s/game.ogg');
-		this.load.audio('music_win',  'static/s/win.ogg');
-		this.load.audio('music_lose', 'static/s/lose.ogg');
-		this.load.atlas('btn', 'static/i/btn.png', 'static/i/btn.json');
-		this.load.image('bg', 'static/i/bg.png');
-		this.load.spritesheet('poker',  'static/i/poker.png', 90, 120);
-		this.load.json('rule', 'static/rule.json');
-	},
+        this.load.audio('music_bg', 'static/s/bg3.ogg');
+        this.load.audio('music_deal', 'static/s/deal.ogg');
+        this.load.audio('music_game', 'static/s/game.ogg');
+        this.load.audio('music_win', 'static/s/win.ogg');
+        this.load.audio('music_lose', 'static/s/lose.ogg');
+        this.load.atlas('btn', 'static/i/btn.png', 'static/i/btn.json');
+        this.load.image('bg', 'static/i/bg.png');
+        this.load.spritesheet('poker', 'static/i/poker.png', 90, 120);
+        this.load.json('rule', 'static/rule.json');
+    },
 
-	create: function () {
+    create: function () {
         PG.RuleList = this.cache.getJSON('rule');
         var jsonVal = document.getElementById("user").value;
         if (jsonVal) {
@@ -80,63 +80,63 @@ PG.Preloader = {
         } else {
             this.state.start('Login');
         }
-		PG.music = this.add.audio('music_bg');
-		PG.music.loop = true;
-		// PG.music.loopFull();
-		// PG.music.play();
-	}
+        PG.music = this.game.add.audio('music_bg');
+        PG.music.loop = true;
+        // PG.music.loopFull();
+        // PG.music.play();
+    }
 };
 
 PG.MainMenu = {
 
-	create: function () {
-		this.stage.backgroundColor = '#182d3b';
-		var bg = this.add.sprite(this.game.width/2, 0, 'bg');
-		bg.anchor.set(0.5, 0);
+    create: function () {
+        this.stage.backgroundColor = '#182d3b';
+        var bg = this.game.add.sprite(this.game.width / 2, 0, 'bg');
+        bg.anchor.set(0.5, 0);
 
-		var aiRoom = this.add.button(this.world.width/2, this.world.height/4, 'btn', this.gotoAiRoom, this, 'quick.png', 'quick.png', 'quick.png');
-		aiRoom.anchor.set(0.5);
-		this.world.add(aiRoom);
+        var aiRoom = this.game.add.button(this.game.world.width / 2, this.game.world.height / 4, 'btn', this.gotoAiRoom, this, 'quick.png', 'quick.png', 'quick.png');
+        aiRoom.anchor.set(0.5);
+        this.game.world.add(aiRoom);
 
-		var humanRoom = this.add.button(this.world.width/2, this.world.height/2, 'btn', this.gotoRoom, this, 'start.png', 'start.png', 'start.png');
-		humanRoom.anchor.set(0.5);
-		this.world.add(humanRoom);
+        var humanRoom = this.game.add.button(this.game.world.width / 2, this.game.world.height / 2, 'btn', this.gotoRoom, this, 'start.png', 'start.png', 'start.png');
+        humanRoom.anchor.set(0.5);
+        this.game.world.add(humanRoom);
 
-		var setting = this.add.button(this.world.width/2, this.world.height * 3/4, 'btn', this.gotoSetting, this, 'setting.png', 'setting.png', 'setting.png');
-		setting.anchor.set(0.5);
-		this.world.add(setting);
+        var setting = this.game.add.button(this.game.world.width / 2, this.game.world.height * 3 / 4, 'btn', this.gotoSetting, this, 'setting.png', 'setting.png', 'setting.png');
+        setting.anchor.set(0.5);
+        this.game.world.add(setting);
 
-        var style = { font: "28px Arial", fill: "#fff", align: "right" };
-        var text = this.add.text(this.world.width-4, 4, "欢迎回来 " + PG.playerInfo.username, style);
+        var style = {font: "28px Arial", fill: "#fff", align: "right"};
+        var text = this.game.add.text(this.game.world.width - 4, 4, "欢迎回来 " + PG.playerInfo.username, style);
         text.addColor('#cc00cc', 4);
         text.anchor.set(1, 0);
-	},
+    },
 
     gotoAiRoom: function () {
         // start(key, clearWorld, clearCache, parameter)
         this.state.start('Game', true, false, 1);
         // this.music.stop();
-	},
+    },
 
-	gotoRoom: function () {
-		this.state.start('Game', true, false, 2);
-	},
+    gotoRoom: function () {
+        this.state.start('Game', true, false, 2);
+    },
 
-	gotoSetting: function () {
-		var style = { font: "22px Arial", fill: "#fff", align: "center" };
-		var text = this.add.text(0, 0, "hei hei hei hei", style);
-		var tween = this.add.tween(text).to( { x: 600, y: 450 }, 2000, "Linear", true);
-		tween.onComplete.add(Phaser.Text.prototype.destroy, text);
-	}
+    gotoSetting: function () {
+        var style = {font: "22px Arial", fill: "#fff", align: "center"};
+        var text = this.game.add.text(0, 0, "hei hei hei hei", style);
+        var tween = this.game.add.tween(text).to({x: 600, y: 450}, 2000, "Linear", true);
+        tween.onComplete.add(Phaser.Text.prototype.destroy, text);
+    }
 };
 
 PG.Login = {
-	create: function () {
-		this.stage.backgroundColor = '#182d3b';
-		var bg = this.add.sprite(this.game.width/2, 0, 'bg');
-		bg.anchor.set(0.5, 0);
+    create: function () {
+        this.stage.backgroundColor = '#182d3b';
+        var bg = this.game.add.sprite(this.game.width / 2, 0, 'bg');
+        bg.anchor.set(0.5, 0);
 
-		var style = {
+        var style = {
             font: '24px Arial', fill: '#000', width: 300, padding: 12,
             borderWidth: 1, borderColor: '#c8c8c8', borderRadius: 2,
             textAlign: 'center', placeHolder: '姓名'
@@ -144,31 +144,46 @@ PG.Login = {
         };
         this.game.add.plugin(PhaserInput.Plugin);
 
-        this.username = this.add.inputField((this.world.width-300)/2, this.world.height/2 - 130, style);
+        this.username = this.game.add.inputField((this.game.world.width - 300) / 2, this.game.world.height / 2 - 130, style);
 
         style.placeHolder = '密码';
-        this.password = this.add.inputField((this.world.width-300)/2, this.world.height/2 - 65, style);
+        this.password = this.game.add.inputField((this.game.world.width - 300) / 2, this.game.world.height / 2 - 65, style);
 
         style.placeHolder = '再次输入密码';
-        this.passwordAgain = this.add.inputField((this.world.width-300)/2, this.world.height/2, style);
+        this.passwordAgain = this.game.add.inputField((this.game.world.width - 300) / 2, this.game.world.height / 2, style);
 
         var style = {font: "22px Arial", fill: "#f00", align: "center"};
-        this.errorText = this.add.text(this.world.centerX, this.world.height/2 + 65, '', style);
+        this.errorText = this.game.add.text(this.game.world.centerX, this.game.world.height / 2 + 65, '', style);
         this.errorText.anchor.set(0.5, 0);
 
-		var login = this.add.button(this.world.centerX, this.world.height * 3/4, 'btn', this.onLogin, this, 'register.png', 'register.png', 'register.png');
-		login.anchor.set(0.5);
-	},
+        var login = this.game.add.button(this.game.world.centerX, this.game.world.height * 3 / 4, 'btn', this.onLogin, this, 'register.png', 'register.png', 'register.png');
+        login.anchor.set(0.5);
+    },
 
-	onLogin: function () {
-        if (!this.username.value) { this.username.startFocus(); this.errorText.text = '请输入用户名'; return; }
-        if (!this.password.value) { this.password.startFocus(); this.errorText.text = '请输入密码'; return; }
-        if (!this.passwordAgain.value) { this.passwordAgain.startFocus(); this.errorText.text = '请再次输入密码'; return; }
-        if (this.password.value != this.passwordAgain.value) { this.errorText.text="两次输入的密码不一致"; return; }
+    onLogin: function () {
+        if (!this.username.value) {
+            this.username.startFocus();
+            this.errorText.text = '请输入用户名';
+            return;
+        }
+        if (!this.password.value) {
+            this.password.startFocus();
+            this.errorText.text = '请输入密码';
+            return;
+        }
+        if (!this.passwordAgain.value) {
+            this.passwordAgain.startFocus();
+            this.errorText.text = '请再次输入密码';
+            return;
+        }
+        if (this.password.value != this.passwordAgain.value) {
+            this.errorText.text = "两次输入的密码不一致";
+            return;
+        }
 
         var httpRequest = new XMLHttpRequest();
         var that = this;
-        httpRequest.onreadystatechange = function(){
+        httpRequest.onreadystatechange = function () {
             if (httpRequest.readyState === XMLHttpRequest.DONE) {
                 if (httpRequest.status === 200) {
                     if (httpRequest.responseText == '0') {
@@ -188,5 +203,5 @@ PG.Login = {
 
         var req = 'username=' + encodeURIComponent(this.username.value) + '&password=' + encodeURIComponent(this.password.value);
         httpRequest.send(req);
-	}
+    }
 };

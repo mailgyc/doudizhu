@@ -17,8 +17,9 @@ class Table(object):
     END = 2
     CLOSED = 3
 
-    def __init__(self, room):
-        self.uid = Table.gen_id()
+    def __init__(self, uid, room):
+        self.uid = uid
+        self.room = room
         self.players = [None, None, None]
         self.state = 0  # 0 waiting  1 playing 2 end 3 closed
         self.pokers: List[int] = []
@@ -27,7 +28,6 @@ class Table(object):
         self.whose_turn = 0
         self.last_shot_seat = 0
         self.last_shot_poker = []
-        self.room = room
         if room.allow_robot:
             IOLoop.current().call_later(0.1, self.ai_join, nth=1)
 
@@ -138,11 +138,4 @@ class Table(object):
 
     def __str__(self):
         return '[{}: {}]'.format(self.uid, self.players)
-
-    counter = 0
-
-    @classmethod
-    def gen_id(cls):
-        cls.counter += 1
-        return cls.counter
 

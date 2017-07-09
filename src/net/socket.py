@@ -66,18 +66,29 @@ class SocketHandler(WebSocketHandler):
             self.write_message([Pt.RSP_ROOM_LIST])
 
         elif code == Pt.REQ_TABLE_LIST:
-            self.write_message([Pt.RSP_TABLE_LIST, self.room.tables()])
+            self.write_message([Pt.RSP_TABLE_LIST, self.room.rsp_tables()])
 
         elif code == Pt.REQ_JOIN_ROOM:
             self.player.room = RoomManager.find_room(packet[1])
-            self.write_message([Pt.RSP_JOIN_ROOM])
+            self.write_message([Pt.RSP_JOIN_ROOM, self.room.rsp_tables()])
+
+        elif code == Pt.REQ_NEW_TABLE:
+            # TODO: check player was already in table.
+            table = self.room.new_table()
+            self.player.join_table(table)
+            logger.info('PLAYER[%s] NEW TABLE[%d]', self.uid, table.uid)
+            self.write_message([Pt.RSP_NEW_TABLE, table.uid])
 
         elif code == Pt.REQ_JOIN_TABLE:
-            table_id = packet[1]
-            table = self.find_table(table_id)
+            if packet[1] == -1:  # fast join
+                table = self.room.first_waiting_table()
+            else:
+                table = self.room.find_waiting_table(packet[1])
+
             if not table:
-                self.write_message([Pt.RSP_TABLE_LIST, self.room.tables()])
-                logger.info('PLAYER[%d] JOIN FULL TABLE[%d]', self.uid, table.uid)
+                self.write_message([Pt.RSP_TABLE_LIST, self.room.rsp_tables()])
+                logger.info('PLAYER[%d] JOIN TABLE[%d] NOT FOUND', self.uid, packet[1])
+                return
 
             self.player.join_table(table)
             logger.info('PLAYER[%s] JOIN TABLE[%d]', self.uid, table.uid)
@@ -113,11 +124,6 @@ class SocketHandler(WebSocketHandler):
     def handle_shot_poker(self, packet):
         pokers = packet[1]
         self.player.handle_shot_poker(pokers)
-
-    def find_table(self, table_id):
-        if table_id == -1:  # fast join
-            return self.room.first_waiting_table()
-        return self.room.find_waiting_table(table_id)
 
     def handle_chat(self, packet):
         if self.player and self.player.table:

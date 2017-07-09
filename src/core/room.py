@@ -16,6 +16,17 @@ class Room(object):
         self.entrance_fee = 100
         logger.info('ROOM[%d] CREATED', uid)
 
+    def rsp_tables(self):
+        rsp = []
+        for _, t in self.waiting_tables.items():
+            rsp.append([t.uid, t.size()])
+        return rsp
+
+    def new_table(self):
+        t = Table(RoomManager.gen_table_id(), self)
+        self.waiting_tables[t.uid] = t
+        return t
+
     def find_waiting_table(self, uid, default=None):
         table = self.waiting_tables.get(uid, default)
         if table and table == default:
@@ -25,9 +36,7 @@ class Room(object):
     def first_waiting_table(self):
         for _, table in self.waiting_tables.items():
             return table
-        t = Table(self)
-        self.waiting_tables[t.uid] = t
-        return t
+        return self.new_table()
 
     def join_tables(self, tid):
         tables = self.waiting_tables
@@ -41,13 +50,6 @@ class Room(object):
             return True
         else:
             return False
-
-    @property
-    def tables(self):
-        l = []
-        l.extend(self.waiting_tables.keys())
-        l.extend(self.playing_tables.keys())
-        return l
 
     @property
     def waiting_tables(self):
@@ -65,6 +67,13 @@ class RoomManager(object):
         1: Room(1, True),
         2: Room(2, False),
     }
+
+    __current_table_id = 0
+
+    @staticmethod
+    def gen_table_id():
+        RoomManager.__current_table_id += 1
+        return RoomManager.__current_table_id
 
     @staticmethod
     def find_room(uid, created=False):

@@ -7,7 +7,7 @@ PG.createPlay = function (seat, game) {
     ];
     player.initUI(xy[seat * 2], xy[seat * 2 + 1]);
     if (seat == 0) {
-       player.initShotGroup();
+       player.initShotLayer();
     } else if (seat == 1) {
         player.uiHead.scale.set(-1, 1);
     }
@@ -41,18 +41,18 @@ PG.Player.prototype.updateInfo = function(uid, name) {
     }
 };
 
-PG.Player.prototype.initShotGroup = function() {
-    this.uiShotBtn = this.game.add.group();
-    var group = this.uiShotBtn;
+PG.Player.prototype.initShotLayer = function() {
+    this.shotLayer = this.game.add.group();
+    var group = this.shotLayer;
 
     var sy =  this.game.world.height * 0.6;
-    var pass = this.game.add.button(0, sy, "btn", this.onPass, this, 'pass.png', 'pass.png', 'pass.png');
+    var pass = this.game.make.button(0, sy, "btn", this.onPass, this, 'pass.png', 'pass.png', 'pass.png');
     pass.anchor.set(0.5, 0);
     group.add(pass);
-    var hint = this.game.add.button(0, sy, "btn", this.onHint, this, 'hint.png', 'hint.png', 'hint.png');
+    var hint = this.game.make.button(0, sy, "btn", this.onHint, this, 'hint.png', 'hint.png', 'hint.png');
     hint.anchor.set(0.5, 0);
     group.add(hint);
-    var shot = this.game.add.button(0, sy, "btn", this.onShot, this, 'shot.png', 'shot.png', 'shot.png');
+    var shot = this.game.make.button(0, sy, "btn", this.onShot, this, 'shot.png', 'shot.png', 'shot.png');
     shot.anchor.set(0.5, 0);
     group.add(shot);
 
@@ -117,7 +117,7 @@ PG.Player.prototype.onHint = function (btn) {
         this.hintPoker = this.lastTurnPoker;
     } else {
         this.pokerUnSelected(this.hintPoker);
-        if (!PG.Poker.canCompare(this.hintPoker, this.lastTurnPoker)) {
+        if (this.lastTurnPoker.length > 0 && !PG.Poker.canCompare(this.hintPoker, this.lastTurnPoker)) {
             this.hintPoker = [];
         }
     }
@@ -181,7 +181,7 @@ PG.Player.prototype.canPlay = function (lastTurnPoker, shotPoker) {
 PG.Player.prototype.playPoker = function(lastTurnPoker) {
     this.lastTurnPoker = lastTurnPoker;
 
-    var group = this.uiShotBtn;
+    var group = this.shotLayer;
     var step = this.game.world.width/6;
     var sx = this.game.world.width/2 - 0.5 * step;
     if (!this.game.isLastShotPlayer()) {

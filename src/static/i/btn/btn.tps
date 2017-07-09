@@ -251,42 +251,16 @@
                 <key>scale9FromFile</key>
                 <false/>
             </struct>
-            <key type="filename">wifi.png</key>
+            <key type="filename">table.png</key>
             <struct type="IndividualSpriteSettings">
                 <key>pivotPoint</key>
                 <point_f>0.5,0.5</point_f>
                 <key>scale9Enabled</key>
                 <false/>
                 <key>scale9Borders</key>
-                <rect>16,13,32,25</rect>
+                <rect>21,16,42,32</rect>
                 <key>scale9Paddings</key>
-                <rect>16,13,32,25</rect>
-                <key>scale9FromFile</key>
-                <false/>
-            </struct>
-            <key type="filename">wifi2.png</key>
-            <struct type="IndividualSpriteSettings">
-                <key>pivotPoint</key>
-                <point_f>0.5,0.5</point_f>
-                <key>scale9Enabled</key>
-                <false/>
-                <key>scale9Borders</key>
-                <rect>16,16,32,32</rect>
-                <key>scale9Paddings</key>
-                <rect>16,16,32,32</rect>
-                <key>scale9FromFile</key>
-                <false/>
-            </struct>
-            <key type="filename">wifi_error.png</key>
-            <struct type="IndividualSpriteSettings">
-                <key>pivotPoint</key>
-                <point_f>0.5,0.5</point_f>
-                <key>scale9Enabled</key>
-                <false/>
-                <key>scale9Borders</key>
-                <rect>16,15,32,30</rect>
-                <key>scale9Paddings</key>
-                <rect>16,15,32,30</rect>
+                <rect>21,16,42,32</rect>
                 <key>scale9FromFile</key>
                 <false/>
             </struct>
