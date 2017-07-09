@@ -117,15 +117,15 @@ class Table(object):
                 player.seat = i
                 self.players[i] = player
                 return True
-        logger.error('Player[%d] JOIN Table[%d] FULL', player.pid, self.uid)
+        logger.error('Player[%d] JOIN Table[%d] FULL', player.uid, self.uid)
         return False
 
     def remove(self, player):
         for i, p in enumerate(self.players):
-            if p and p.pid == player.pid:
+            if p and p.uid == player.uid:
                 self.players[i] = None
         else:
-            logger.error('Player[%d] NOT IN Table[%d]', player.pid, self.uid)
+            logger.error('Player[%d] NOT IN Table[%d]', player.uid, self.uid)
 
         if all(p is None for p in self.players):
             self.state = 3
