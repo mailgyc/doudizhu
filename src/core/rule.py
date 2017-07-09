@@ -74,9 +74,9 @@ def _to_cards(pokers):
 
 
 def _to_poker(card):
-    if card == 'w':
-        return [52]
     if card == 'W':
+        return [52]
+    if card == 'w':
         return [53]
 
     cards = 'A234567890JQK'
@@ -149,5 +149,5 @@ def _card_type(cards):
         if value >= 0:
             return t, value
     logger.info('Unknown Card Type: %s', cards)
-    raise Exception('Unknown Card Type: %s' % cards)
+    # raise Exception('Unknown Card Type: %s' % cards)
     return '', 0

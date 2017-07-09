@@ -34,7 +34,6 @@ PG.Poker.comparePoker = function (a, b) {
 };
 
 PG.Poker.toCards = function (pokers) {
-
     var cards = [];
     for (var i = 0; i < pokers.length; i++) {
         var pid = pokers[i];
@@ -125,9 +124,9 @@ PG.Rule.bestShot = function (handCards) {
 
     handCards.sort(this.sorter);
     var shot = '';
-    var len = this.cardsType.length;
+    var len = this._CardsType.length;
     for (var i = 2; i < len; i++) {
-        var oneRule = PG.RuleList[this.cardsType[i]];
+        var oneRule = PG.RuleList[this._CardsType[i]];
         for (var j = 0; j < oneRule.length; j++) {
             if (oneRule[j].length > shot.length && this.containsAll(handCards, oneRule[j])) {
                 shot = oneRule[j];
@@ -149,7 +148,7 @@ PG.Rule.bestShot = function (handCards) {
     return shot;
 };
 
-PG.Rule.cardsType = [
+PG.Rule._CardsType = [
     'rocket', 'bomb',
     'single', 'pair', 'trio', 'trio_pair', 'trio_single',
     'seq_single5', 'seq_single6', 'seq_single7', 'seq_single8', 'seq_single9', 'seq_single10', 'seq_single11', 'seq_single12',
@@ -202,9 +201,9 @@ PG.Rule.cardsValue = function (cards) {
     if (index >= 0)
         return ['bomb', 1000 + index];
 
-    var length = this.cardsType.length;
+    var length = this._CardsType.length;
     for (var i = 2; i < length; i++) {
-        var typeName = this.cardsType[i];
+        var typeName = this._CardsType[i];
         var index = this.index_of(PG.RuleList[typeName], cards);
         if (index >= 0)
             return [typeName, index];

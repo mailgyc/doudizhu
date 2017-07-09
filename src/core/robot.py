@@ -36,10 +36,10 @@ class AiPlayer(Player):
         elif code == Pt.RSP_CALL_SCORE:
             if self.table.turn_player == self:
                 # caller = packet[1]
-                score = packet[2]
+                # score = packet[2]
                 call_end = packet[3]
                 if not call_end:
-                    self.auto_call_score(score)
+                    self.auto_call_score()
                 else:
                     self.auto_shot_poker()
         elif code == Pt.RSP_SHOW_POKER:
@@ -57,7 +57,7 @@ class AiPlayer(Player):
     def auto_call_score(self, score=0):
         # millis = random.randint(1000, 2000)
         # score = random.randint(min_score + 1, 3)
-        packet = [Pt.REQ_CALL_SCORE, score + 1]
+        packet = [Pt.REQ_CALL_SCORE, self.table.call_score + 1]
         IOLoop.current().add_callback(self.to_server, packet)
 
     def auto_shot_poker(self):

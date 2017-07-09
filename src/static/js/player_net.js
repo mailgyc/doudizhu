@@ -13,24 +13,25 @@ PG.NetPlayer.prototype.pushAPoker = function (poker) {
 };
 
 PG.NetPlayer.prototype.removeAPoker = function (pid) {
-    if (pid > 53) {
-        this.pokerInHand.pop();
-        this._pokerPic.pop();
-        this.updateLeftPoker();
-    } else {
-        for (var i = 0; i < this.pokerInHand.length; i++) {
-            if (this.pokerInHand[i] === pid) {
-                this.pokerInHand.splice(i, 1);
-            }
+    for (var i = this.pokerInHand.length - 1; i >= 0; i--) {
+        if (this.pokerInHand[i] === pid) {
+            this.pokerInHand.splice(i, 1);
+            break
         }
-        for (var i = 0; i < this._pokerPic.length; i++) {
-            if (this._pokerPic[i].id === pid) {
-                this._pokerPic.splice(i, 1);
-                return;
-            }
-        }
-        console.log('Error: REMOVE POKER ', pid);
     }
+    if (i == -1) {
+        this.pokerInHand.pop();
+    }
+    for (var i = this._pokerPic.length - 1; i >= 0; i--) {
+        if (this._pokerPic[i].id === pid) {
+            this._pokerPic.splice(i, 1);
+            break
+        }
+    }
+    if (i == -1) {
+        this._pokerPic.pop();
+    }
+    this.updateLeftPoker();
 };
 
 PG.NetPlayer.prototype.arrangePoker = function () {
@@ -44,6 +45,9 @@ PG.NetPlayer.prototype.replacePoker = function (pokers, start) {
     if (this.pokerInHand.length !== pokers.length - start) {
         console.log("ERROR ReplacePoker:", this.pokerInHand, pokers);
     }
+    if (this._pokerPic.length !== pokers.length - start) {
+        console.log("ERROR ReplacePoker:", this._pokerPic, pokers);
+    }
     var length = this.pokerInHand.length;
     for (var i = 0; i < length; i++) {
         this.pokerInHand[i] = pokers[start + i];
@@ -53,17 +57,12 @@ PG.NetPlayer.prototype.replacePoker = function (pokers, start) {
 };
 
 PG.NetPlayer.prototype.findAPoker = function (pid) {
-    if (pid > 53) {
-        return this._pokerPic[this._pokerPic.length - 1];
-    } else {
-        for (var i = 0; i < this._pokerPic.length; i++) {
-            if (this._pokerPic[i].id == pid) {
-                return this._pokerPic[i];
-            }
+    for (var i = this._pokerPic.length - 1; i >= 0; i--) {
+        if (this._pokerPic[i].id == pid) {
+            return this._pokerPic[i];
         }
-        console.log('Error NetPlayer FindPoker:', pid);
-        return null;
     }
+    return this._pokerPic[this._pokerPic.length - 1];
 };
 
 PG.NetPlayer.prototype.reDealPoker = function () {

@@ -141,12 +141,8 @@ PG.Player.prototype.onShot = function (btn) {
         return;
     }
     var code = this.canPlay(this.game.isLastShotPlayer() ? [] : this.game.tablePoker, this.hintPoker);
-    if (code == -1) {
-        this.say("出牌不符合规矩");
-        return;
-    }
-    if (code == 0) {
-        this.say("出牌必须大于上家的牌");
+    if (code) {
+        this.say(code);
         return;
     }
     this.game.finishPlay(this.hintPoker);
@@ -171,13 +167,23 @@ PG.Player.prototype.hint = function (lastTurnPoker) {
 
 PG.Player.prototype.canPlay = function (lastTurnPoker, shotPoker) {
     var cardsA = PG.Poker.toCards(shotPoker);
+    var valueA = PG.Rule.cardsValue(cardsA);
+    if (!valueA[0]){
+        return '出牌不合法';
+    }
     var cardsB = PG.Poker.toCards(lastTurnPoker);
-    var code = PG.Rule.compare(cardsA, cardsB);
-    if (code === -10000)
-        return -1;
-    if (code > 0)
-        return 1;
-    return 0;
+    if (cardsB.length == 0) {
+        return '';
+    }
+    var valueB = PG.Rule.cardsValue(cardsB);
+    if (valueA[0] != valueB[0] && valueA[1] < 1000) {
+        return '出牌类型跟上家不一致';
+    }
+
+    if (valueA[1] > valueB[1]) {
+        return '';
+    }
+    return '出牌需要大于上家';
 };
 
 PG.Player.prototype.playPoker = function (lastTurnPoker) {

@@ -195,8 +195,8 @@ PG.Game.prototype = {
             turnPlayer.pushAPoker(poker);
         }
         turnPlayer.sortPoker();
-        turnPlayer.arrangePoker();
         if (this.whoseTurn == 0) {
+            turnPlayer.arrangePoker();
             for (var i = 0; i < 3; i++) {
                 var p = this.tablePoker[i + 3];
                 var tween = this.game.add.tween(p).to({y: this.game.world.height - PG.PH * 0.8 }, 400, Phaser.Easing.Default, true);
@@ -209,6 +209,7 @@ PG.Game.prototype = {
             var first = turnPlayer.findAPoker(54);
             for (var i = 0; i < 3; i++) {
                 var p = this.tablePoker[i + 3];
+                p.frame = 54;
                 p.frame = 54;
                 this.game.add.tween(p).to({ x: first.x, y: first.y}, 200, Phaser.Easing.Default, true);
             }
