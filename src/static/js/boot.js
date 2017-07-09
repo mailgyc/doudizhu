@@ -82,8 +82,8 @@ PG.Preloader = {
         }
         PG.music = this.game.add.audio('music_bg');
         PG.music.loop = true;
-        // PG.music.loopFull();
-        // PG.music.play();
+        PG.music.loopFull();
+        PG.music.play();
     }
 };
 
