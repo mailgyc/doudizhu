@@ -1,6 +1,7 @@
 import subprocess
 
 import bcrypt
+from tornado.escape import json_encode
 
 from net.base import BaseHandler
 
@@ -18,7 +19,7 @@ class UpdateHandler(BaseHandler):
     # @tornado.web.authenticated
     def get(self):
         proc = subprocess.run(["git", "pull"], stdout=subprocess.PIPE)
-        self.head('content-type', 'text/plain; charset=UTF-8')
+        self.set_header('Content-Type', 'text/plain; charset=UTF-8')
         self.write(proc.stdout)
 
 
@@ -40,7 +41,12 @@ class RegHandler(BaseHandler):
                              email, username, password)
 
         self.set_current_user(uid, username)
-        self.write('0')
+        self.set_header('Content-Type', 'application/json')
+        info = {
+            'uid': uid,
+            'username': username,
+        }
+        self.write(json_encode(info))
 
 
 class LoginHandler(BaseHandler):
@@ -51,7 +57,7 @@ class LoginHandler(BaseHandler):
         account = self.db.get('SELECT * FROM account WHERE email="%s"', email)
         password = bcrypt.hashpw(password.encode('utf8'), account.get('password'))
 
-        self.head('content-type', 'application/json')
+        self.set_header('Content-Type', 'application/json')
         if password == account.get('password'):
             self.set_current_user(account.get('id'), account.get('username'))
             self.redirect(self.get_argument("next", "/"))

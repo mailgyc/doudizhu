@@ -72,18 +72,18 @@ PG.Preloader = {
         var jsonVal = document.getElementById("user").value;
         if (jsonVal) {
             PG.playerInfo = JSON.parse(jsonVal);
-            // if (PG.playerInfo['uid']) {
-            //     this.state.start('MainMenu');
-            // } else {
+            if (PG.playerInfo['uid']) {
+                this.state.start('MainMenu');
+            } else {
                 this.state.start('Login');
-            // }
+            }
         } else {
             this.state.start('Login');
         }
         PG.music = this.game.add.audio('music_bg');
         PG.music.loop = true;
-        // PG.music.loopFull();
-        // PG.music.play();
+        PG.music.loopFull();
+        PG.music.play();
     }
 };
 
@@ -143,19 +143,19 @@ PG.Login = {
         };
         this.game.add.plugin(PhaserInput.Plugin);
 
-        this.username = this.game.add.inputField((this.game.world.width - 300) / 2, this.game.world.centerY - 150, style);
+        this.username = this.game.add.inputField((this.game.world.width - 300) / 2, this.game.world.centerY - 160, style);
 
         style.placeHolder = '密码';
-        this.password = this.game.add.inputField((this.game.world.width - 300) / 2, this.game.world.centerY - 85, style);
+        this.password = this.game.add.inputField((this.game.world.width - 300) / 2, this.game.world.centerY - 90, style);
 
         style.placeHolder = '再次输入密码';
-        this.passwordAgain = this.game.add.inputField((this.game.world.width - 300) / 2, this.game.world.centerY - 20, style);
+        this.passwordAgain = this.game.add.inputField((this.game.world.width - 300) / 2, this.game.world.centerY - 15, style);
 
         var style = {font: "22px Arial", fill: "#f00", align: "center"};
         this.errorText = this.game.add.text(this.game.world.centerX, this.game.world.centerY + 45, '', style);
         this.errorText.anchor.set(0.5, 0);
 
-        var login = this.game.add.button(this.game.world.centerX, this.game.world.centerY + 80, 'btn', this.onLogin, this, 'register.png', 'register.png', 'register.png');
+        var login = this.game.add.button(this.game.world.centerX, this.game.world.centerY + 100, 'btn', this.onLogin, this, 'register.png', 'register.png', 'register.png');
         login.anchor.set(0.5);
     },
 
@@ -185,10 +185,11 @@ PG.Login = {
         httpRequest.onreadystatechange = function () {
             if (httpRequest.readyState === XMLHttpRequest.DONE) {
                 if (httpRequest.status === 200) {
-                    if (httpRequest.responseText == '0') {
-                        that.state.start('MainMenu');
-                    } else {
+                    if (httpRequest.responseText == '1') {
                         that.errorText.text = '该用户名已经被占用';
+                    } else {
+                        PG.playerInfo = JSON.parse(httpRequest.responseText);
+                        that.state.start('MainMenu');
                     }
                 } else {
                     console.log('Error:' + httpRequest.status);
