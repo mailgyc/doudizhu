@@ -7,7 +7,7 @@ PG.createPlay = function (seat, game) {
     ];
     player.initUI(xy[seat * 2], xy[seat * 2 + 1]);
     if (seat == 0) {
-       player.initShotLayer();
+        player.initShotLayer();
     } else if (seat == 1) {
         player.uiHead.scale.set(-1, 1);
     }
@@ -32,7 +32,7 @@ PG.Player.prototype.initUI = function (sx, sy) {
     this.uiHead.anchor.set(0.5, 1);
 };
 
-PG.Player.prototype.updateInfo = function(uid, name) {
+PG.Player.prototype.updateInfo = function (uid, name) {
     this.uid = uid;
     if (uid == -1) {
         this.uiHead.frameName = 'icon_default.png';
@@ -41,11 +41,11 @@ PG.Player.prototype.updateInfo = function(uid, name) {
     }
 };
 
-PG.Player.prototype.initShotLayer = function() {
+PG.Player.prototype.initShotLayer = function () {
     this.shotLayer = this.game.add.group();
     var group = this.shotLayer;
 
-    var sy =  this.game.world.height * 0.6;
+    var sy = this.game.world.height * 0.6;
     var pass = this.game.make.button(0, sy, "btn", this.onPass, this, 'pass.png', 'pass.png', 'pass.png');
     pass.anchor.set(0.5, 0);
     group.add(pass);
@@ -56,7 +56,9 @@ PG.Player.prototype.initShotLayer = function() {
     shot.anchor.set(0.5, 0);
     group.add(shot);
 
-    group.forEach(function(child){ child.kill(); });
+    group.forEach(function (child) {
+        child.kill();
+    });
 };
 
 PG.Player.prototype.setLandlord = function () {
@@ -67,7 +69,7 @@ PG.Player.prototype.setLandlord = function () {
 PG.Player.prototype.say = function (str) {
 
     var style = {font: "22px Arial", fill: "#ffffff", align: "center"};
-    var sx = this.uiHead.x + this.uiHead.width/2 + 10;
+    var sx = this.uiHead.x + this.uiHead.width / 2 + 10;
     var sy = this.uiHead.y - this.uiHead.height * 0.5;
     var text = this.game.add.text(sx, sy, str, style);
     if (this.uiHead.scale.x == -1) {
@@ -178,12 +180,12 @@ PG.Player.prototype.canPlay = function (lastTurnPoker, shotPoker) {
     return 0;
 };
 
-PG.Player.prototype.playPoker = function(lastTurnPoker) {
+PG.Player.prototype.playPoker = function (lastTurnPoker) {
     this.lastTurnPoker = lastTurnPoker;
 
     var group = this.shotLayer;
-    var step = this.game.world.width/6;
-    var sx = this.game.world.width/2 - 0.5 * step;
+    var step = this.game.world.width / 6;
+    var sx = this.game.world.width / 2 - 0.5 * step;
     if (!this.game.isLastShotPlayer()) {
         sx -= 0.5 * step;
         var pass = group.getAt(0);
@@ -205,13 +207,43 @@ PG.Player.prototype.sortPoker = function () {
     this.pokerInHand.sort(PG.Poker.comparePoker);
 };
 
+PG.Player.prototype.dealPoker = function () {
+    this.sortPoker();
+    var length = this.pokerInHand.length;
+    for (var i = 0; i < length; i++) {
+        var pid = this.pokerInHand[i];
+        var p = new PG.Poker(this.game, pid, pid);
+        this.game.world.add(p);
+        this.pushAPoker(p);
+        this.dealPokerAnim(p, i);
+    }
+};
+
+PG.Player.prototype.dealPokerAnim = function (p, i) {
+    //to(properties, duration, ease, autoStart, delay, repeat, yoyo)
+    this.game.add.tween(p).to({
+        x: this.game.world.width / 2 + PG.PW * 0.44 * (i - 8.5),
+        y: this.game.world.height - PG.PH / 2
+    }, 500, Phaser.Easing.Default, true, 50 * i);
+};
+
+PG.Player.prototype.arrangePoker = function () {
+    var count = this.pokerInHand.length;
+    var gap = Math.min(this.game.world.width / count, PG.PW * 0.36);
+    for (var i = 0; i < count; i++) {
+        var pid = this.pokerInHand[i];
+        var p = this.findAPoker(pid);
+        p.bringToTop();
+        this.game.add.tween(p).to({x: this.game.world.width / 2 + (i - count / 2) * gap}, 600, Phaser.Easing.Default, true);
+    }
+};
+
 PG.Player.prototype.pushAPoker = function (poker) {
     this._pokerPic[poker.id] = poker;
 
     poker.events.onInputDown.add(this.onInputDown, this);
     poker.events.onInputUp.add(this.onInputUp, this);
     poker.events.onInputOver.add(this.onInputOver, this);
-
 };
 
 PG.Player.prototype.removeAPoker = function (pid) {
@@ -220,11 +252,10 @@ PG.Player.prototype.removeAPoker = function (pid) {
         if (this.pokerInHand[i] === pid) {
             this.pokerInHand.splice(i, 1);
             delete this._pokerPic[pid];
-            return true;
+            return;
         }
     }
     console.log('Error: REMOVE POKER ', pid);
-    return false;
 };
 
 PG.Player.prototype.findAPoker = function (pid) {

@@ -13,11 +13,10 @@ CREATE TABLE IF NOT EXISTS account (
 
 CREATE TABLE IF NOT EXISTS record (
     id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    u_id INT NOT NULL REFERENCES account(id),
+    a_id INT NOT NULL,
+    b_id INT NOT NULL,
+    c_id INT NOT NULL,
     round VARCHAR(100) NOT NULL,
-    markdown MEDIUMTEXT NOT NULL,
-    published DATETIME NOT NULL,
-    updated TIMESTAMP NOT NULL,
-    KEY (published)
+    created_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 );
 

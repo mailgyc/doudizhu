@@ -5,7 +5,6 @@ PG.Game = function(game) {
     this.players = [];
 
     this.titleBar = null;
-    this.tableLayer = null;
     this.tableId = 0;
     this.shotLayer = null;
     
@@ -37,12 +36,12 @@ PG.Game.prototype = {
 	},
 	
 	onopen: function() {
-	    console.log('onopen');
+	    console.log('socket onopen');
         PG.Socket.send([PG.Protocol.REQ_JOIN_ROOM, this.roomId]);
 	},
 
     onerror: function() {
-        console.log('connect server fail');
+        console.log('socket connect onerror');
     },
 
 	send_message: function(request) {
@@ -112,31 +111,42 @@ PG.Game.prototype = {
                 this.handleShotPoker(packet);
                 break;
             case PG.Protocol.RSP_GAME_OVER:
-                var playerId = packet[1];
+                var winner = packet[1];
                 var coin = packet[2];
-                this.whoseTurn = this.uidToSeat(playerId);
+
+                var loserASeat = this.uidToSeat(packet[3][0]);
+                this.players[loserASeat].replacePoker(packet[3], 1);
+                this.players[loserASeat].reDealPoker();
+
+                var loserBSeat = this.uidToSeat(packet[4][0]);
+                this.players[loserBSeat].replacePoker(packet[4], 1);
+                this.players[loserBSeat].reDealPoker();
+
+                this.whoseTurn = this.uidToSeat(winner);
                 function gameOver() {
                     alert(this.players[this.whoseTurn].isLandlord ? "地主赢" : "农民赢");
                 }
                 this.game.time.events.add(1000, gameOver, this);
                 break;
+            case PG.Protocol.RSP_CHEAT:
+                var seat = this.uidToSeat(packet[1]);
+                this.players[seat].replacePoker(packet[2], 0);
+                this.players[seat].reDealPoker();
+                break;
+            default:
+                console.log("UNKNOWN PACKET:", packet)
 	    }
 	},
 	
 	update: function () {
-        
 	},
 
-	quitGame: function () {
-		this.state.start('MainMenu');
-	},
-	
 	uidToSeat: function (uid) {
 	    for (var i = 0; i < 3; i++) {
 	        if (uid == this.players[i].uid)
 	            return i;
 	    }
-	    console.log('error uid:' + uid);
+	    console.log('ERROR uidToSeat:' + uid);
 	    return -1;
 	},
     
@@ -155,26 +165,13 @@ PG.Game.prototype = {
             this.players[0].pokerInHand.push(pokers.pop());
         }
 
-        this.players[0].sortPoker();
-        
-        //to(properties, duration, ease, autoStart, delay, repeat, yoyo)
-        var headX = [ 0, this.game.world.width - PG.PW/2, PG.PW/2 ];
-        var headY = [
-            this.game.world.height - PG.PH/2,
-            this.players[1].uiHead.y + PG.PH/2 + 10,
-            this.players[1].uiHead.y + PG.PH/2 + 10
-        ];
-
-        for (var i = 0; i < 17; i++) {
-            for (var turn = 0; turn < 3; turn++) {
-                var pid = this.players[turn].pokerInHand[i];
-                var p = new PG.Poker(this, pid, pid);
-                this.game.world.add(p);
-                this.players[turn].pushAPoker(p);
-                if (turn == 0) { headX[0] = this.game.world.width/2 + PG.PW * 0.44 * (i - 8.5); }
-                this.game.add.tween(p).to({ x: headX[turn], y: headY[turn] }, 500, Phaser.Easing.Default, true, (turn == 0 ? 0 : 25) + i * 50);
-            }
-        }
+        this.players[0].dealPoker();
+        this.players[1].dealPoker();
+        this.players[2].dealPoker();
+        //this.game.time.events.add(1000, function() {
+        //    this.send_message([PG.Protocol.REQ_CHEAT, this.players[1].uid]);
+        //    this.send_message([PG.Protocol.REQ_CHEAT, this.players[2].uid]);
+        //}, this);
     },
      
     showLastThreePoker: function() {
@@ -185,22 +182,9 @@ PG.Game.prototype = {
             p.frame = pokerId;
             this.game.add.tween(p).to({ x: this.game.world.width/2 + (i - 1) * 60}, 600, Phaser.Easing.Default, true);
         }
-        
-         this.game.time.events.add(1500, this.dealLastThreePoker, this);
+        this.game.time.events.add(1500, this.dealLastThreePoker, this);
     },
-    
-    arrangePoker: function() {
-        this.players[0].sortPoker();
-        var count = this.players[0].pokerInHand.length;
-        var gap = Math.min(this.game.world.width / count, PG.PW * 0.36);
-        for (var i = 0; i < count; i++) {
-            var pid = this.players[0].pokerInHand[i];
-            var p = this.players[0].findAPoker(pid);
-            p.bringToTop();
-            this.game.add.tween(p).to({ x: this.game.world.width/2 + (i - count/2) * gap}, 600, Phaser.Easing.Default, true);
-        }
-    },
-    
+
     dealLastThreePoker: function() {
 	    var turnPlayer = this.players[this.whoseTurn];
 
@@ -210,9 +194,9 @@ PG.Game.prototype = {
             turnPlayer.pokerInHand.push(pid);
             turnPlayer.pushAPoker(poker);
         }
-        
+        turnPlayer.sortPoker();
+        turnPlayer.arrangePoker();
         if (this.whoseTurn == 0) {
-            this.arrangePoker();
             for (var i = 0; i < 3; i++) {
                 var p = this.tablePoker[i + 3];
                 var tween = this.game.add.tween(p).to({y: this.game.world.height - PG.PH * 0.8 }, 400, Phaser.Easing.Default, true);
@@ -238,10 +222,9 @@ PG.Game.prototype = {
     },
 
     handleShotPoker: function(packet) {
-        var playerId = packet[1];
-        var pokers = packet[2];
-        this.whoseTurn = this.uidToSeat(playerId);
+        this.whoseTurn = this.uidToSeat(packet[1]);
         var turnPlayer = this.players[this.whoseTurn];
+        var pokers = packet[2];
         if (pokers.length == 0) {
             this.players[this.whoseTurn].say("不出");
         } else {
@@ -268,12 +251,9 @@ PG.Game.prototype = {
             this.tablePoker = pokers;
             this.tablePokerPic = pokersPic;
             this.lastShotPlayer = turnPlayer;
-            if (this.whoseTurn == 0) {
-                this.arrangePoker();
-            }
-            console.log("shot poker:", this.tablePoker);
+            turnPlayer.arrangePoker();
         }
-        if (!this.isGameOver()) {
+        if (turnPlayer.pokerInHand.length > 0) {
             this.whoseTurn = (this.whoseTurn + 1) % 3;
             if (this.whoseTurn == 0) {
                 this.game.time.events.add(1000, this.startPlay, this);
@@ -281,17 +261,7 @@ PG.Game.prototype = {
         }
     },
 
-    isGameOver: function() {
-	    for (var i = 0; i < 3; i++) {
-	        if (this.players[i].pokerInHand.length === 0) {
-	            return true;
-            }
-        }
-        return false;
-    },
-
     startCallScore: function(minscore) {
-
         function btnTouch(btn) {
             this.send_message([PG.Protocol.REQ_CALL_SCORE, btn.score]);
             btn.parent.destroy();
@@ -332,7 +302,6 @@ PG.Game.prototype = {
     },
 
     finishPlay: function(pokers) {
-        console.log('finishPlay', pokers);
         this.send_message([PG.Protocol.REQ_SHOT_POKER, pokers]);
     },
 
@@ -343,8 +312,7 @@ PG.Game.prototype = {
     createTableLayer: function (tables) {
         tables.push([-1, 0]);
 
-        this.tableLayer = this.game.add.group();
-        var group = this.tableLayer;
+        var group = this.game.add.group();
         this.game.world.bringToTop(group);
         var gc = this.game.make.graphics(0, 0);
         gc.beginFill(0x00000080);
@@ -369,6 +337,10 @@ PG.Game.prototype = {
                 text.text = '新建房间';
             }
         }
+    },
+
+    quitGame: function () {
+        this.state.start('MainMenu');
     },
 
     createTitleBar: function() {

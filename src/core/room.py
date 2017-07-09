@@ -27,29 +27,20 @@ class Room(object):
         self.waiting_tables[t.uid] = t
         return t
 
-    def find_waiting_table(self, uid, default=None):
-        table = self.waiting_tables.get(uid, default)
-        if table and table == default:
-            self.waiting_tables[uid] = table
-        return table
+    def find_waiting_table(self, uid):
+        if uid == -1:
+            for _, table in self.waiting_tables.items():
+                return table
+            return self.new_table()
+        return self.waiting_tables.get(uid)
 
-    def first_waiting_table(self):
-        for _, table in self.waiting_tables.items():
-            return table
-        return self.new_table()
-
-    def join_tables(self, tid):
-        tables = self.waiting_tables
-        for table in tables:
-            if tid != table[0]:
-                continue
-
-            table.append(tid)
-            if len(table) == 4:
-                tables.remove(table)
-            return True
-        else:
-            return False
+    def on_table_changed(self, table):
+        if table.is_full():
+            self.waiting_tables.pop(table.uid, None)
+            self.playing_tables[table.uid] = table
+        if table.is_empty():
+            self.playing_tables.pop(table.uid, None)
+            self.waiting_tables[table.uid] = table
 
     @property
     def waiting_tables(self):

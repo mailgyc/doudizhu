@@ -13,13 +13,83 @@ PG.NetPlayer.prototype.pushAPoker = function (poker) {
 };
 
 PG.NetPlayer.prototype.removeAPoker = function (pid) {
-    this.pokerInHand.pop();
-    this._pokerPic.pop();
-    this.updateLeftPoker();
+    if (pid > 53) {
+        this.pokerInHand.pop();
+        this._pokerPic.pop();
+        this.updateLeftPoker();
+    } else {
+        for (var i = 0; i < this.pokerInHand.length; i++) {
+            if (this.pokerInHand[i] === pid) {
+                this.pokerInHand.splice(i, 1);
+            }
+        }
+        for (var i = 0; i < this._pokerPic.length; i++) {
+            if (this._pokerPic[i].id === pid) {
+                this._pokerPic.splice(i, 1);
+                return;
+            }
+        }
+        console.log('Error: REMOVE POKER ', pid);
+    }
+};
+
+PG.NetPlayer.prototype.arrangePoker = function () {
+    if (this.pokerInHand.length > 0 && this.pokerInHand[0] < 54) {
+        // PG.Player.prototype.arrangePoker.call(this);
+        this.reDealPoker();
+    }
+};
+
+PG.NetPlayer.prototype.replacePoker = function (pokers, start) {
+    if (this.pokerInHand.length !== pokers.length - start) {
+        console.log("ERROR ReplacePoker:", this.pokerInHand, pokers);
+    }
+    var length = this.pokerInHand.length;
+    for (var i = 0; i < length; i++) {
+        this.pokerInHand[i] = pokers[start + i];
+        this._pokerPic[i].id = pokers[start + i];
+        this._pokerPic[i].frame = pokers[start + i];
+    }
 };
 
 PG.NetPlayer.prototype.findAPoker = function (pid) {
-    return this._pokerPic[this._pokerPic.length - 1];
+    if (pid > 53) {
+        return this._pokerPic[this._pokerPic.length - 1];
+    } else {
+        for (var i = 0; i < this._pokerPic.length; i++) {
+            if (this._pokerPic[i].id == pid) {
+                return this._pokerPic[i];
+            }
+        }
+        console.log('Error NetPlayer FindPoker:', pid);
+        return null;
+    }
+};
+
+PG.NetPlayer.prototype.reDealPoker = function () {
+    this.sortPoker();
+    var length = this.pokerInHand.length;
+    for (var i = 0; i < length; i++) {
+        var pid = this.pokerInHand[i];
+        var p = this.findAPoker(pid);
+        p.bringToTop();
+        this.dealPokerAnim(p, this.seat == 1 ? length-1-i : i);
+    }
+};
+
+PG.NetPlayer.prototype.dealPokerAnim = function (p, i) {
+    var width = this.game.world.width;
+    if (p.id > 53) {
+        this.game.add.tween(p).to({
+            x: this.seat == 1 ? width - PG.PW/2 : PG.PW/2,
+            y: this.seat == 1 ? this.uiHead.y + PG.PH/2 + 10 : this.uiHead.y + PG.PH/2 + 10
+        }, 500, Phaser.Easing.Default, true, 25 + 50 * i);
+    } else {
+        this.game.add.tween(p).to({
+            x: this.seat == 1 ? (width - PG.PW/2) - (i * PG.PW * 0.44) : PG.PW/2 + i * PG.PW * 0.44,
+            y: this.seat == 1 ? this.uiHead.y + PG.PH/2 + 10 : this.uiHead.y + PG.PH * 1.5 + 20
+        }, 500, Phaser.Easing.Default, true, 50 * i);
+    }
 };
 
 PG.NetPlayer.prototype.initUI = function (sx, sy) {

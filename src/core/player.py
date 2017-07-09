@@ -19,7 +19,7 @@ class Player(object):
         self.name = name
         self.socket = socket
         self.room = None
-        self.table: Table = None
+        self.table: Table = []
         self.ready = False
         self.seat = 0
         self.is_called = False
@@ -77,26 +77,19 @@ class Player(object):
             p.send(response)
         logger.info('Player[%d] shot[%s]', self.uid, str(pokers))
 
-        self.handle_game_over()
-
-    def handle_game_over(self):
-        if self.hand_pokers:
-            return
-        response = [Pt.REQ_GAME_OVER, self.uid, self.table.calc_coin(self)]
-        for p in self.table.players:
-            p.send(response)
-        logger.info('Table[%d] over[%d]', self.table.uid, self.uid)
+        if not self.hand_pokers:
+            self.table.on_game_over(self)
 
     def join_table(self, t):
-        t.add(self)
         self.ready = True
         self.table = t
+        t.on_join(self)
 
     def leave_table(self):
         self.ready = False
         if self.table:
-            self.table.remove(self)
-            logger.info('Player[%d] leave Table[%d]', self.uid, self.table.uid)
+            self.table.on_leave(self)
+        # self.table = None
 
     def __repr(self):
         return self.__str__()

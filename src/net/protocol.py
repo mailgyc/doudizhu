@@ -2,6 +2,10 @@ from enum import IntEnum
 
 
 class Protocol(IntEnum):
+
+    REQ_CHEAT = 1
+    RSP_CHEAT = 2
+
     REQ_LOGIN = 11
     RSP_LOGIN = 12
 
