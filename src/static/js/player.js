@@ -235,7 +235,7 @@ PG.Player.prototype.dealPokerAnim = function (p, i) {
 
 PG.Player.prototype.arrangePoker = function () {
     var count = this.pokerInHand.length;
-    var gap = Math.min(this.game.world.width / count, PG.PW * 0.36);
+    var gap = Math.min(this.game.world.width / count, PG.PW * 0.44);
     for (var i = 0; i < count; i++) {
         var pid = this.pokerInHand[i];
         var p = this.findAPoker(pid);
