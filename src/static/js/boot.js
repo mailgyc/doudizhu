@@ -58,7 +58,7 @@ PG.Preloader = {
 
         this.load.audio('music_bg', 'static/s/bg3.ogg');
         this.load.audio('music_deal', 'static/s/deal.ogg');
-        this.load.audio('music_game', 'static/s/game.ogg');
+        // this.load.audio('music_game', 'static/s/game.ogg');
         this.load.audio('music_win', 'static/s/win.ogg');
         this.load.audio('music_lose', 'static/s/lose.ogg');
         this.load.atlas('btn', 'static/i/btn.png', 'static/i/btn.json');
