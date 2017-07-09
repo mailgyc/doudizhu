@@ -39,11 +39,11 @@ class Table(object):
         if size == 2 and nth == 1:
             IOLoop.current().call_later(1, self.ai_join, nth=2)
 
-        p1 = AiPlayer(11, 'AI-1', self.players[0])
+        p1 = AiPlayer(11, 'IDIOT-I', self.players[0])
         p1.to_server([Pt.REQ_JOIN_TABLE, self.uid])
 
         if size == 1:
-            p2 = AiPlayer(12, 'AI-2', self.players[0])
+            p2 = AiPlayer(12, 'IDIOT-II', self.players[0])
             p2.to_server([Pt.REQ_JOIN_TABLE, self.uid])
 
     def sync_table(self):

@@ -1,6 +1,7 @@
 
 PG.Game = function(game) {
 
+    this.roomId = 1;
     this.players = [];
 
     this.tableId = 0;
@@ -16,6 +17,10 @@ PG.Game = function(game) {
 
 PG.Game.prototype = {
 
+    init: function(roomId) {
+        this.roomId = roomId;
+    },
+
 	create: function () {
         this.stage.backgroundColor = '#182d3b';
 
@@ -23,12 +28,14 @@ PG.Game.prototype = {
         this.players.push(PG.createPlay(1, this));
         this.players.push(PG.createPlay(2, this));
 
+        this.players[0].updateInfo(PG.playerInfo.uid, PG.playerInfo.username);
         PG.Socket.connect(this.onopen.bind(this), this.onmessage.bind(this), this.onerror.bind(this));
 	},
 	
 	onopen: function() {
 	    console.log('onopen');
-	    this.send_message([11]);
+        PG.Socket.send([PG.Protocol.REQ_JOIN_ROOM, this.roomId]);
+        // PG.Socket.send([PG.Protocol.REQ_LOGIN]);
 	},
 
     onerror: function() {
@@ -42,6 +49,9 @@ PG.Game.prototype = {
 	onmessage: function(packet) {
 	    var opcode = packet[0];
 	    switch(opcode) {
+            case PG.Protocol.RSP_JOIN_ROOM:
+                PG.Socket.send([PG.Protocol.REQ_JOIN_TABLE, -1]);
+                break;
 	        case PG.Protocol.RSP_JOIN_TABLE:
                 this.tableId = packet[1];
                 var playerIds = packet[2];
@@ -133,12 +143,7 @@ PG.Game.prototype = {
         this.players[0].sortPoker();
         
         //to(properties, duration, ease, autoStart, delay, repeat, yoyo)
-        var headX = [
-            0,
-            this.world.width - PG.PW/2,
-            PG.PW/2
-        ];
-
+        var headX = [ 0, this.world.width - PG.PW/2, PG.PW/2 ];
         var headY = [
             this.world.height - PG.PH/2,
             this.players[1].uiHead.y + PG.PH/2 + 10,
@@ -151,10 +156,7 @@ PG.Game.prototype = {
                 var p = new PG.Poker(this, pid, pid);
                 this.world.add(p);
                 this.players[turn].pushAPoker(p);
-
-                if (turn == 0) {
-                    headX[0] = this.world.width/2 + PG.PW * 0.44 * (i - 8.5);
-                }
+                if (turn == 0) { headX[0] = this.world.width/2 + PG.PW * 0.44 * (i - 8.5); }
                 this.add.tween(p).to({ x: headX[turn], y: headY[turn] }, 500, Phaser.Easing.Default, true, (turn == 0 ? 0 : 25) + i * 50);
             }
         }

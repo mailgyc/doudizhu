@@ -25,7 +25,7 @@ class Room(object):
     def first_waiting_table(self):
         for _, table in self.waiting_tables.items():
             return table
-        t = Table()
+        t = Table(self)
         self.waiting_tables[t.uid] = t
         return t
 
@@ -61,12 +61,15 @@ class Room(object):
 class RoomManager(object):
     __metaclass__ = Singleton
 
-    __room_dict = {}
+    __room_dict = {
+        1: Room(1, True),
+        2: Room(2, False),
+    }
 
     @staticmethod
     def find_room(uid, created=False):
         room = RoomManager.__room_dict.get(uid)
         if not room and created:
-            room = Room(0)
+            room = Room(uid)
             RoomManager.__room_dict[uid] = room
         return room

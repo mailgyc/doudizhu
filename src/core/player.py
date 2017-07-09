@@ -13,7 +13,7 @@ LANDLORD = 2
 
 
 class Player(object):
-    def __init__(self, uid: int, name: str, socket: WebSocketHandler=None):
+    def __init__(self, uid: int, name: str, socket: WebSocketHandler = None):
         from core.table import Table
         self.uid = uid
         self.name = name
@@ -95,8 +95,11 @@ class Player(object):
     def leave_table(self):
         self.ready = False
         if self.table:
-             self.table.remove(self)
-             logger.info('Player[%d] leave Table[%d]', self.uid, self.table.uid)
+            self.table.remove(self)
+            logger.info('Player[%d] leave Table[%d]', self.uid, self.table.uid)
+
+    def __repr(self):
+        return self.__str__()
 
     def __str__(self):
         return self.uid + '-' + self.name

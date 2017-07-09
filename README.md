@@ -3,7 +3,7 @@
 
 运行:
 
-pip3 install tornado bcrypt pymysql
+pip3 install tornado bcrypt pymysql msgpack
 
 python3 main.py
 

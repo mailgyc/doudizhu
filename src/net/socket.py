@@ -3,6 +3,8 @@ import json
 import logging
 
 import msgpack
+from tornado.escape import json_decode
+from tornado.web import authenticated
 from tornado.websocket import WebSocketHandler, WebSocketClosedError
 
 from core.player import Player
@@ -33,6 +35,9 @@ class SocketHandler(WebSocketHandler):
     def data_received(self, chunk):
         logger.info('socket data_received')
 
+    def get_current_user(self):
+        return json_decode(self.get_secure_cookie("user"))
+
     @property
     def uid(self):
         return self.player.uid
@@ -41,9 +46,10 @@ class SocketHandler(WebSocketHandler):
     def room(self):
         return self.player.room
 
+    @authenticated
     def open(self):
-        self.player = Player(10, 'Jerry', self)
-        self.player.room = RoomManager.find_room(0, True)
+        user = self.current_user
+        self.player = Player(user['uid'], user['username'], self)
         logger.info('SOCKET[%s] OPEN', self.player.uid)
 
     def on_message(self, message):
@@ -57,19 +63,20 @@ class SocketHandler(WebSocketHandler):
             self.write_message(response)
 
         elif code == Pt.REQ_ROOM_LIST:
-            response = [Pt.RSP_ROOM_LIST]
-            self.write_message(response)
+            self.write_message([Pt.RSP_ROOM_LIST])
 
         elif code == Pt.REQ_TABLE_LIST:
-            response = [Pt.RSP_TABLE_LIST, self.room.tables()]
-            self.write_message(response)
+            self.write_message([Pt.RSP_TABLE_LIST, self.room.tables()])
+
+        elif code == Pt.REQ_JOIN_ROOM:
+            self.player.room = RoomManager.find_room(packet[1])
+            self.write_message([Pt.RSP_JOIN_ROOM])
 
         elif code == Pt.REQ_JOIN_TABLE:
             table_id = packet[1]
             table = self.find_table(table_id)
             if not table:
-                response = [Pt.RSP_TABLE_LIST, self.room.tables()]
-                self.write_message(response)
+                self.write_message([Pt.RSP_TABLE_LIST, self.room.tables()])
                 logger.info('PLAYER[%d] JOIN FULL TABLE[%d]', self.uid, table.uid)
 
             self.player.join_table(table)
@@ -125,9 +132,8 @@ class SocketHandler(WebSocketHandler):
         return self.ws_connection.write_message(packet, binary=binary)
 
     def on_close(self):
-        # self.session.get(self.uid).socket = None
-        logger.info('socket[%s] close', self.player.uid)
         if self.player:
+            logger.info('socket[%s] close', self.player.uid)
             self.player.leave_table()
 
     def send_updates(cls, chat):
