@@ -5,7 +5,7 @@ python:
   - '3.5'
 
 install:
-  - pip install tox codecov
+  - pip install tox codecov pytest
   - pip install -r requirements.txt
 
 script: pytest

@@ -1,11 +1,18 @@
 # 斗地主
-斗地主游戏, html5, python 实现
+斗地主游戏, html5, python, mysql 实现
+[![Coverage Status](https://coveralls.io/repos/github/mailgyc/doudizhu/badge.svg?branch=master)](https://coveralls.io/github/mailgyc/doudizhu?branch=master)
 
-运行:
+运行步骤:
 
-pip3 install tornado bcrypt pymysql msgpack-python
+1.安装MySQL数据库, 执行:
 
-python3 main.py
+    mysql --user=root --password=123123 --database=ddz < schema.sql
+
+2.安装Python3.6, 执行:
+
+    pip3 install tornado bcrypt pymysql msgpack-python
+
+    python3 main.py
 
 浏览器访问即可,端口默认8080
 
