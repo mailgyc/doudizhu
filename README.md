@@ -1,5 +1,6 @@
 # 斗地主
 斗地主游戏, html5, python, mysql 实现
+
 [![Coverage Status](https://coveralls.io/repos/github/mailgyc/doudizhu/badge.svg?branch=master)](https://coveralls.io/github/mailgyc/doudizhu?branch=master)
 
 运行步骤:
