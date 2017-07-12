@@ -1,5 +1,5 @@
-# doudizhu
-斗地主游戏, html5 + python 实现
+# 斗地主
+斗地主游戏, html5, python 实现
 
 运行:
 
