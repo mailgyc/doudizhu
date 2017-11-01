@@ -41,7 +41,6 @@ PG.Protocol = {
 };
 
 PG.Socket = {
-    wsUri: "ws://127.0.0.1:8080/ws",
     websocket: null,
     onmessage: null
 };
@@ -52,7 +51,7 @@ PG.Socket.connect = function(onopen, onmessage, onerror) {
         return;
     }
     
-    this.websocket = new WebSocket(this.wsUri);
+    this.websocket = new WebSocket("ws://" + window.location.host + "/ws");
     this.websocket.binaryType = 'arraybuffer';
     this.websocket.onopen = function(evt) {
         console.log("CONNECTED");
