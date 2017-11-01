@@ -25,6 +25,8 @@ class Table(object):
         self.pokers: List[int] = []
         self.multiple = 1
         self.call_score = 0
+        self.max_call_score = 0
+        self.max_call_score_turn = 0
         self.whose_turn = 0
         self.last_shot_seat = 0
         self.last_shot_poker = []
@@ -63,7 +65,7 @@ class Table(object):
         # if not all(p and p.ready for p in self.players):
         #     return
 
-        self.state = 1
+        self.state = Table.PLAYING
         self.pokers = [i for i in range(54)]
         random.shuffle(self.pokers)
         for i in range(51):
@@ -75,8 +77,9 @@ class Table(object):
             response = [Pt.RSP_DEAL_POKER, self.turn_player.uid, p.hand_pokers]
             p.send(response)
 
-    def call_score_end(self, score):
-        self.call_score = score
+    def call_score_end(self):
+        self.call_score = self.max_call_score
+        self.whose_turn = self.max_call_score_turn
         self.turn_player.role = 2
         self.turn_player.hand_pokers += self.pokers
         response = [Pt.RSP_SHOW_POKER, self.turn_player.uid, self.pokers]
@@ -152,4 +155,11 @@ class Table(object):
 
     def __str__(self):
         return '[{}: {}]'.format(self.uid, self.players)
+
+    def all_called(self):
+        for p in self.players:
+            if not p.is_called:
+                return False
+        return True
+
 

@@ -41,19 +41,22 @@ class Player(object):
         self.is_called = True
 
         next_seat = (self.seat + 1) % 3
-        call_end = score == 3 or self.table.players[next_seat].is_called
+
+        call_end = score == 3 or self.table.all_called()
         if not call_end:
             self.table.whose_turn = next_seat
         if score > 0:
             self.table.last_shot_seat = self.seat
-            self.table.call_score = score
+        if score > self.table.max_call_score:
+            self.table.max_call_score = score
+            self.table.max_call_score_turn = self.seat
 
         response = [Pt.RSP_CALL_SCORE, self.uid, score, call_end]
         for p in self.table.players:
             p.send(response)
 
         if call_end:
-            self.table.call_score_end(score)
+            self.table.call_score_end()
 
     def handle_shot_poker(self, pokers):
         if pokers:
