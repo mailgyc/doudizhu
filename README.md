@@ -7,17 +7,17 @@
 
 1.安装MySQL数据库, 执行:
 
-    mysql --user=root --password=123123 --database=ddz < schema.sql
+    mysql --user=root --password=your_password --database=ddz < schema.sql
 
 2.安装Python3.6, 执行:
 
-    pip3 install tornado bcrypt pymysql msgpack-python
+    pip3 install -r requirements.txt
 
     python3 main.py
 
 浏览器访问即可,端口默认8080
 
-在线体验 <http://ddz.ihouser.com/>
+在线体验 <https://www.ihouser.com/>
 
 运行截图
 

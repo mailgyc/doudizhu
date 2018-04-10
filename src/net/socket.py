@@ -2,7 +2,6 @@ import functools
 import json
 import logging
 
-import msgpack
 from tornado.escape import json_decode
 from tornado.web import authenticated
 from tornado.websocket import WebSocketHandler, WebSocketClosedError
@@ -57,8 +56,7 @@ class SocketHandler(WebSocketHandler):
         logger.info('SOCKET[%s] CLOSE', self.player.uid)
 
     def on_message(self, message):
-        packet = msgpack.unpackb(message, use_list=False)
-        # packet = json.loads(message)
+        packet = json.loads(message)
         logger.info('REQ[%d]: %s', self.uid, packet)
 
         code = packet[0]
@@ -136,7 +134,6 @@ class SocketHandler(WebSocketHandler):
     def write_message(self, message, binary=False):
         if self.ws_connection is None:
             raise WebSocketClosedError()
-        # packet = msgpack.packb(message)
         logger.info('RSP[%d]: %s', self.uid, message)
         packet = json.dumps(message)
         return self.ws_connection.write_message(packet, binary=binary)

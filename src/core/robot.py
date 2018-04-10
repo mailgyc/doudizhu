@@ -1,5 +1,6 @@
+import json
 import logging
-import msgpack
+
 from tornado.ioloop import IOLoop
 
 from core import rule
@@ -17,7 +18,7 @@ class AiPlayer(Player):
         self.room = player.room
 
     def to_server(self, message):
-        packet = msgpack.packb(message)
+        packet = json.dumps(message)
         IOLoop.current().add_callback(self.socket.on_message, packet)
         logger.info('AI[%d] REQ: %s', self.uid, message)
 

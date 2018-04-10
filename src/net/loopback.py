@@ -1,4 +1,3 @@
-import msgpack
 from tornado.ioloop import IOLoop
 
 from net.socket import SocketHandler

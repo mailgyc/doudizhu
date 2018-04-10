@@ -13,8 +13,8 @@ from db import torndb
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s')
-logger = logging.getLogger('ddz')
-logger.setLevel(logging.DEBUG)
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 
 define("host", default="localhost", help="DB host")
