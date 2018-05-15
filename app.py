@@ -7,8 +7,8 @@ import tornado.ioloop
 from tornado.options import define, options
 import tornado.web
 import tornado.websocket
-from net.socket import SocketHandler
-from net.web import WebHandler, UpdateHandler, RegHandler
+from handlers.socket import SocketHandler
+from handlers.web import WebHandler, UpdateHandler, RegHandler
 from db import torndb
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -54,8 +54,8 @@ def main():
     tornado.options.parse_command_line()
     app = Application()
     app.listen(8080)
-    tornado.ioloop.IOLoop.current().start()
     logger.info('listening on 8080')
+    tornado.ioloop.IOLoop.current().start()
 
 
 if __name__ == '__main__':

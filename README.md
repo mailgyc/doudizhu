@@ -14,7 +14,7 @@
 
     pip3 install -r requirements.txt
 
-    python3 main.py
+    python3 app.py
 
 浏览器访问即可,端口默认8080
 

@@ -5,7 +5,7 @@ from tornado.ioloop import IOLoop
 
 from core import rule
 from core.player import Player
-from net.protocol import Protocol as Pt
+from handlers.protocol import Protocol as Pt
 
 logger = logging.getLogger('ddz')
 
@@ -13,7 +13,7 @@ logger = logging.getLogger('ddz')
 class AiPlayer(Player):
 
     def __init__(self, uid: int, username: str, player: Player):
-        from net.loopback import LoopBackSocketHandler
+        from handlers.loopback import LoopBackSocketHandler
         super().__init__(uid, username, LoopBackSocketHandler(self))
         self.room = player.room
 

@@ -3,7 +3,7 @@ import subprocess
 import bcrypt
 from tornado.escape import json_encode
 
-from net.base import BaseHandler
+from handlers.base import BaseHandler
 
 
 class WebHandler(BaseHandler):

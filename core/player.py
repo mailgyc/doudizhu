@@ -4,7 +4,7 @@ from typing import List
 from tornado.websocket import WebSocketHandler
 
 from core import rule
-from net.protocol import Protocol as Pt
+from handlers.protocol import Protocol as Pt
 
 logger = logging.getLogger('ddz')
 

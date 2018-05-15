@@ -5,7 +5,7 @@ from typing import List
 from tornado.ioloop import IOLoop
 
 from core.robot import AiPlayer
-from net.protocol import Protocol as Pt
+from handlers.protocol import Protocol as Pt
 
 logger = logging.getLogger('ddz')
 

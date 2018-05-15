@@ -1,6 +1,6 @@
 from tornado.ioloop import IOLoop
 
-from net.socket import SocketHandler
+from handlers.socket import SocketHandler
 
 
 class LoopBackSocketHandler(SocketHandler):
