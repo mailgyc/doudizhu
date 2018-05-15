@@ -1,6 +1,6 @@
 --   mysql --user=user --password=pwd --database=ddz < schema.sql
 
-CREATE DATABASE IF NOT EXISTS ddz DEFAULT CHARSET utf8 COLLATE utf8_general_ci;
+CREATE DATABASE IF NOT EXISTS ddz DEFAULT CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
 
 CREATE TABLE IF NOT EXISTS account (
     id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,

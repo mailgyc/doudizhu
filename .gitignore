@@ -1,6 +1,10 @@
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
+.pytest_cache
+
+# PyCharm
+.idea
 
 # C extensions
 *.so
@@ -10,9 +14,6 @@ __pycache__/
 env/
 mongodb-3.2.10/
 redis-3.2.6/
-server/static/audio/
-server/static/explode/
-server/static/PokerM/
 build/
 develop-eggs/
 dist/

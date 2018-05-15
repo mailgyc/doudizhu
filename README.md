@@ -1,6 +1,7 @@
 # 斗地主
 斗地主游戏, html5, python, mysql 实现
 
+[![Build Status](https://travis-ci.org/mailgyc/doudizhu.svg?branch=master)](https://travis-ci.org/mailgyc)
 [![Coverage Status](https://coveralls.io/repos/github/mailgyc/doudizhu/badge.svg?branch=master)](https://coveralls.io/github/mailgyc/doudizhu?branch=master)
 
 运行步骤:
