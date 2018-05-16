@@ -7,7 +7,7 @@ from pymysql.cursors import SSCursor
 
 
 class Connection(object):
-    def __init__(self, host: str, database: str, user: str, password: str, **kwargs):
+    def __init__(self, host: str, database: str, user: str, password: str):
         self.host = host
         self.max_idle_time = float(7 * 3600)
 
@@ -17,8 +17,7 @@ class Connection(object):
             "user": user,
             "password": password,
             "port": 3306,
-
-            'charset': 'utf8',
+            'charset': 'utf8mb4',
             'use_unicode': True,
             'sql_mode': 'TRADITIONAL',
             'init_command': 'SET time_zone = "+0:00"',
