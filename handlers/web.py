@@ -1,5 +1,3 @@
-import subprocess
-
 import bcrypt
 from tornado.escape import json_encode
 
@@ -13,14 +11,6 @@ class WebHandler(BaseHandler):
         # user = xhtml_escape(self.current_user or '')
         user = self.current_user or ''
         self.render('poker.html', user=user)
-
-
-class UpdateHandler(BaseHandler):
-    # @tornado.web.authenticated
-    def get(self):
-        proc = subprocess.run(["git", "pull"], stdout=subprocess.PIPE)
-        self.set_header('Content-Type', 'text/plain; charset=UTF-8')
-        self.write(proc.stdout)
 
 
 class RegHandler(BaseHandler):

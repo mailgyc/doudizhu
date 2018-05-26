@@ -11,20 +11,13 @@ __pycache__/
 
 # Distribution / packaging
 .Python
-env/
-mongodb-3.2.10/
-redis-3.2.6/
-build/
+venv
+build
 develop-eggs/
 dist/
 downloads/
 eggs/
 .eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
 *.egg-info/
 .installed.cfg
 *.egg
@@ -48,17 +41,3 @@ htmlcov/
 nosetests.xml
 coverage.xml
 *,cover
-
-# Translations
-*.mo
-*.pot
-
-# Django stuff:
-*.log
-
-# Sphinx documentation
-docs/_build/
-
-# PyBuilder
-target/
-.vs

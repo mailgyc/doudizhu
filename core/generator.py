@@ -152,5 +152,5 @@ if __name__ == '__main__':
     import json
 
     with open('rule.json', 'w') as out:
-        # json.dump(rule, out, sort_keys=True, indent=4)
+        # json.dump(RULE, out, sort_keys=True, indent=4)
         json.dump(RULE, out)

@@ -3,7 +3,7 @@ import os
 import tornado.template
 from tornado.options import define, options
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 define("port", default=8080, help="run on the given port", type=int)
 define("debug", default=False, help="debug mode")
