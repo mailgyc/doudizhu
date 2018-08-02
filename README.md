@@ -14,11 +14,11 @@
 
     pip3 install -r requirements.txt
 
-    python3 app.py
+    python3 app.py --password=your_password
 
 浏览器访问即可,端口默认8080
 
-在线体验 <https://www.ihouser.com/>
+在线体验 <http://m.ihouser.com/>
 
 运行截图
 
