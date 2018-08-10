@@ -14,7 +14,7 @@
 
     pip3 install -r requirements.txt
 
-    python3 app.py --password=your_password
+    python3 app.py --password=your_database_password
 
 浏览器访问即可,端口默认8080
 
