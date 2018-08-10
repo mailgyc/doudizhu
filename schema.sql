@@ -1,8 +1,8 @@
---   mysql --user=user --password=pwd --database=ddz < schema.sql
+-- mysql --user=root -p < schema.sql
 
 CREATE DATABASE IF NOT EXISTS ddz DEFAULT CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
 
-CREATE TABLE IF NOT EXISTS account (
+CREATE TABLE IF NOT EXISTS ddz.account (
     id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     email VARCHAR(20) NOT NULL UNIQUE,
     username VARCHAR(10) NOT NULL,
@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS account (
     updated_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS record (
+CREATE TABLE IF NOT EXISTS ddz.record (
     id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     a_id INT NOT NULL,
     b_id INT NOT NULL,

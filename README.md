@@ -8,7 +8,7 @@
 
 1.安装MySQL数据库, 执行:
 
-    mysql --user=root --password=your_password --database=ddz < schema.sql
+    mysql --user=root -p < schema.sql
 
 2.安装Python3.6, 执行:
 
