@@ -264,6 +264,16 @@ PG.Player.prototype.removeAPoker = function (pid) {
     console.log('Error: REMOVE POKER ', pid);
 };
 
+PG.Player.prototype.removeAllPoker = function () {
+    var length = this.pokerInHand.length;
+    for (var i = 0; i < length; i++) {
+            this.pokerInHand.splice(i, 1);
+            delete this._pokerPic[pid];
+        }
+    console.log('Error: REMOVE POKER ', pid);
+};
+
+
 PG.Player.prototype.findAPoker = function (pid) {
     var poker = this._pokerPic[pid];
     if (poker === undefined) {

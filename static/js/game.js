@@ -15,7 +15,6 @@ PG.Game = function(game) {
 
     this.whoseTurn = 0;
 
-    this.end_flag = false;
 };
 
 PG.Game.prototype = {
@@ -30,7 +29,6 @@ PG.Game.prototype = {
         this.players.push(PG.createPlay(0, this));
         this.players.push(PG.createPlay(1, this));
         this.players.push(PG.createPlay(2, this));
-
         this.players[0].updateInfo(PG.playerInfo.uid, PG.playerInfo.username);
         PG.Socket.connect(this.onopen.bind(this), this.onmessage.bind(this), this.onerror.bind(this));
 
@@ -121,12 +119,17 @@ PG.Game.prototype = {
                 this.players[loserASeat].reDealPoker();
 
                 var loserBSeat = this.uidToSeat(packet[4][0]);
-                this.players[loserBSeat].replacePoker(packet[4], 1);
-                // this.players[loserBSeat].reDealPoker();
+                this.players[loserBSeat].replacePoker(packet[4], 2);
+                this.players[loserBSeat].reDealPoker();
+//                 this.players[loserBSeat].removeAllPoker();
+//               this.players[loserASeat].pokerInHand = [];
+
                 this.whoseTurn = this.uidToSeat(winner);
+
                 function gameOver() {
                     alert(this.players[this.whoseTurn].isLandlord ? "地主赢" : "农民赢");
-                    this.end_flag = true;
+
+                    this.restart();
                 }
                 this.game.time.events.add(1000, gameOver, this);
                 break;
@@ -139,7 +142,29 @@ PG.Game.prototype = {
                 console.log("UNKNOWN PACKET:", packet)
 	    }
 	},
-	
+
+	restart: function () {
+	    this.roomId = 1;
+        this.players = [];
+        this.tableId = 0;
+        this.shotLayer = null;
+
+        this.tablePoker = [];
+        this.tablePokerPic = {};
+
+        this.lastShotPlayer = null;
+
+        this.whoseTurn = 0;
+
+        this.stage.backgroundColor = '#182d3b';
+        this.players.push(PG.createPlay(0, this));
+        this.players.push(PG.createPlay(1, this));
+        this.players.push(PG.createPlay(2, this));
+        this.players[0].updateInfo(PG.playerInfo.uid, PG.playerInfo.username);
+        PG.Socket.send([PG.Protocol.REQ_JOIN_ROOM, this.roomId]);
+//        PG.Socket.send([PG.Protocol.REQ_JOIN_ROOM, -1]);
+	},
+
 	update: function () {
 	},
 
