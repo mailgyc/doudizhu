@@ -5,6 +5,7 @@
 [![Coverage Status](https://coveralls.io/repos/github/mailgyc/doudizhu/badge.svg?branch=master)](https://coveralls.io/github/mailgyc/doudizhu?branch=master)
 
 运行步骤:
+--------
 
 1.安装MySQL数据库, 执行:
 
@@ -19,6 +20,13 @@
 浏览器访问即可,端口默认8080
 
 在线体验 <http://m.ihouser.com/>
+--------------------------------
+
+License
+-------
+
+This project is released under the terms of the MIT license. See [LICENSE](LICENSE) for more
+information or see https://opensource.org/licenses/MIT.
 
 运行截图
 
