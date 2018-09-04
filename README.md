@@ -20,14 +20,14 @@
 
 3.在线体验 <http://m.ihouser.com/>
 
--------
+---
 
 License
 
 This project is released under the terms of the MIT license. See [LICENSE](LICENSE) for more
 information or see https://opensource.org/licenses/MIT.
 
-------
+---
 
 运行截图
 
