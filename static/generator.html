@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset=utf-8/>
+    <title>Poker</title></head>
+<body>
+<div id="command">
+    <span>Code: </span><span id='code'>Click card to get code.</span>
+</div>
+
+<div id="container">
+    &nbsp;
+</div>
+</body>
+<script src="../static/js/generator.js"></script>
+<script>
+    if (window.Poker) {
+        var container = document.getElementById('container'), domCanvas = document.createElement('canvas'),
+            canvas = domCanvas.getContext('2d');
+        var commandArray = [[], [], [], [], [], [], [], [], [], [], [], [], []], param = {};
+        container.appendChild(domCanvas);
+        function showpoker(size) {
+            var h = +(size || 200), w = h * 0.75, x = 0, y = 0, suits = ['hearts', 'diamonds', 'spades', 'clubs'],
+                points = ['a', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'j', 'q', 'k'];
+            param.h = h;
+            param.w = w;
+            domCanvas.height = 5 * h;
+            domCanvas.width = 13 * w;
+            for (var ks in suits) {
+                for (var kp in points) {
+                    drawPokerCard(x, y, h, suits[ks], points[kp]);
+                    x += w;
+                }
+                x = 0, y += h;
+            }
+            drawPokerCard(x = 0, y, h, 'hearts', 'joker');
+            drawPokerCard(x += w, y, h, 'spades', 'joker');
+            drawPokerBack(x += w, y, h, '#b55', '#a22');
+            drawPokerBack(x += w, y, h, '#F9CD9C', '#EB870D');
+            drawPokerBack(x += w, y, h, '#A464B8', '#5E0C78');
+            drawPokerBack(x += w, y, h, '#7A7BB8', '#2E319C');
+            drawPokerBack(x += w, y, h, '#58AAAF', '#1F7A80');
+            drawPokerBack(x += w, y, h, '#78A867', '#437034');
+            drawPokerBack(x += w, y, h, '#B7B860', '#7E7F2A');
+            drawPokerBack(x += w, y, h, '#A9566C', '#71273A');
+            drawPokerBack(x += w, y, h, '#8BA23C', '#3C451B');
+            drawPokerBack(x += w, y, h, '#5C72C2', '#2B4299');
+            drawPokerBack(x += w, y, h, '#90928C', '#535550');
+            //document.getElementById('status').innerHTML = 'Image Size: ' + domCanvas.width + ' x ' + domCanvas.height + ' Card Size: ' + w + ' x ' + h;
+        }
+
+        function drawPokerCard(x, y, h, suit, point) {
+            canvas.drawPokerCard(x, y, h, suit, point);
+            commandArray[x / param.w][y / param.h] = 'canvas.drawPokerCard(' + x + ', ' + y + ', ' + h + ', \'' + suit + '\', \'' + point + '\');';
+        };
+        function drawPokerBack(x, y, h, c1, c2) {
+            canvas.drawPokerBack(x, y, h, c1, c2);
+            commandArray[x / param.w][y / param.h] = 'canvas.drawPokerBack(' + x + ', ' + y + ', ' + h + ', \'' + c1 + '\', \'' + c2 + '\');';
+        };
+        showpoker(120);
+        domCanvas.addEventListener('click', function (e) {
+            var x = ((e.pageX - e.target.offsetLeft) / param.w) | 0,
+                y = ((e.pageY - e.target.offsetTop ) / param.h) | 0;
+            document.getElementById('code').innerHTML = commandArray[x][y];
+            console.dir(e)
+        });
+    } else {
+        document.body.innerHTML = 'This browser does not support canvas.';
+    }
+</script>
+</html>
