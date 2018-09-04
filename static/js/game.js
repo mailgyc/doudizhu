@@ -14,6 +14,8 @@ PG.Game = function(game) {
     this.lastShotPlayer = null;
 
     this.whoseTurn = 0;
+
+    this.end_flag = false;
 };
 
 PG.Game.prototype = {
@@ -120,11 +122,11 @@ PG.Game.prototype = {
 
                 var loserBSeat = this.uidToSeat(packet[4][0]);
                 this.players[loserBSeat].replacePoker(packet[4], 1);
-                this.players[loserBSeat].reDealPoker();
-
+                // this.players[loserBSeat].reDealPoker();
                 this.whoseTurn = this.uidToSeat(winner);
                 function gameOver() {
                     alert(this.players[this.whoseTurn].isLandlord ? "地主赢" : "农民赢");
+                    this.end_flag = true;
                 }
                 this.game.time.events.add(1000, gameOver, this);
                 break;
