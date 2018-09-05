@@ -82,6 +82,7 @@ PG.Game.prototype = {
             case PG.Protocol.RSP_DEAL_POKER:
                 var playerId = packet[1];
                 var pokers = packet[2];
+                console.log(pokers);
                 this.dealPoker(pokers);
                 this.whoseTurn = this.uidToSeat(playerId);
                 this.startCallScore(0);
@@ -125,11 +126,12 @@ PG.Game.prototype = {
 //               this.players[loserASeat].pokerInHand = [];
 
                 this.whoseTurn = this.uidToSeat(winner);
-
                 function gameOver() {
                     alert(this.players[this.whoseTurn].isLandlord ? "地主赢" : "农民赢");
                     this.players[loserBSeat].cleanPokers();
                     this.players[loserASeat].cleanPokers();
+                    this.players[loserBSeat].uiLeftPoker.kill();
+                    this.players[loserASeat].uiLeftPoker.kill();
                     PG.Socket.send([PG.Protocol.REQ_RESTART]);
                 }
                 this.game.time.events.add(1000, gameOver, this);
@@ -148,7 +150,6 @@ PG.Game.prototype = {
 
 	restart: function () {
         this.players = [];
-        this.tableId = 0;
         this.shotLayer = null;
 
         this.tablePoker = [];
@@ -163,8 +164,9 @@ PG.Game.prototype = {
         this.players.push(PG.createPlay(1, this));
         this.players.push(PG.createPlay(2, this));
         this.players[0].updateInfo(PG.playerInfo.uid, PG.playerInfo.username);
-        this.send_message([PG.Protocol.REQ_JOIN_ROOM, this.roomId]);
-//        PG.Socket.send([PG.Protocol.REQ_JOIN_ROOM, -1]);
+
+        // this.send_message([PG.Protocol.REQ_DEAL_POKEER, -1]);
+//        PG.Socket.send([PG.Protocol.REQ_JOIN_TABLE, this.tableId]);
 	},
 
 	update: function () {
