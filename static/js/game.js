@@ -266,6 +266,8 @@ PG.Game.prototype = {
         function btnTouch(btn) {
             this.send_message([PG.Protocol.REQ_CALL_SCORE, btn.score]);
             btn.parent.destroy();
+            var audio = this.game.add.audio('f_score_' + btn.score);
+            audio.play();
         };
 
         if (this.whoseTurn == 0) {

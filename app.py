@@ -23,7 +23,7 @@ class WebApp(tornado.web.Application):
 def main():
     app = WebApp()
     app.listen(options.port)
-    logging.info(f'listening on {options.port}')
+    logging.info(f'server on http://127.0.0.1:{options.port}')
     IOLoop.current().start()
 
 
