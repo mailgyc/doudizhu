@@ -128,8 +128,9 @@ PG.Game.prototype = {
 
                 function gameOver() {
                     alert(this.players[this.whoseTurn].isLandlord ? "地主赢" : "农民赢");
-
-                    this.restart();
+                    this.players[loserBSeat].cleanPokers();
+                    this.players[loserASeat].cleanPokers();
+                    PG.Socket.send([PG.Protocol.REQ_RESTART]);
                 }
                 this.game.time.events.add(1000, gameOver, this);
                 break;
@@ -138,13 +139,14 @@ PG.Game.prototype = {
                 this.players[seat].replacePoker(packet[2], 0);
                 this.players[seat].reDealPoker();
                 break;
+            case PG.Protocol.RSP_RESTART:
+                this.restart();
             default:
                 console.log("UNKNOWN PACKET:", packet)
 	    }
 	},
 
 	restart: function () {
-	    this.roomId = 1;
         this.players = [];
         this.tableId = 0;
         this.shotLayer = null;
@@ -161,7 +163,7 @@ PG.Game.prototype = {
         this.players.push(PG.createPlay(1, this));
         this.players.push(PG.createPlay(2, this));
         this.players[0].updateInfo(PG.playerInfo.uid, PG.playerInfo.username);
-        PG.Socket.send([PG.Protocol.REQ_JOIN_ROOM, this.roomId]);
+        this.send_message([PG.Protocol.REQ_JOIN_ROOM, this.roomId]);
 //        PG.Socket.send([PG.Protocol.REQ_JOIN_ROOM, -1]);
 	},
 

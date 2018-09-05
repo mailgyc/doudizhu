@@ -76,6 +76,16 @@ PG.NetPlayer.prototype.reDealPoker = function () {
     }
 };
 
+PG.NetPlayer.prototype.cleanPokers = function () {
+
+    var length = this.pokerInHand.length;
+    for (var i = 0; i < length; i++) {
+        var pid = this.pokerInHand[i];
+        var p = this.findAPoker(pid);
+        p.kill();
+        }
+}
+
 PG.NetPlayer.prototype.dealPokerAnim = function (p, i) {
     var width = this.game.world.width;
     if (p.id > 53) {

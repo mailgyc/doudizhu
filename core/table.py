@@ -43,8 +43,8 @@ class Table(object):
         self.whose_turn = 0
         self.last_shot_seat = 0
         self.last_shot_poker = []
-        if self.room.allow_robot:
-            IOLoop.current().call_later(0.1, self.ai_join, nth=1)
+        restart_response = [Pt.RSP_RESTART]
+        self.players[0].send(restart_response)
 
     def ai_join(self, nth=1):
         size = self.size()
@@ -68,7 +68,6 @@ class Table(object):
                 ps.append((p.uid, p.name))
             else:
                 ps.append((-1, ''))
-
         response = [Pt.RSP_JOIN_TABLE, self.uid, ps]
         for player in self.players:
             if player:
@@ -95,12 +94,12 @@ class Table(object):
         self.whose_turn = self.max_call_score_turn
         self.turn_player.role = 2
         self.turn_player.hand_pokers += self.pokers
+        # winner = self.players[-1]
+        # self.on_game_over(winner)
         response = [Pt.RSP_SHOW_POKER, self.turn_player.uid, self.pokers]
         for p in self.players:
             p.send(response)
         logger.info('Player[%d] IS LANDLORD[%s]', self.turn_player.uid, str(self.pokers))
-        winner = self.players[-1]
-        self.on_game_over(winner)
 
     def go_next_turn(self):
         self.whose_turn += 1
@@ -133,8 +132,8 @@ class Table(object):
                 break
 
     def on_game_over(self, winner):
-        # if winner.hand_pokers:
-        #     return
+        if winner.hand_pokers:
+            return
         coin = self.room.entrance_fee * self.call_score * self.multiple
         for p in self.players:
             response = [Pt.RSP_GAME_OVER, p.uid, coin if p != winner else coin * 2 - 100]
@@ -145,8 +144,6 @@ class Table(object):
         # TODO deduct coin from database
         # TODO store poker round to database
         logger.info('Table[%d] GameOver[%d]', self.uid, self.uid)
-        self.reset()
-        self.sync_table()
 
     def remove(self, player):
         for i, p in enumerate(self.players):
