@@ -70,6 +70,7 @@ class Player(object):
 
         self.table.go_next_turn()
         if pokers:
+            self.table.history[self.seat] += pokers
             self.table.last_shot_seat = self.seat
             self.table.last_shot_poker = pokers
             for p in pokers:
