@@ -1,4 +1,3 @@
-
 PG.NetPlayer = function (seat, game) {
     PG.Player.call(this, seat, game);
     this._pokerPic = [];

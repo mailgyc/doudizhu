@@ -105,8 +105,8 @@ class Table(object):
         for p in self.players:
             p.send(response)
         logger.info('Player[%d] IS LANDLORD[%s]', self.turn_player.uid, str(self.pokers))
-        winner = self.players[0]
-        self.on_game_over(winner)
+        # winner = self.players[0]
+        # self.on_game_over(winner)
 
     def go_next_turn(self):
         self.whose_turn += 1
@@ -145,13 +145,11 @@ class Table(object):
         #     return
         coin = self.room.entrance_fee * self.call_score * self.multiple
         for p in self.players:
-            if p == winner:
-                response = [Pt.RSP_GAME_OVER, p.uid, coin if p != winner else coin * 2 - 100]
-
-                for pp in self.players:
-                    if pp != p:
-                        response.append([pp.uid, *pp.hand_pokers])
-                p.send(response)
+            response = [Pt.RSP_GAME_OVER, p.uid, coin if p != winner else coin * 2 - 100]
+            for pp in self.players:
+                if pp != p:
+                    response.append([pp.uid, *pp.hand_pokers])
+            p.send(response)
         # TODO deduct coin from database
         # TODO store poker round to database
         logger.info('Table[%d] GameOver[%d]', self.uid, self.uid)

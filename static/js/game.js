@@ -132,11 +132,10 @@ PG.Game.prototype = {
                     this.players[loserASeat].cleanPokers();
                     this.players[loserBSeat].uiLeftPoker.kill();
                     this.players[loserASeat].uiLeftPoker.kill();
-//                    this
-//                    this.players[winner].uiLeftPoker.kill();
+                    this.players[this.whoseTurn].uiHead.frameName = 'icon_farmer.png';
                     PG.Socket.send([PG.Protocol.REQ_RESTART]);
                 }
-                this.game.time.events.add(1000, gameOver, this);
+                this.game.time.events.add(3000, gameOver, this);
                 break;
             case PG.Protocol.RSP_CHEAT:
                 var seat = this.uidToSeat(packet[1]);
@@ -165,9 +164,10 @@ PG.Game.prototype = {
         this.players.push(PG.createPlay(0, this));
         this.players.push(PG.createPlay(1, this));
         this.players.push(PG.createPlay(2, this));
+        //this.players[0].updateInfo(this.uid, this.username);
         for (var i = 0; i < 3; i++) {
-            this.players[i].uiHead.kill();
-            this.players[i].updateInfo(this.players[i].uid, 'null');
+            //this.players[i].uiHead.kill();
+            this.players[i].updateInfo(this.players[i].uid, ' ');
         }
 
         // this.send_message([PG.Protocol.REQ_DEAL_POKEER, -1]);
