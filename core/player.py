@@ -26,6 +26,12 @@ class Player(object):
         self.role = FARMER
         self.hand_pokers: List[int] = []
 
+    def reset(self):
+        self.ready = False
+        self.is_called = False
+        self.role = FARMER
+        self.hand_pokers: List[int] = []
+
     def send(self, packet):
         self.socket.write_message(packet)
 

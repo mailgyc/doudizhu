@@ -97,6 +97,7 @@ PG.Game.prototype = {
                 var playerId = packet[1];
                 var score = packet[2];
                 var callend = packet[3];
+                this.debug_log(callend);
                 this.whoseTurn = this.uidToSeat(playerId);
                 //this.debug_log(playerId);
 
