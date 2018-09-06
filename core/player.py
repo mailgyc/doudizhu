@@ -50,7 +50,6 @@ class Player(object):
         if score > self.table.max_call_score:
             self.table.max_call_score = score
             self.table.max_call_score_turn = self.seat
-
         response = [Pt.RSP_CALL_SCORE, self.uid, score, call_end]
         for p in self.table.players:
             p.send(response)
@@ -75,17 +74,19 @@ class Player(object):
             self.table.last_shot_poker = pokers
             for p in pokers:
                 self.hand_pokers.remove(p)
+        if not self.hand_pokers:
+            self.table.on_game_over(self)
+            return
+
+        import debug
+        if self.uid == debug.over_in_advance:
+            self.table.on_game_over(self)
+            return
 
         response = [Pt.RSP_SHOT_POKER, self.uid, pokers]
         for p in self.table.players:
             p.send(response)
         logger.info('Player[%d] shot[%s]', self.uid, str(pokers))
-
-        import debug
-        if self.uid == debug.over_in_advance:
-            self.table.on_game_over(self)
-        if not self.hand_pokers:
-            self.table.on_game_over(self)
 
     def join_table(self, t):
         self.ready = True

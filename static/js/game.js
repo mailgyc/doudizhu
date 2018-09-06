@@ -23,6 +23,12 @@ PG.Game.prototype = {
         this.roomId = roomId;
     },
 
+    debug_log(obj) {
+    console.log('*******');
+    console.log(obj);
+    console.log('********');
+    },
+
 	create: function () {
         this.stage.backgroundColor = '#182d3b';
 
@@ -92,6 +98,7 @@ PG.Game.prototype = {
                 var score = packet[2];
                 var callend = packet[3];
                 this.whoseTurn = this.uidToSeat(playerId);
+                //this.debug_log(playerId);
 
                 var hanzi = ['不叫', "一分", "两分", "三分"];
                 this.players[this.whoseTurn].say(hanzi[score]);
@@ -129,7 +136,7 @@ PG.Game.prototype = {
                 function gameOver() {
                     alert(this.players[this.whoseTurn].isLandlord ? "地主赢" : "农民赢");
                     PG.Socket.send([PG.Protocol.REQ_RESTART]);
-                    this.cleanWorld(loserASeat, loserBSeat);
+                    this.cleanWorld();
                 }
                 this.game.time.events.add(3000, gameOver, this);
                 break;
@@ -145,14 +152,22 @@ PG.Game.prototype = {
 	    }
 	},
 
-    cleanWorld: function (loserASeat, loserBSeat) {
-        this.players[loserBSeat].cleanPokers();
-        this.players[loserASeat].cleanPokers();
-        this.players[loserBSeat].uiLeftPoker.kill();
-        this.players[loserASeat].uiLeftPoker.kill();
-        this.players[this.whoseTurn].cleanPokers();
-        this.players[loserBSeat].uiLeftPoker.kill();
-        this.players[this.whoseTurn].uiHead.frameName = 'icon_farmer.png';
+    cleanWorld: function () {
+        for (i =0; i < 3; i ++) {
+            this.players[i].cleanPokers();
+            try {
+                this.players[i].uiLeftPoker.kill();
+            }
+            catch (err) {
+            }
+            this.players[i].uiHead.frameName = 'icon_farmer.png';
+        }
+
+        for (var i = 0; i < this.tablePoker.length; i++) {
+                var p = this.tablePokerPic[this.tablePoker[i]];
+                // p.kill();
+                p.destroy();
+            }
     },
 
 	restart: function () {
@@ -170,10 +185,10 @@ PG.Game.prototype = {
         this.players.push(PG.createPlay(0, this));
         this.players.push(PG.createPlay(1, this));
         this.players.push(PG.createPlay(2, this));
-        //this.players[0].updateInfo(this.uid, this.username);
+        player_id = [1, 11, 12];
         for (var i = 0; i < 3; i++) {
             //this.players[i].uiHead.kill();
-            this.players[i].updateInfo(this.players[i].uid, ' ');
+            this.players[i].updateInfo(player_id[i], ' ');
         }
 
         // this.send_message([PG.Protocol.REQ_DEAL_POKEER, -1]);
@@ -185,6 +200,7 @@ PG.Game.prototype = {
 
 	uidToSeat: function (uid) {
 	    for (var i = 0; i < 3; i++) {
+//	        this.debug_log(this.players[i].uid);
 	        if (uid == this.players[i].uid)
 	            return i;
 	    }

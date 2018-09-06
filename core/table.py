@@ -45,7 +45,7 @@ class Table(object):
         self.last_shot_poker = []
         self.players[0].send([Pt.RSP_RESTART])
         for player in self.players:
-            player.join_table(self)
+            # player.join_table(self)
             player.hand_pokers = []
         if self.is_full():
             self.deal_poker()

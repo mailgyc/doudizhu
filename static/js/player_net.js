@@ -83,6 +83,7 @@ PG.NetPlayer.prototype.cleanPokers = function () {
         var p = this.findAPoker(pid);
         p.kill();
         }
+    this.pokerInHand = [];
 }
 
 PG.NetPlayer.prototype.dealPokerAnim = function (p, i) {
