@@ -74,9 +74,6 @@ class Player(object):
             self.table.last_shot_poker = pokers
             for p in pokers:
                 self.hand_pokers.remove(p)
-        if not self.hand_pokers:
-            self.table.on_game_over(self)
-            return
 
         import debug
         if self.uid == debug.over_in_advance:
@@ -87,6 +84,10 @@ class Player(object):
         for p in self.table.players:
             p.send(response)
         logger.info('Player[%d] shot[%s]', self.uid, str(pokers))
+
+        if not self.hand_pokers:
+            self.table.on_game_over(self)
+            return
 
     def join_table(self, t):
         self.ready = True

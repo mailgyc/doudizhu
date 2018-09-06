@@ -44,3 +44,4 @@ class Protocol(IntEnum):
 
     REQ_RESTART = 45
     RSP_RESTART = 46
+

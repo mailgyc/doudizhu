@@ -133,6 +133,7 @@ PG.Game.prototype = {
 //               this.players[loserASeat].pokerInHand = [];
 
                 this.whoseTurn = this.uidToSeat(winner);
+
                 function gameOver() {
                     alert(this.players[this.whoseTurn].isLandlord ? "地主赢" : "农民赢");
                     PG.Socket.send([PG.Protocol.REQ_RESTART]);
