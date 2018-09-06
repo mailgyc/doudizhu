@@ -66,14 +66,15 @@ class Player(object):
             if self.table.last_shot_seat != self.seat and rule.compare_poker(pokers, self.table.last_shot_poker) < 0:
                 logger.warning('Player[%d] play small than last shot poker', self.uid)
                 return
-
-        self.table.go_next_turn()
         if pokers:
             self.table.history[self.seat] += pokers
             self.table.last_shot_seat = self.seat
             self.table.last_shot_poker = pokers
             for p in pokers:
                 self.hand_pokers.remove(p)
+
+        if self.hand_pokers:
+            self.table.go_next_turn()
 
         import debug
         if self.uid == debug.over_in_advance:

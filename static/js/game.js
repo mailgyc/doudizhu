@@ -127,7 +127,7 @@ PG.Game.prototype = {
                 this.players[loserASeat].reDealPoker();
 
                 var loserBSeat = this.uidToSeat(packet[4][0]);
-                this.players[loserBSeat].replacePoker(packet[4], 2);
+                this.players[loserBSeat].replacePoker(packet[4], 1);
                 this.players[loserBSeat].reDealPoker();
 //                 this.players[loserBSeat].removeAllPoker();
 //               this.players[loserASeat].pokerInHand = [];
