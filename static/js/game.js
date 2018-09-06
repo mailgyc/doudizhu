@@ -128,12 +128,8 @@ PG.Game.prototype = {
                 this.whoseTurn = this.uidToSeat(winner);
                 function gameOver() {
                     alert(this.players[this.whoseTurn].isLandlord ? "地主赢" : "农民赢");
-                    this.players[loserBSeat].cleanPokers();
-                    this.players[loserASeat].cleanPokers();
-                    this.players[loserBSeat].uiLeftPoker.kill();
-                    this.players[loserASeat].uiLeftPoker.kill();
-                    this.players[this.whoseTurn].uiHead.frameName = 'icon_farmer.png';
                     PG.Socket.send([PG.Protocol.REQ_RESTART]);
+                    this.cleanWorld(loserASeat, loserBSeat);
                 }
                 this.game.time.events.add(3000, gameOver, this);
                 break;
@@ -148,6 +144,16 @@ PG.Game.prototype = {
                 console.log("UNKNOWN PACKET:", packet)
 	    }
 	},
+
+    cleanWorld: function (loserASeat, loserBSeat) {
+        this.players[loserBSeat].cleanPokers();
+        this.players[loserASeat].cleanPokers();
+        this.players[loserBSeat].uiLeftPoker.kill();
+        this.players[loserASeat].uiLeftPoker.kill();
+        this.players[this.whoseTurn].cleanPokers();
+        this.players[loserBSeat].uiLeftPoker.kill();
+        this.players[this.whoseTurn].uiHead.frameName = 'icon_farmer.png';
+    },
 
 	restart: function () {
         this.players = [];

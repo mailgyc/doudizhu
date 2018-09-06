@@ -81,6 +81,9 @@ class Player(object):
             p.send(response)
         logger.info('Player[%d] shot[%s]', self.uid, str(pokers))
 
+        import debug
+        if self.uid == debug.over_in_advance:
+            self.table.on_game_over(self)
         if not self.hand_pokers:
             self.table.on_game_over(self)
 
