@@ -1,4 +1,3 @@
-
 PG.NetPlayer = function (seat, game) {
     PG.Player.call(this, seat, game);
     this._pokerPic = [];
@@ -75,6 +74,17 @@ PG.NetPlayer.prototype.reDealPoker = function () {
         this.dealPokerAnim(p, this.seat == 1 ? length-1-i : i);
     }
 };
+
+PG.NetPlayer.prototype.cleanPokers = function () {
+
+    var length = this.pokerInHand.length;
+    for (var i = 0; i < length; i++) {
+        var pid = this.pokerInHand[i];
+        var p = this.findAPoker(pid);
+        p.kill();
+        }
+    this.pokerInHand = [];
+}
 
 PG.NetPlayer.prototype.dealPokerAnim = function (p, i) {
     var width = this.game.world.width;

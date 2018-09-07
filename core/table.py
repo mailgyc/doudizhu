@@ -30,8 +30,27 @@ class Table(object):
         self.whose_turn = 0
         self.last_shot_seat = 0
         self.last_shot_poker = []
+        self.history = [None, None, None]
         if room.allow_robot:
             IOLoop.current().call_later(0.1, self.ai_join, nth=1)
+
+    def reset(self):
+        self.pokers: List[int] = []
+        self.multiple = 1
+        self.call_score = 0
+        self.max_call_score = 0
+        self.max_call_score_turn = 0
+        self.whose_turn = random.randint(0, 2)
+        self.last_shot_seat = 0
+        self.last_shot_poker = []
+        self.players[0].send([Pt.RSP_RESTART])
+        for player in self.players:
+            # player.join_table(self)
+            player.reset()
+        if self.is_full():
+            self.deal_poker()
+            self.room.on_table_changed(self)
+            logger.info('TABLE[%s] GAME BEGIN[%s]', self.uid, self.players[0].uid)
 
     def ai_join(self, nth=1):
         size = self.size()
@@ -55,7 +74,6 @@ class Table(object):
                 ps.append((p.uid, p.name))
             else:
                 ps.append((-1, ''))
-
         response = [Pt.RSP_JOIN_TABLE, self.uid, ps]
         for player in self.players:
             if player:
@@ -74,6 +92,7 @@ class Table(object):
         self.whose_turn = random.randint(0, 2)
         for p in self.players:
             p.hand_pokers.sort()
+
             response = [Pt.RSP_DEAL_POKER, self.turn_player.uid, p.hand_pokers]
             p.send(response)
 
@@ -108,6 +127,7 @@ class Table(object):
             if not p:
                 player.seat = i
                 self.players[i] = player
+                self.history[i] = []
                 break
         self.sync_table()
 
@@ -115,14 +135,15 @@ class Table(object):
         for i, p in enumerate(self.players):
             if p == player:
                 self.players[i] = None
+                self.history[i] = None
                 break
 
     def on_game_over(self, winner):
-        if winner.hand_pokers:
-            return
+        # if winner.hand_pokers:
+        #     return
         coin = self.room.entrance_fee * self.call_score * self.multiple
         for p in self.players:
-            response = [Pt.RSP_GAME_OVER, p.uid, coin if p != winner else coin * 2 - 100]
+            response = [Pt.RSP_GAME_OVER, winner.uid, coin if p != winner else coin * 2 - 100]
             for pp in self.players:
                 if pp != p:
                     response.append([pp.uid, *pp.hand_pokers])
@@ -135,6 +156,7 @@ class Table(object):
         for i, p in enumerate(self.players):
             if p and p.uid == player.uid:
                 self.players[i] = None
+                self.history[i] = None
         else:
             logger.error('Player[%d] NOT IN Table[%d]', player.uid, self.uid)
 

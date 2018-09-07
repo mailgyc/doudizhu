@@ -41,6 +41,17 @@ PG.Player.prototype.updateInfo = function (uid, name) {
     }
 };
 
+PG.Player.prototype.cleanPokers = function () {
+
+    var length = this.pokerInHand.length;
+    for (var i = 0; i < length; i++) {
+        var pid = this.pokerInHand[i];
+        var p = this.findAPoker(pid);
+        p.kill();
+        }
+    this.pokerInHand = [];
+}
+
 PG.Player.prototype.initShotLayer = function () {
     this.shotLayer = this.game.add.group();
     var group = this.shotLayer;
@@ -263,6 +274,16 @@ PG.Player.prototype.removeAPoker = function (pid) {
     }
     console.log('Error: REMOVE POKER ', pid);
 };
+
+PG.Player.prototype.removeAllPoker = function () {
+    var length = this.pokerInHand.length;
+    for (var i = 0; i < length; i++) {
+            this.pokerInHand.splice(i, 1);
+            delete this._pokerPic[pid];
+        }
+    console.log('Error: REMOVE POKER ', pid);
+};
+
 
 PG.Player.prototype.findAPoker = function (pid) {
     var poker = this._pokerPic[pid];

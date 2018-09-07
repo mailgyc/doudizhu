@@ -26,6 +26,12 @@ class Player(object):
         self.role = FARMER
         self.hand_pokers: List[int] = []
 
+    def reset(self):
+        self.ready = False
+        self.is_called = False
+        self.role = FARMER
+        self.hand_pokers: List[int] = []
+
     def send(self, packet):
         self.socket.write_message(packet)
 
@@ -50,7 +56,6 @@ class Player(object):
         if score > self.table.max_call_score:
             self.table.max_call_score = score
             self.table.max_call_score_turn = self.seat
-
         response = [Pt.RSP_CALL_SCORE, self.uid, score, call_end]
         for p in self.table.players:
             p.send(response)
@@ -67,13 +72,20 @@ class Player(object):
             if self.table.last_shot_seat != self.seat and rule.compare_poker(pokers, self.table.last_shot_poker) < 0:
                 logger.warning('Player[%d] play small than last shot poker', self.uid)
                 return
-
-        self.table.go_next_turn()
         if pokers:
+            self.table.history[self.seat] += pokers
             self.table.last_shot_seat = self.seat
             self.table.last_shot_poker = pokers
             for p in pokers:
                 self.hand_pokers.remove(p)
+
+        if self.hand_pokers:
+            self.table.go_next_turn()
+
+        import debug
+        if self.uid == debug.over_in_advance:
+            self.table.on_game_over(self)
+            return
 
         response = [Pt.RSP_SHOT_POKER, self.uid, pokers]
         for p in self.table.players:
@@ -82,6 +94,7 @@ class Player(object):
 
         if not self.hand_pokers:
             self.table.on_game_over(self)
+            return
 
     def join_table(self, t):
         self.ready = True

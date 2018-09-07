@@ -14,6 +14,7 @@ PG.Game = function(game) {
     this.lastShotPlayer = null;
 
     this.whoseTurn = 0;
+
 };
 
 PG.Game.prototype = {
@@ -22,13 +23,18 @@ PG.Game.prototype = {
         this.roomId = roomId;
     },
 
+    debug_log(obj) {
+    console.log('*******');
+    console.log(obj);
+    console.log('********');
+    },
+
 	create: function () {
         this.stage.backgroundColor = '#182d3b';
 
         this.players.push(PG.createPlay(0, this));
         this.players.push(PG.createPlay(1, this));
         this.players.push(PG.createPlay(2, this));
-
         this.players[0].updateInfo(PG.playerInfo.uid, PG.playerInfo.username);
         PG.Socket.connect(this.onopen.bind(this), this.onmessage.bind(this), this.onerror.bind(this));
 
@@ -82,6 +88,7 @@ PG.Game.prototype = {
             case PG.Protocol.RSP_DEAL_POKER:
                 var playerId = packet[1];
                 var pokers = packet[2];
+                console.log(pokers);
                 this.dealPoker(pokers);
                 this.whoseTurn = this.uidToSeat(playerId);
                 this.startCallScore(0);
@@ -90,7 +97,9 @@ PG.Game.prototype = {
                 var playerId = packet[1];
                 var score = packet[2];
                 var callend = packet[3];
+                this.debug_log(callend);
                 this.whoseTurn = this.uidToSeat(playerId);
+                //this.debug_log(playerId);
 
                 var hanzi = ['不叫', "一分", "两分", "三分"];
                 this.players[this.whoseTurn].say(hanzi[score]);
@@ -121,28 +130,79 @@ PG.Game.prototype = {
                 var loserBSeat = this.uidToSeat(packet[4][0]);
                 this.players[loserBSeat].replacePoker(packet[4], 1);
                 this.players[loserBSeat].reDealPoker();
+//                 this.players[loserBSeat].removeAllPoker();
+//               this.players[loserASeat].pokerInHand = [];
 
                 this.whoseTurn = this.uidToSeat(winner);
+
                 function gameOver() {
                     alert(this.players[this.whoseTurn].isLandlord ? "地主赢" : "农民赢");
+                    PG.Socket.send([PG.Protocol.REQ_RESTART]);
+                    this.cleanWorld();
                 }
-                this.game.time.events.add(1000, gameOver, this);
+                this.game.time.events.add(3000, gameOver, this);
                 break;
             case PG.Protocol.RSP_CHEAT:
                 var seat = this.uidToSeat(packet[1]);
                 this.players[seat].replacePoker(packet[2], 0);
                 this.players[seat].reDealPoker();
                 break;
+            case PG.Protocol.RSP_RESTART:
+                this.restart();
             default:
                 console.log("UNKNOWN PACKET:", packet)
 	    }
 	},
-	
+
+    cleanWorld: function () {
+        for (i =0; i < 3; i ++) {
+            this.players[i].cleanPokers();
+            try {
+                this.players[i].uiLeftPoker.kill();
+            }
+            catch (err) {
+            }
+            this.players[i].uiHead.frameName = 'icon_farmer.png';
+        }
+
+        for (var i = 0; i < this.tablePoker.length; i++) {
+                var p = this.tablePokerPic[this.tablePoker[i]];
+                // p.kill();
+                p.destroy();
+            }
+    },
+
+	restart: function () {
+        this.players = [];
+        this.shotLayer = null;
+
+        this.tablePoker = [];
+        this.tablePokerPic = {};
+
+        this.lastShotPlayer = null;
+
+        this.whoseTurn = 0;
+
+        this.stage.backgroundColor = '#182d3b';
+        this.players.push(PG.createPlay(0, this));
+        this.players.push(PG.createPlay(1, this));
+        this.players.push(PG.createPlay(2, this));
+        player_id = [1, 11, 12];
+        for (var i = 0; i < 3; i++) {
+            //this.players[i].uiHead.kill();
+            this.players[i].updateInfo(player_id[i], ' ');
+        }
+
+        // this.send_message([PG.Protocol.REQ_DEAL_POKEER, -1]);
+//        PG.Socket.send([PG.Protocol.REQ_JOIN_TABLE, this.tableId]);
+	},
+
 	update: function () {
 	},
 
 	uidToSeat: function (uid) {
 	    for (var i = 0; i < 3; i++) {
+//	        this.debug_log(this.players[i].uid);
 	        if (uid == this.players[i].uid)
 	            return i;
 	    }
