@@ -1,14 +1,18 @@
 language: python
 python:
   - '3.6'
+  - '3.7'
 
 install:
-  - pip install codecov
+  - pip install -U pip
+
+before_script:
   - pip install -r requirements.txt
+  - git clone https://github.com/mailgyc/doudizhu.git
+  - cd doudizhu
 
 script: 
-  - pytest
+  - coverage run
 
-#after_success:
-#  - tox -e coverage-report
-#  - codecov
+after_success:
+  - coverage report
