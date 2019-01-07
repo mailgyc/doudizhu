@@ -30,7 +30,6 @@ class RegHandler(BaseHandler):
 
         uid = await self.db.insert('INSERT INTO account (email, username, password) VALUES (%s, %s, %s)',
                                    email, username, password)
-        print(uid)
         self.set_current_user(uid, username)
         self.set_header('Content-Type', 'application/json')
         response = {
