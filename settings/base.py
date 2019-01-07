@@ -61,19 +61,14 @@ LOGGING = {
         },
     },
     'loggers': {
-        'db': {
+        '': {
+            'level': 'INFO',
+            'handlers': ['file'],
+            'propagate': False,
+        },
+        'root': {
             'level': 'INFO',
             'handlers': ['console', 'file'],
-            'propagate': False,
-        },
-        'core': {
-            'level': 'INFO',
-            'handlers': ['console'],
-            'propagate': False,
-        },
-        'handlers': {
-            'level': 'INFO',
-            'handlers': ['console'],
             'propagate': False,
         },
     },

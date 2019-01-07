@@ -1,15 +1,16 @@
+import json
 from concurrent.futures import ThreadPoolExecutor
 
 from tornado.escape import json_encode
 from tornado.web import RequestHandler
 
-from db import torndb
+from db import aio_db
 
 
 class BaseHandler(RequestHandler):
 
     @property
-    def db(self) -> torndb.Connection:
+    def db(self) -> aio_db.AsyncConnection:
         return self.application.db
 
     @property
@@ -18,6 +19,12 @@ class BaseHandler(RequestHandler):
 
     def data_received(self, chunk):
         pass
+
+    def get_query_params(self, name, default=None, strip=True):
+        if not hasattr(self, 'query_params'):
+            query_params = json.loads(self.request.body.decode('utf-8'))
+            setattr(self, 'query_params', query_params)
+        return self.query_params.get(name, default)
 
     def get_current_user(self):
         return self.get_secure_cookie("user")

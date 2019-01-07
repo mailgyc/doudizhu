@@ -1,5 +1,7 @@
+import asyncio
+import json
+
 import bcrypt
-from tornado.escape import json_encode
 
 from handlers.base import BaseHandler
 
@@ -15,36 +17,35 @@ class WebHandler(BaseHandler):
 
 class RegHandler(BaseHandler):
 
-    def post(self):
-        email = self.get_argument('email', self.get_argument('username'))
-        account = self.db.get('SELECT * FROM account WHERE email="%s"', email)
-
-        if account:
-            self.write('1')
+    async def post(self):
+        email = self.get_query_params('email', self.get_query_params('username'))
+        account: asyncio.Future = await self.db.fetchone('SELECT id FROM account WHERE email=%s', email)
+        if account and account.result():
+            self.write({'errcode': 1, 'errmsg': 'The email has already exist'})
             return
 
-        username = self.get_argument('username')
-        password = self.get_argument('password')
+        username = self.get_query_params('username')
+        password = self.get_query_params('password')
         password = bcrypt.hashpw(password.encode('utf8'), bcrypt.gensalt())
 
-        uid = self.db.insert('INSERT INTO account (email, username, password) VALUES ("%s", "%s", "%s")',
-                             email, username, password)
-
+        uid = await self.db.insert('INSERT INTO account (email, username, password) VALUES (%s, %s, %s)',
+                                   email, username, password)
+        print(uid)
         self.set_current_user(uid, username)
         self.set_header('Content-Type', 'application/json')
-        info = {
-            'uid': uid,
-            'username': username,
+        response = {
+            'errcode': 0,
+            'userinfo': {'uid': uid, 'username': username}
         }
-        self.write(json_encode(info))
+        self.write(response)
 
 
 class LoginHandler(BaseHandler):
 
-    def post(self):
+    async def post(self):
         email = self.get_argument('email')
         password = self.get_argument("password")
-        account = self.db.get('SELECT * FROM account WHERE email="%s"', email)
+        account = await self.db.get('SELECT * FROM account WHERE email=%s', email)
         password = bcrypt.hashpw(password.encode('utf8'), account.get('password'))
 
         self.set_header('Content-Type', 'application/json')

@@ -184,28 +184,26 @@ PG.Login = {
             return;
         }
 
-        var httpRequest = new XMLHttpRequest();
         var that = this;
-        httpRequest.onreadystatechange = function () {
-            if (httpRequest.readyState === XMLHttpRequest.DONE) {
-                if (httpRequest.status === 200) {
-                    if (httpRequest.responseText == '1') {
-                        that.errorText.text = '该用户名已经被占用';
-                    } else {
-                        PG.playerInfo = JSON.parse(httpRequest.responseText);
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', '/reg', true);
+        xhr.setRequestHeader('Content-type', 'application/json;charset=UTF-8');
+        xhr.setRequestHeader('X-Csrftoken', PG.getCookie("_xsrf"));
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === XMLHttpRequest.DONE) {
+                if (xhr.status === 200) {
+                    var response = JSON.parse(xhr.responseText);
+                    if (response.errcode == 0) {
+                        PG.playerInfo = response.userinfo
                         that.state.start('MainMenu');
+                    } else {
+                        that.errorText.text = response.errmsg;
                     }
                 } else {
-                    console.log('Error:' + httpRequest.status);
-                    that.errorText.text = httpRequest.responseText;
+                    that.errorText.text = xhr.responseText;
                 }
             }
         };
-        httpRequest.open('POST', '/reg', true);
-        httpRequest.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-        httpRequest.setRequestHeader('X-Csrftoken', PG.getCookie("_xsrf"));
-
-        var req = 'username=' + encodeURIComponent(this.username.value) + '&password=' + encodeURIComponent(this.password.value);
-        httpRequest.send(req);
+        xhr.send(JSON.stringify({"username": this.username.value, "password": this.password.value}));
     }
 };

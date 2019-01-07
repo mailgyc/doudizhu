@@ -7,11 +7,9 @@ from tornado.web import authenticated
 from tornado.websocket import WebSocketHandler, WebSocketClosedError
 
 from core.player import Player
-from core.room import RoomManager, Room
-from db import torndb
+from core.room import RoomManager
+from db import aio_db
 from .protocol import Protocol as Pt
-
-logger = logging.getLogger('ddz')
 
 
 def shot_turn(method):
@@ -20,7 +18,7 @@ def shot_turn(method):
         if socket.player.seat == socket.player.table.whose_turn:
             method(socket, packet)
         else:
-            logger.warning('Player[%d] TURN CHEAT', socket.uid)
+            logging.warning('Player[%d] TURN CHEAT', socket.uid)
     return wrapper
 
 
@@ -28,11 +26,11 @@ class SocketHandler(WebSocketHandler):
 
     def __init__(self, application, request, **kwargs):
         super().__init__(application, request, **kwargs)
-        self.db: torndb.Connection = self.application.db
+        self.db: aio_db.AsyncConnection = self.application.db
         self.player: Player = None
 
     def data_received(self, chunk):
-        logger.info('socket data_received')
+        logging.info('socket data_received')
 
     def get_current_user(self):
         return json_decode(self.get_secure_cookie("user"))
@@ -49,15 +47,15 @@ class SocketHandler(WebSocketHandler):
     def open(self):
         user = self.current_user
         self.player = Player(user['uid'], user['username'], self)
-        logger.info('SOCKET[%s] OPEN', self.player.uid)
+        logging.info('SOCKET[%s] OPEN', self.player.uid)
 
     def on_close(self):
         self.player.leave_table()
-        logger.info('SOCKET[%s] CLOSE', self.player.uid)
+        logging.info('SOCKET[%s] CLOSE', self.player.uid)
 
-    def on_message(self, message):
+    async def on_message(self, message):
         packet = json.loads(message)
-        logger.info('REQ[%d]: %s', self.uid, packet)
+        logging.info('REQ[%d]: %s', self.uid, packet)
 
         code = packet[0]
         if code == Pt.REQ_LOGIN:
@@ -78,22 +76,22 @@ class SocketHandler(WebSocketHandler):
             # TODO: check player was already in table.
             table = self.room.new_table()
             self.player.join_table(table)
-            logger.info('PLAYER[%s] NEW TABLE[%d]', self.uid, table.uid)
+            logging.info('PLAYER[%s] NEW TABLE[%d]', self.uid, table.uid)
             self.write_message([Pt.RSP_NEW_TABLE, table.uid])
 
         elif code == Pt.REQ_JOIN_TABLE:
             table = self.room.find_waiting_table(packet[1])
             if not table:
                 self.write_message([Pt.RSP_TABLE_LIST, self.room.rsp_tables()])
-                logger.info('PLAYER[%d] JOIN TABLE[%d] NOT FOUND', self.uid, packet[1])
+                logging.info('PLAYER[%d] JOIN TABLE[%d] NOT FOUND', self.uid, packet[1])
                 return
 
             self.player.join_table(table)
-            logger.info('PLAYER[%s] JOIN TABLE[%d]', self.uid, table.uid)
+            logging.info('PLAYER[%s] JOIN TABLE[%d]', self.uid, table.uid)
             if table.is_full():
                 table.deal_poker()
                 self.room.on_table_changed(table)
-                logger.info('TABLE[%s] GAME BEGIN[%s]', table.uid, table.players)
+                logging.info('TABLE[%s] GAME BEGIN[%s]', table.uid, table.players)
 
         elif code == Pt.REQ_CALL_SCORE:
             self.handle_call_score(packet)
@@ -112,7 +110,7 @@ class SocketHandler(WebSocketHandler):
         elif code == Pt.REQ_RESTART:
             self.player.table.reset()
         else:
-            logger.info('UNKNOWN PACKET: %s', code)
+            logging.info('UNKNOWN PACKET: %s', code)
 
     @shot_turn
     def handle_call_score(self, packet):
@@ -136,12 +134,12 @@ class SocketHandler(WebSocketHandler):
     def write_message(self, message, binary=False):
         if self.ws_connection is None:
             raise WebSocketClosedError()
-        logger.info('RSP[%d]: %s', self.uid, message)
+        logging.info('RSP[%d]: %s', self.uid, message)
         packet = json.dumps(message)
         return self.ws_connection.write_message(packet, binary=binary)
 
     def send_updates(cls, chat):
-        logger.info('sending message to %d waiters', len(cls.waiters))
+        logging.info('sending message to %d waiters', len(cls.waiters))
         for waiter in cls.waiters:
             waiter.write_message('tornado:' + chat)
 
