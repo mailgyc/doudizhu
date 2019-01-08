@@ -7,7 +7,7 @@ from tornado.ioloop import IOLoop
 from tornado.options import options
 
 from db import aio_db
-from settings.base import settings, DATABASE, LOGGING
+from settings.base import APPLICATION, DATABASE, LOGGING
 from settings.urls import url_patterns
 
 logging.config.dictConfig(LOGGING)
@@ -15,7 +15,7 @@ logging.config.dictConfig(LOGGING)
 
 class WebApp(tornado.web.Application):
     def __init__(self):
-        super().__init__(url_patterns, **settings)
+        super().__init__(url_patterns, **APPLICATION)
         self.db = aio_db.AsyncConnection(**DATABASE)
         self.executor = ThreadPoolExecutor()
 

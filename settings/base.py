@@ -3,8 +3,6 @@ import os
 import tornado.template
 from tornado.options import define, options
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
 define("port", default=8080, help="run on the given port", type=int)
 define("debug", default=False, help="debug mode")
 define("host", default="localhost", help="Database host")
@@ -13,10 +11,11 @@ define("user", default="root", help="username")
 define("password", default="123456", help="password")
 tornado.options.parse_command_line()
 
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 TEMPLATE_ROOT = os.path.join(BASE_DIR, 'templates')
 
-settings = {
+APPLICATION = {
     'title': 'Tornado Poker',
     'login_url': '/',
     'static_path': STATIC_ROOT,

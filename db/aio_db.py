@@ -32,10 +32,11 @@ class AsyncConnection(object):
         if self._async_wait:
             await self._async_wait
         if self._conn_pool:
-            self._conn_pool.terminate()
+            # self._conn_pool.terminate()
+            self._conn_pool.close()
             await self._conn_pool.wait_closed()
-            self._conn_pool = None
             self._async_wait = None
+            self._conn_pool = None
 
     async def reconnect(self):
         if self._conn_pool:
@@ -43,7 +44,6 @@ class AsyncConnection(object):
         elif self._async_wait:
             await self._async_wait
         else:
-            # self._async_wait = asyncio.Future(loop=self._loop)
             self._async_wait = self.loop.create_future()
             try:
                 self._conn_pool = await aiomysql.create_pool(loop=self.loop, **self._db_args)
@@ -60,7 +60,7 @@ class AsyncConnection(object):
             await self._execute(cursor, query, args, kwargs)
             return cursor.fetchone()
         finally:
-            await cursor.close()
+            await cursor.release()
 
     async def insert(self, query: str, *args, **kwargs):
         cursor = await self.cursor()
@@ -68,10 +68,7 @@ class AsyncConnection(object):
             await self._execute(cursor, query, args, kwargs)
             return cursor.lastrowid
         finally:
-            await cursor.close()
-
-    def release(self, conn):
-        self._conn_pool.release(conn)
+            await cursor.release()
 
     async def cursor(self, conn=None) -> aiomysql.Cursor:
         in_transaction = conn is not None
@@ -87,7 +84,7 @@ class AsyncConnection(object):
         conn = cursor.connection
         await cursor.close()
         if not in_transaction:
-            self.release(conn)
+            self._conn_pool.release(conn)
 
     async def _execute(self, cursor: aiomysql.Cursor, query: str, args, kwargs):
         try:
