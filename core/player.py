@@ -82,11 +82,6 @@ class Player(object):
         if self.hand_pokers:
             self.table.go_next_turn()
 
-        import debug
-        if self.uid == debug.over_in_advance:
-            self.table.on_game_over(self)
-            return
-
         response = [Pt.RSP_SHOT_POKER, self.uid, pokers]
         for p in self.table.players:
             p.send(response)
