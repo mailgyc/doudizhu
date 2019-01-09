@@ -4,7 +4,7 @@ import tornado.template
 from tornado.options import define, options
 
 define("port", default=8080, help="run on the given port", type=int)
-define("debug", default=False, help="debug mode")
+define("debug", default=True, help="debug mode")
 define("host", default="localhost", help="Database host")
 define("database", default="ddz", help="Database name")
 define("user", default="root", help="username")
@@ -24,6 +24,15 @@ APPLICATION = {
     'cookie_secret': 'fiDSpuZ7QFe8fm0XP9Jb7ZIPNsOegkHYtgKSd4I83Hs=',
     'debug': options.debug,
 }
+
+if not options.debug:
+    import sentry_sdk
+    from sentry_sdk.integrations.tornado import TornadoIntegration
+    sentry_sdk.init(
+        'https://f32173ee60f949d5b2cbad5c651a14a7@sentry.io/1366504',
+        integrations=[TornadoIntegration()]
+    )
+
 
 DATABASE = {
     'host': options.host,

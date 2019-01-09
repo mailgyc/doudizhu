@@ -7,8 +7,6 @@ from core import rule
 from core.player import Player
 from handlers.protocol import Protocol as Pt
 
-logger = logging.getLogger('ddz')
-
 
 class AiPlayer(Player):
 
@@ -20,10 +18,10 @@ class AiPlayer(Player):
     def to_server(self, message):
         packet = json.dumps(message)
         IOLoop.current().add_callback(self.socket.on_message, packet)
-        logger.info('AI[%d] REQ: %s', self.uid, message)
+        logging.info('AI[%d] REQ: %s', self.uid, message)
 
     def from_server(self, packet):
-        logger.info('AI[%d] ON: %s', self.uid, packet)
+        logging.info('AI[%d] ON: %s', self.uid, packet)
         code = packet[0]
         if code == Pt.RSP_LOGIN:
             pass
@@ -53,7 +51,7 @@ class AiPlayer(Player):
             winner = packet[1]
             coin = packet[2]
         else:
-            logger.info('AI ERROR PACKET: %s', packet)
+            logging.info('AI ERROR PACKET: %s', packet)
 
     def auto_call_score(self, score=0):
         # millis = random.randint(1000, 2000)

@@ -4,10 +4,8 @@ from typing import List
 
 from tornado.ioloop import IOLoop
 
-from core.robot import AiPlayer
+from core.robot import AiPlayer, Player
 from handlers.protocol import Protocol as Pt
-
-logger = logging.getLogger('ddz')
 
 
 class Table(object):
@@ -20,7 +18,7 @@ class Table(object):
     def __init__(self, uid, room):
         self.uid = uid
         self.room = room
-        self.players = [None, None, None]
+        self.players: List[Player] = [None, None, None]
         self.state = 0  # 0 waiting  1 playing 2 end 3 closed
         self.pokers: List[int] = []
         self.multiple = 1
@@ -50,7 +48,7 @@ class Table(object):
         if self.is_full():
             self.deal_poker()
             self.room.on_table_changed(self)
-            logger.info('TABLE[%s] GAME BEGIN[%s]', self.uid, self.players[0].uid)
+            logging.info('TABLE[%s] GAME BEGIN[%s]', self.uid, self.players[0].uid)
 
     def ai_join(self, nth=1):
         size = self.size()
@@ -104,7 +102,7 @@ class Table(object):
         response = [Pt.RSP_SHOW_POKER, self.turn_player.uid, self.pokers]
         for p in self.players:
             p.send(response)
-        logger.info('Player[%d] IS LANDLORD[%s]', self.turn_player.uid, str(self.pokers))
+        logging.info('Player[%d] IS LANDLORD[%s]', self.turn_player.uid, str(self.pokers))
 
     def go_next_turn(self):
         self.whose_turn += 1
@@ -122,7 +120,7 @@ class Table(object):
 
     def on_join(self, player):
         if self.is_full():
-            logger.error('Player[%d] JOIN Table[%d] FULL', player.uid, self.uid)
+            logging.error('Player[%d] JOIN Table[%d] FULL', player.uid, self.uid)
         for i, p in enumerate(self.players):
             if not p:
                 player.seat = i
@@ -150,7 +148,7 @@ class Table(object):
             p.send(response)
         # TODO deduct coin from database
         # TODO store poker round to database
-        logger.info('Table[%d] GameOver[%d]', self.uid, self.uid)
+        logging.info('Table[%d] GameOver[%d]', self.uid, self.uid)
 
     def remove(self, player):
         for i, p in enumerate(self.players):
@@ -158,11 +156,11 @@ class Table(object):
                 self.players[i] = None
                 self.history[i] = None
         else:
-            logger.error('Player[%d] NOT IN Table[%d]', player.uid, self.uid)
+            logging.error('Player[%d] NOT IN Table[%d]', player.uid, self.uid)
 
         if all(p is None for p in self.players):
             self.state = 3
-            logger.error('Table[%d] close', self.uid)
+            logging.error('Table[%d] close', self.uid)
             return True
         return False
 

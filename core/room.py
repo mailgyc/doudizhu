@@ -3,8 +3,6 @@ import logging
 from core import Singleton
 from core.table import Table
 
-logger = logging.getLogger('ddz')
-
 
 class Room(object):
 
@@ -14,7 +12,7 @@ class Room(object):
         self.__playing_tables = {}
         self.allow_robot = allow_robot
         self.entrance_fee = 100
-        logger.info('ROOM[%d] CREATED', uid)
+        logging.info('ROOM[%d] CREATED', uid)
 
     def rsp_tables(self):
         rsp = []

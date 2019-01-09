@@ -2,8 +2,6 @@ from collections import Counter
 import logging
 import json
 
-logger = logging.getLogger('ddz')
-
 '''
 # A 2 3 4 5 6 7 8 9 0 J Q K W w
 # 记分
@@ -148,6 +146,6 @@ def _card_type(cards):
         value = _index_of(rules[t], cards)
         if value >= 0:
             return t, value
-    logger.info('Unknown Card Type: %s', cards)
+    logging.info('Unknown Card Type: %s', cards)
     # raise Exception('Unknown Card Type: %s' % cards)
     return '', 0
