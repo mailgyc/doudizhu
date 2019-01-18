@@ -28,8 +28,8 @@ class RegHandler(BaseHandler):
         password = self.get_query_params('password')
         password = bcrypt.hashpw(password.encode('utf8'), bcrypt.gensalt())
 
-        uid = await self.db.insert('INSERT INTO account (email, username, password) VALUES (%s, %s, %s)',
-                                   email, username, password)
+        uid = await self.db.insert('INSERT INTO account (email, username, password, ip_addr) VALUES (%s, %s, %s, %s)',
+                                   email, username, password, self.request.remote_ip)
         self.set_current_user(uid, username)
         self.set_header('Content-Type', 'application/json')
         response = {

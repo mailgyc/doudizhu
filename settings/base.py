@@ -22,6 +22,7 @@ APPLICATION = {
     'template_path': TEMPLATE_ROOT,
     'xsrf_cookies': True,
     'cookie_secret': 'fiDSpuZ7QFe8fm0XP9Jb7ZIPNsOegkHYtgKSd4I83Hs=',
+    'xheaders': True,
     'debug': options.debug,
 }
 
