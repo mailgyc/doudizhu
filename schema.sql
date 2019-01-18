@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS ddz.account (
     email VARCHAR(40) NOT NULL UNIQUE,
     username VARCHAR(40) NOT NULL,
     password VARCHAR(100) NOT NULL,
-    ip_addr VARCHAR(40) NOT NULL,
+    ip_addr VARCHAR(100) NOT NULL,
     created_date DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_date DATETIME ON UPDATE CURRENT_TIMESTAMP
 );

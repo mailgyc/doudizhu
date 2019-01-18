@@ -17,6 +17,11 @@ class BaseHandler(RequestHandler):
     def executor(self) -> ThreadPoolExecutor:
         return self.application.executor
 
+    @property
+    def client_ip(self):
+        headers = self.request.headers
+        return headers.get('X-Forwarded-For', headers.get('X-Real-Ip', self.request.remote_ip))
+
     def data_received(self, chunk):
         pass
 
@@ -27,7 +32,7 @@ class BaseHandler(RequestHandler):
         return self.query_params.get(name, default)
 
     def get_current_user(self):
-        return self.get_secure_cookie("user")
+        return self.get_secure_cookie('user')
 
     def set_current_user(self, uid, username):
         info = {
