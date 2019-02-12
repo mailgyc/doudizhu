@@ -1,0 +1,108 @@
+swagger: '2.0'
+info:
+  title: Ocurrence Exchanges API
+  description: |
+    A api to get the customers
+  version: 1.0.0
+schemes:
+  - http
+basePath: /
+produces:
+  - application/json
+tags:
+  - name: customers
+paths:
+  /customers:
+    get:
+      summary: Get a list of the customers
+      produces:
+        - application/json
+      tags:
+        - customers
+      responses:
+        '200':
+          description: A list of the customers
+          schema: 
+            $ref: '#/definitions/customers'
+        '400':
+          description: Invalid ID supplied
+          schema:
+            $ref: '#/definitions/customers/{id}/Error400'
+  /customers/{id}:
+    get:
+      summary: Get a customer
+      produces:
+        - application/json
+      parameters:
+        - name: id
+          in: path
+          description: Id of the customer to be fetched
+          required: true
+          type: integer
+          format: integer
+      tags:
+        - customers
+      responses:
+        '200':
+          description: A list of the customers
+          schema: 
+            $ref: '#/definitions/customers/{id}'
+        '400':
+          description: Invalid ID supplied
+          schema:
+            $ref: '#/definitions/customers/{id}/Error400'
+        '404':
+          description: Customer not found
+definitions:
+  customers:
+    type: object
+    properties:
+      meta:
+        type: object
+        properties:
+          name:
+            type: string
+          version:
+            type: string
+          server:
+            type: string
+          record_count:
+            type: integer
+      objects:
+        type: array
+        items:
+          type: object
+          properties:
+            id:
+              type: integer
+              description: Return the id of the customer
+            name:
+              type: string
+              description: Name of the customer
+            created_at:
+              type: datetime
+              description: Date that the user was created
+  customers/{id}:
+    type: object
+    properties:
+      meta:
+        type: object
+        properties:
+          name:
+            type: string
+          version:
+            type: string
+          server:
+            type: string
+      object:
+        type: object
+        properties:
+          id:
+            type: integer
+            description: Return the id of the customer
+          name:
+            type: string
+            description: Name of the customer
+          created_at:
+            type: datetime
+            description: Date that the user was created

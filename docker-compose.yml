@@ -1,0 +1,23 @@
+version: "3"
+
+services:
+  nginx:
+    build: ./compose/nginx
+
+  doudizhu:
+    image: mailyc/doudizhu:latest
+    build: ./compose/app/
+    command: python3 app.py --host=172.20.0.1
+    networks:
+      - default
+    ports:
+      - "8080:8080"
+    volumes:
+      - /var/log:/var/log
+      - ./doudizhu:/app
+    restart: always
+
+networks:
+  default:
+    driver: bridge
+
