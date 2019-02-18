@@ -18,6 +18,7 @@ Quick Start
     cd doudizhu
     mysql --user=root -p < schema.sql
     pip3 install -r requirements.txt
+    cd doudizhu
     python3 app.py --password=your_database_password
     Now visit http://127.0.0.1:8080
 
