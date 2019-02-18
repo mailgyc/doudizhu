@@ -6,7 +6,7 @@ from tornado.ioloop import IOLoop
 
 from .player import Player
 from .protocol import Protocol as Pt
-from .strategy.simple import AiPlayer
+from .components.simple import AiPlayer
 
 
 class Table(object):
