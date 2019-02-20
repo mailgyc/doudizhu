@@ -23,10 +23,10 @@ PG.Game.prototype = {
         this.roomId = roomId;
     },
 
-    debug_log(obj) {
-    console.log('*******');
-    console.log(obj);
-    console.log('********');
+    debug_log: function(obj) {
+        console.log('*******');
+        console.log(obj);
+        console.log('********');
     },
 
 	create: function () {
