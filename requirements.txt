@@ -4,5 +4,6 @@ coverage==4.5.2
 pillow==5.4.1
 pymysql==0.9.3
 raven==6.10.0
+sentry-sdk=0.7.4
 tornado==5.1.1
 
