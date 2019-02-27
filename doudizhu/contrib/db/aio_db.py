@@ -1,6 +1,7 @@
 import asyncio
 import functools
 import logging
+from typing import Dict
 
 import aiomysql
 from aiomysql import Pool, DictCursor
@@ -54,11 +55,12 @@ class AsyncConnection(object):
                 self._async_wait = None
                 raise
 
-    async def fetchone(self, query: str, *args, **kwargs):
+    async def fetchone(self, query: str, *args, **kwargs) -> Dict[str, str]:
         cursor = await self.cursor()
         try:
             await self._execute(cursor, query, args, kwargs)
-            return cursor.fetchone()
+            future: asyncio.Future = await cursor.fetchone()
+            return await future
         finally:
             await cursor.release()
 

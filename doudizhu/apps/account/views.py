@@ -1,5 +1,3 @@
-import asyncio
-
 import bcrypt
 
 from contrib.handlers import BaseHandler
@@ -19,7 +17,7 @@ class SignupHandler(BaseHandler):
 
     async def post(self):
         email = self.get_query_params('email', self.get_query_params('username'))
-        account: asyncio.Future = await self.db.fetchone('SELECT id FROM account WHERE email=%s', email)
+        account = await self.db.fetchone('SELECT id FROM account WHERE email=%s', email)
         if account and account.result():
             self.write({'errcode': 1, 'errmsg': 'The email has already exist'})
             return
@@ -44,7 +42,7 @@ class LoginHandler(BaseHandler):
     async def post(self):
         email = self.get_argument('email')
         password = self.get_argument("password")
-        account = await self.db.get('SELECT * FROM account WHERE email=%s', email)
+        account = await self.db.fetchone('SELECT * FROM account WHERE email=%s', email)
         password = bcrypt.hashpw(password.encode('utf8'), account.get('password'))
 
         self.set_header('Content-Type', 'application/json')
