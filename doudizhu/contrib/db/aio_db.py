@@ -59,8 +59,7 @@ class AsyncConnection(object):
         cursor = await self.cursor()
         try:
             await self._execute(cursor, query, args, kwargs)
-            future: asyncio.Future = await cursor.fetchone()
-            return await future
+            return await cursor.fetchone()
         finally:
             await cursor.release()
 

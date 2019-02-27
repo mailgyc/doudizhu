@@ -18,7 +18,7 @@ class SignupHandler(BaseHandler):
     async def post(self):
         email = self.get_query_params('email', self.get_query_params('username'))
         account = await self.db.fetchone('SELECT id FROM account WHERE email=%s', email)
-        if account and account.result():
+        if account:
             self.write({'errcode': 1, 'errmsg': 'The email has already exist'})
             return
 
