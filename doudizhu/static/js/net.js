@@ -53,8 +53,9 @@ PG.Socket.connect = function(onopen, onmessage, onerror) {
     if (this.websocket != null) {
         return;
     }
-    
-    this.websocket = new WebSocket("ws://" + window.location.host + "/ws");
+
+    var protocol = location.protocol === 'https' ? 'wss://' : 'ws://';
+    this.websocket = new WebSocket(protocol + location.host + "/ws");
     this.websocket.binaryType = 'arraybuffer';
     this.websocket.onopen = function(evt) {
         console.log("CONNECTED");
