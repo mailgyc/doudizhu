@@ -54,7 +54,7 @@ PG.Socket.connect = function(onopen, onmessage, onerror) {
         return;
     }
 
-    var protocol = location.protocol === 'https' ? 'wss://' : 'ws://';
+    var protocol = location.protocol.startsWith('https') ? 'wss://' : 'ws://';
     this.websocket = new WebSocket(protocol + location.host + "/ws");
     this.websocket.binaryType = 'arraybuffer';
     this.websocket.onopen = function(evt) {
