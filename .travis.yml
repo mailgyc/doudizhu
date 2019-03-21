@@ -7,8 +7,7 @@ install:
 
 before_script:
   - pip install -r requirements.txt
-  - git clone https://github.com/mailgyc/doudizhu.git
-  - cd doudizhu/doudizhu
+  - cd doudizhu
 
 script: 
   - coverage run __init__.py
