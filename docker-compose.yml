@@ -7,6 +7,6 @@ services:
     ports:
       - "8080:8080"
     volumes:
-      - /var/log:/var/log
+      - ./ddz.log:ddz.log
     restart: always
     network_mode: host

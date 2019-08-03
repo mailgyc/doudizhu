@@ -8,7 +8,7 @@ DEBUG = False
 SECRET_KEY = 'fiDSpuZ7QFe8fm0XP9Jb7ZIPNsOegkHYtgKSd4I83Hs='
 
 DATABASE = {
-    'host': 'localhost',
+    'host': '127.0.0.1',
     'database': 'ddz',
     'user': 'root',
     'password': '123456',
