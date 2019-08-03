@@ -1,10 +1,10 @@
+import asyncio
 import logging.config
 from concurrent.futures import ThreadPoolExecutor
 
 import tornado.web
 import tornado.websocket
 from tornado.ioloop import IOLoop
-from tornado.options import options
 
 from apps.urls import url_patterns
 from contrib.db import AsyncConnection
@@ -12,10 +12,11 @@ from settings import settings
 
 logging.config.dictConfig(settings.LOGGING)
 
-# APPLICATION = {
-#     'login_url': '/',
-#     'xheaders': True,
-# }
+try:
+    import uvloop
+    uvloop.install()
+except ModuleNotFoundError:
+    pass
 
 
 class Application(tornado.web.Application):
@@ -46,6 +47,7 @@ def main():
     make_app(settings.PORT)
     logging.info(f'server on http://127.0.0.1:{settings.PORT}')
     IOLoop.current().start()
+    asyncio.get_event_loop().run_forever()
 
 
 if __name__ == '__main__':

@@ -1,8 +1,6 @@
 aiomysql==0.0.20
-bcrypt==3.1.4
-coverage==4.5.2
-pillow==5.4.1
-raven==6.10.0
-sentry-sdk==0.7.4
-tornado==5.1.1
-
+bcrypt==3.1.7
+coverage==4.5.4
+sentry-sdk==0.10.2
+tornado==6.0.3
+#uvloop==0.12.2

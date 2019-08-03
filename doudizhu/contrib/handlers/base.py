@@ -1,14 +1,13 @@
 import json
 from concurrent.futures import ThreadPoolExecutor
 
-from raven.contrib.tornado import SentryMixin
 from tornado.escape import json_encode
 from tornado.web import RequestHandler
 
 from contrib.db import AsyncConnection
 
 
-class BaseHandler(SentryMixin, RequestHandler):
+class BaseHandler(RequestHandler):
 
     @property
     def db(self) -> AsyncConnection:
