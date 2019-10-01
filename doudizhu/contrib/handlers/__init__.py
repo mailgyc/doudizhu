@@ -1,1 +1,1 @@
-from .base import BaseHandler
+from .base import RestfulHandler, JwtMixin

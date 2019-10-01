@@ -1,6 +1,7 @@
-aiomysql==0.0.20
-bcrypt==3.1.7
-coverage==4.5.4
-sentry-sdk==0.10.2
-tornado==6.0.3
-#uvloop==0.12.2
+aiomysql>=0.0.20
+bcrypt>=3.1.7
+coverage>=4.5.4
+pyjwt>=1.7.1
+sentry-sdk>=0.11.1
+tornado>=6.0.3
+#uvloop>=0.12.2
