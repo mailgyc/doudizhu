@@ -135,15 +135,18 @@ class SocketHandler(WebSocketHandler):
 
     def write_message(self, message, binary=False):
         if self.ws_connection is None:
-            raise WebSocketClosedError()
-        logging.info('RSP[%d]: %s', self.uid, message)
+            return
         packet = json.dumps(message)
-        return self.ws_connection.write_message(packet, binary=binary)
+        try:
+            future = self.ws_connection.write_message(packet, binary=binary)
+            logging.info('RSP[%d]: %s', self.uid, message)
+        except WebSocketClosedError:
+            logging.error('WebSockedClosed[%s][%s]', self.uid, message)
 
-    def send_updates(cls, chat):
-        logging.info('sending message to %d waiters', len(cls.waiters))
-        for waiter in cls.waiters:
-            waiter.write_message('tornado:' + chat)
+    # def send_updates(cls, chat):
+    #     logging.info('sending message to %d waiters', len(cls.waiters))
+    #     for waiter in cls.waiters:
+    #         waiter.write_message('tornado:' + chat)
 
 
 class LoopBackSocketHandler(SocketHandler):
