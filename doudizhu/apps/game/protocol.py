@@ -3,8 +3,13 @@ from enum import IntEnum
 
 class Protocol(IntEnum):
 
+    RSP_ERROR = 0
+
     REQ_CHEAT = 1
     RSP_CHEAT = 2
+
+    REQ_RECONNECT = 3
+    RSP_RECONNECT = 4
 
     REQ_LOGIN = 11
     RSP_LOGIN = 12
@@ -12,17 +17,14 @@ class Protocol(IntEnum):
     REQ_ROOM_LIST = 13
     RSP_ROOM_LIST = 14
 
-    REQ_TABLE_LIST = 15
-    RSP_TABLE_LIST = 16
+    REQ_NEW_ROOM = 15
+    RSP_NEW_ROOM = 16
 
     REQ_JOIN_ROOM = 17
     RSP_JOIN_ROOM = 18
 
-    REQ_JOIN_TABLE = 19
-    RSP_JOIN_TABLE = 20
-
-    REQ_NEW_TABLE = 21
-    RSP_NEW_TABLE = 22
+    REQ_READY = 21
+    RSP_READY = 22
 
     REQ_DEAL_POKER = 31
     RSP_DEAL_POKER = 32

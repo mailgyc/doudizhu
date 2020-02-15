@@ -84,10 +84,10 @@ PG.Preloader = {
         } else {
             this.state.start('Login');
         }
-        PG.music = this.game.add.audio('music_room');
-        PG.music.loop = true;
-        PG.music.loopFull();
-        PG.music.play();
+        // PG.music = this.game.add.audio('music_room');
+        // PG.music.loop = true;
+        // PG.music.loopFull();
+        // PG.music.play();
     }
 };
 

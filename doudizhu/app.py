@@ -35,6 +35,7 @@ class Application(tornado.web.Application):
         super().__init__(url_patterns, **self.settings)
         self.db = AsyncConnection(**DATABASE)
         self.executor = ThreadPoolExecutor(max_workers=10)
+        self.allow_robot = True
 
 
 def make_app(port):

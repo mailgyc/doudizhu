@@ -1,10 +1,15 @@
+from __future__ import annotations
+
 import logging
-from typing import List
+from typing import TYPE_CHECKING, List, Optional
 
 from tornado.websocket import WebSocketHandler
 
 from .protocol import Protocol as Pt
 from .rule import rule
+
+if TYPE_CHECKING:
+    from .room import Room
 
 logger = logging.getLogger(__file__)
 
@@ -14,12 +19,10 @@ LANDLORD = 2
 
 class Player(object):
     def __init__(self, uid: int, name: str, socket: WebSocketHandler = None):
-        from .table import Table
         self.uid = uid
         self.name = name
         self.socket = socket
-        self.room = None
-        self.table: Table = []
+        self.room: Optional[Room] = None
         self.ready = False
         self.seat = 0
         self.is_called = False
@@ -37,7 +40,7 @@ class Player(object):
         self.socket.write_message(packet)
 
     def handle_call_score(self, score):
-        if 0 < score < self.table.call_score:
+        if 0 < score < self.room.call_score:
             logger.warning('Player[%d] CALL SCORE[%d] CHEAT', self.uid, score)
             return
 
@@ -49,20 +52,20 @@ class Player(object):
 
         next_seat = (self.seat + 1) % 3
 
-        call_end = score == 3 or self.table.all_called()
+        call_end = score == 3 or self.room.all_called()
         if not call_end:
-            self.table.whose_turn = next_seat
+            self.room.whose_turn = next_seat
         if score > 0:
-            self.table.last_shot_seat = self.seat
-        if score > self.table.max_call_score:
-            self.table.max_call_score = score
-            self.table.max_call_score_turn = self.seat
+            self.room.last_shot_seat = self.seat
+        if score > self.room.max_call_score:
+            self.room.max_call_score = score
+            self.room.max_call_score_turn = self.seat
         response = [Pt.RSP_CALL_SCORE, self.uid, score, call_end]
-        for p in self.table.players:
+        for p in self.room.players:
             p.send(response)
 
         if call_end:
-            self.table.call_score_end()
+            self.room.call_score_end()
 
     def handle_shot_poker(self, pokers):
         if pokers:
@@ -70,41 +73,41 @@ class Player(object):
                 logger.warning('Player[%d] play non-exist poker', self.uid)
                 return
 
-            if self.table.last_shot_seat != self.seat and rule.compare_poker(pokers, self.table.last_shot_poker) < 0:
+            if self.room.last_shot_seat != self.seat and rule.compare_poker(pokers, self.room.last_shot_poker) < 0:
                 logger.warning('Player[%d] play small than last shot poker', self.uid)
                 return
         if pokers:
-            self.table.history[self.seat] += pokers
-            self.table.last_shot_seat = self.seat
-            self.table.last_shot_poker = pokers
+            self.room.history[self.seat] += pokers
+            self.room.last_shot_seat = self.seat
+            self.room.last_shot_poker = pokers
             for p in pokers:
                 self.hand_pokers.remove(p)
 
         if self.hand_pokers:
-            self.table.go_next_turn()
+            self.room.go_next_turn()
 
         response = [Pt.RSP_SHOT_POKER, self.uid, pokers]
-        for p in self.table.players:
+        for p in self.room.players:
             p.send(response)
         logger.info('Player[%d] shot[%s]', self.uid, str(pokers))
 
         if not self.hand_pokers:
-            self.table.on_game_over(self)
+            self.room.on_game_over(self)
             return
 
-    def join_table(self, t):
+    def join_room(self, room: Room):
         self.ready = True
-        self.table = t
-        t.on_join(self)
+        self.room = room
+        room.arrange_seat(self)
 
-    def leave_table(self):
+    def leave_room(self):
         self.ready = False
-        if self.table:
-            self.table.on_leave(self)
-        # self.table = None
+        if self.room:
+            self.room.on_leave(self)
+        self.room = None
 
     def __repr(self):
         return self.__str__()
 
     def __str__(self):
-        return self.uid + '-' + self.name
+        return f'{self.uid}-{self.name}'

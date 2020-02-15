@@ -9,17 +9,11 @@ PG.Protocol = {
     REQ_ROOM_LIST  : 13,
     RSP_ROOM_LIST  : 14,
 
-    REQ_TABLE_LIST : 15,
-    RSP_TABLE_LIST : 16,
+    REQ_NEW_ROOM : 15,
+    RSP_NEW_ROOM : 16,
 
     REQ_JOIN_ROOM : 17,
     RSP_JOIN_ROOM : 18,
-
-    REQ_JOIN_TABLE : 19,
-    RSP_JOIN_TABLE : 20,
-
-    REQ_NEW_TABLE : 21,
-    RSP_NEW_TABLE : 22,
 
     REQ_DEAL_POKER : 31,
     RSP_DEAL_POKER : 32,
@@ -48,6 +42,13 @@ PG.Socket = {
     onmessage: null
 };
 
+const logging_pretty = function(tag, packet) {
+    for (key in PG.Protocol) {
+        if (packet[0] === PG.Protocol[key])
+            console.log(`${tag}: ${key} ${packet.slice(1)}`)
+    }
+};
+
 PG.Socket.connect = function(onopen, onmessage, onerror) {
 
     if (this.websocket != null) {
@@ -73,12 +74,13 @@ PG.Socket.connect = function(onopen, onmessage, onerror) {
     };
 
     this.websocket.onmessage = function(evt) {
-        console.log('RSP: ' + evt.data);
-        onmessage(JSON.parse(evt.data));
+        const packet = JSON.parse(evt.data);
+        logging_pretty('RSP', packet);
+        onmessage(packet);
     };
 };
 
-PG.Socket.send = function(msg) {
-    console.log('REQ: ' + msg);
-    this.websocket.send(JSON.stringify(msg));
+PG.Socket.send = function(packet) {
+    logging_pretty('REQ', packet);
+    this.websocket.send(JSON.stringify(packet));
 };
