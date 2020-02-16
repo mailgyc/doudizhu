@@ -9,7 +9,7 @@ current_dir = dirname(realpath(__file__))
 
 
 def draw_text(image, text, font_size):
-    font = truetype(join(current_dir, 'static/font.ttf'), font_size)
+    font = truetype(join(current_dir, 'static/DroidSansFallback.ttf'), font_size)
     color = '#5C87B2'
 
     draw = Draw(image)
@@ -54,13 +54,14 @@ if __name__ == '__main__':
         ('setting', '设置', (160, 60), 36),
         ('register', '注册', (160, 60), 36),
 
-        ('score_0', '不叫', (128, 48), 28),
-        ('score_1', '一分', (128, 48), 28),
+        ('score_0', '不抢', (128, 48), 28),
+        ('score_1', '抢地主', (128, 48), 28),
         ('score_2', '两分', (128, 48), 28),
         ('score_3', '三分', (128, 48), 28),
         ('pass', '不出', (128, 48), 28),
         ('hint', '提示', (128, 48), 28),
         ('shot', '出牌', (128, 48), 28),
+        ('ready', '准备', (128, 48), 28),
     )
     generate_button(db)
     print('generate done')

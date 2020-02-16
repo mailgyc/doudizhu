@@ -21,23 +21,26 @@ class Room(object):
 
         self.players: List[Optional[Player]] = [None, None, None]
         self.pokers: List[int] = []
-        self.multiple = 1
-        self.call_score = 0
-        self.max_call_score = 0
-        self.max_call_score_turn = 0
+        self.multiple = 15
         self.whose_turn = 0
+        self.landlord_seat = 0
+
         self.last_shot_seat = 0
         self.last_shot_poker = []
         self.allow_robot = allow_robot
         logging.info('ROOM[%d] CREATED', room_id)
 
+    def sync_data(self):
+        return {
+            'id': self.room_id,
+            'base': 10,
+            'multiple': 15,
+        }
+
     def reset(self):
         self.pokers: List[int] = []
-        self.multiple = 1
-        self.call_score = 0
-        self.max_call_score = 0
-        self.max_call_score_turn = 0
-        self.whose_turn = random.randint(0, 2)
+        self.multiple = 15
+
         self.last_shot_seat = 0
         self.last_shot_poker = []
 
@@ -91,7 +94,9 @@ class Room(object):
             return False
 
     def on_game_over(self, winner):
-        point = self.entrance_fee * self.call_score * self.multiple
+        self.landlord_seat = (self.landlord_seat + 1) %3
+
+        point = self.entrance_fee * self.multiple
 
         response = [Pt.RSP_GAME_OVER, {
             'winner': winner.uid,
@@ -100,50 +105,101 @@ class Room(object):
             'pokers': [],
         }]
         for target in self.players:
-            response[1]['pokers'] = [[p.uid, *p.hand_pokers] for p in self.players if p != target]
+            response[1]['pokers'] = [[p.uid, *p._hand_pokers] for p in self.players if p != target]
             target.write_message(response)
         logging.info('Room[%d] GameOver[%d]', self.room_id, self.room_id)
+        self.reset()
 
     def deal_poker(self):
         self.pokers = [i for i in range(54)]
         random.shuffle(self.pokers)
+
         for i in range(51):
-            self.players[i % 3].hand_pokers.append(self.pokers.pop())
+            self.players[i % 3]._hand_pokers.append(self.pokers.pop())
 
-        self.whose_turn = random.randint(0, 2)
+        self.whose_turn = self.landlord_seat
         for player in self.players:
-            player.hand_pokers.sort()
+            player._hand_pokers.sort()
 
-            response = [Pt.RSP_DEAL_POKER, self.turn_player.uid, player.hand_pokers]
+            response = [Pt.RSP_DEAL_POKER, self.turn_player.uid, player._hand_pokers]
             player.write_message(response)
             logging.info('ROOM[%s] DEAL[%s]', self.room_id, response)
-
-    def call_score_end(self):
-        self.call_score = self.max_call_score
-        self.whose_turn = self.max_call_score_turn
-        self.turn_player.role = 2
-        self.turn_player.hand_pokers += self.pokers
-        response = [Pt.RSP_SHOW_POKER, self.turn_player.uid, self.pokers]
-        for p in self.players:
-            p.write_message(response)
-        logging.info('Player[%d] IS LANDLORD[%s]', self.turn_player.uid, str(self.pokers))
 
     def go_next_turn(self):
         self.whose_turn += 1
         if self.whose_turn == 3:
             self.whose_turn = 0
 
+    def go_prev_turn(self):
+        self.whose_turn -= 1
+        if self.whose_turn == -1:
+            self.whose_turn = 2
+
+    @property
+    def prev_player(self):
+        prev_seat = (self.whose_turn - 1) % 3
+        return self.players[prev_seat]
+
     @property
     def turn_player(self):
         return self.players[self.whose_turn]
 
-    def handle_chat(self, player, msg):
-        response = [Pt.RSP_CHAT, player.uid, msg]
+    @property
+    def next_player(self):
+        next_seat = (self.whose_turn + 1) % 3
+        return self.players[next_seat]
+
+    def sync_call_end(self):
+        response = [Pt.RSP_SHOW_POKER, self.turn_player.uid, self.pokers]
         for p in self.players:
             p.write_message(response)
+        logging.info('Player[%d] IS LANDLORD[%s]', self.turn_player.uid, str(self.pokers))
 
-    def is_call_end(self):
-        return all([p.is_called for p in self.players])
+    def is_rob_end(self):
+        if not self._is_rob_end():
+            self.go_next_turn()
+            return False
+
+        for i in range(3):
+            # 每人抢地主, 第一个人是地主
+            if self.turn_player.rob == 1 or i == 2:
+                self.turn_player.role = 2
+                self.turn_player._hand_pokers += self.pokers
+                self.turn_player._hand_pokers.sort()
+                self.last_shot_seat = self.whose_turn
+                return True
+            self.go_prev_turn()
+        return True
+
+    def _is_rob_end(self) -> bool:
+        """
+        每人都可以抢一次地主, 第一个人可以多抢一次
+        :return: 抢地主是否结束
+        """
+        # 下一个人没有抢地主, 继续抢地主
+        if self.next_player.rob == -1:
+            return False
+
+        # 抢了一圈, 处理第一个人多抢一次
+        if self.next_player == self.landlord_seat:
+            # 第一个人第一次没有抢, 结束
+            if self.next_player.rob == 0:
+                return True
+
+            if self.turn_player.rob == 0:
+                # 当前用户没有抢
+                if self.prev_player.rob == 0:
+                    # 前一个用户也没有抢, 第一个人是地主, 结束
+                    return True
+                else:
+                    # 前一个用户抢了, 第一个人可以多抢一次, 继续抢
+                    return False
+            else:
+                # 当前用户抢了, 第一个人可以多抢一次, 继续抢
+                return False
+
+        # 第一个人也抢了, 结束
+        return True
 
     def is_ready(self) -> bool:
         return self.is_full() and all([p.ready for p in self.players])
@@ -153,6 +209,10 @@ class Room(object):
 
     def is_empty(self) -> bool:
         return self.size() == 0
+
+    def has_robot(self) -> bool:
+        from .components.simple import RobotPlayer
+        return any([isinstance(p, RobotPlayer) for p in self.players])
 
     def size(self):
         return sum([p is not None for p in self.players])
@@ -167,7 +227,7 @@ class Room(object):
         return self.room_id == other.room_id
 
     def __ne__(self, other):
-        return not(self == other)
+        return not (self == other)
 
 
 class RoomManager(object):
@@ -185,6 +245,8 @@ class RoomManager(object):
     def find_waiting_room(cls, uid: int, entrance_fee: int, allow_robot: bool) -> Room:
         if uid == -1:
             for _, room in cls.__waiting_rooms.items():
+                if room.has_robot():
+                    continue
                 return room
             return cls.new_room(entrance_fee, allow_robot)
         return cls.__waiting_rooms.get(uid)

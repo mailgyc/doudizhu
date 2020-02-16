@@ -73,9 +73,10 @@ PG.Game.prototype = {
         PG.Socket.connect(this.onopen.bind(this), this.onmessage.bind(this), this.onerror.bind(this));
 
         let style = {font: "22px Arial", fill: "#fff", align: "center"};
-        let titleBar = this.game.add.text(this.game.world.centerX, 0, '房间:', style);
-        observer.subscribe('roomNo', function (val) {
-            titleBar.text = '房间' + val;
+        let titleBar = this.game.add.text(this.game.world.centerX, 0, `房间号:${0} 底分: 0 倍数: 0`, style);
+        titleBar.anchor.set(0.5, 0);
+        observer.subscribe('room', function (room) {
+            titleBar.text = `房间号:${room.id} 底分: ${room.base} 倍数: ${room.multiple}`;
         });
 
         const sx = this.game.world.width / 2;
@@ -109,8 +110,8 @@ PG.Game.prototype = {
         const code = packet[0];
         switch (code) {
             case PG.Protocol.RSP_JOIN_ROOM:
-                observer.publish('roomNo', packet[1]);
-                const syncInfo = packet[2];
+                observer.publish('room', packet[1]['room']);
+                const syncInfo = packet[1]['players'];
                 for (let i = 0; i < syncInfo.length; i++) {
                     if (syncInfo[i].uid === this.players[0].uid) {
                         let info_1 = syncInfo[(i + 1) % 3];
@@ -131,20 +132,25 @@ PG.Game.prototype = {
                 console.log(pokers);
                 this.dealPoker(pokers);
                 this.whoseTurn = this.uidToSeat(playerId);
-                this.startCallScore(0);
+                this.startCallScore();
                 break;
             }
             case PG.Protocol.RSP_CALL_SCORE: {
                 const playerId = packet[1];
-                const score = packet[2];
-                const callend = packet[3];
+                const rob = packet[2];
+                const isCallEnd = packet[3];
                 this.whoseTurn = this.uidToSeat(playerId);
 
-                const hanzi = ['不叫', "一分", "两分", "三分"];
-                this.players[this.whoseTurn].say(hanzi[score]);
-                if (!callend) {
+                const hanzi = ['不抢', "抢地主"];
+                this.players[this.whoseTurn].say(hanzi[rob]);
+                if (!isCallEnd) {
                     this.whoseTurn = (this.whoseTurn + 1) % 3;
-                    this.startCallScore(score);
+                    this.startCallScore();
+                }
+                if (rob == 1) {
+                    let room = observer.get('room');
+                    room.mutiple *= 2;
+                    observer.publish('room', room)
                 }
                 break;
             }
@@ -351,7 +357,7 @@ PG.Game.prototype = {
         }
     },
 
-    startCallScore: function (minscore) {
+    startCallScore: function () {
         function btnTouch(btn) {
             this.send_message([PG.Protocol.REQ_CALL_SCORE, btn.score]);
             btn.parent.destroy();
@@ -360,25 +366,17 @@ PG.Game.prototype = {
         }
 
         if (this.whoseTurn === 0) {
-            let step = this.game.world.width / 6;
-            let ss = [1.5, 1, 0.5, 0];
-            let sx = this.game.world.width / 2 - step * ss[minscore];
-            let sy = this.game.world.height * 0.6;
-            let group = this.game.add.group();
-            let pass = this.game.make.button(sx, sy, "btn", btnTouch, this, 'score_0.png', 'score_0.png', 'score_0.png');
+            const sy = this.game.world.height * 0.6;
+            const group = this.game.add.group();
+            let pass = this.game.make.button(this.game.world.width * 0.4, sy, "btn", btnTouch, this, 'score_0.png', 'score_0.png', 'score_0.png');
             pass.anchor.set(0.5, 0);
             pass.score = 0;
             group.add(pass);
-            sx += step;
 
-            for (let i = minscore + 1; i <= 3; i++) {
-                const tn = 'score_' + i + '.png';
-                const call = this.game.make.button(sx, sy, "btn", btnTouch, this, tn, tn, tn);
-                call.anchor.set(0.5, 0);
-                call.score = i;
-                group.add(call);
-                sx += step;
-            }
+            const rob = this.game.make.button(this.game.world.width * 0.6, sy, "btn", btnTouch, this, 'score_1.png', 'score_1.png', 'score_1.png');
+            rob.anchor.set(0.5, 0);
+            rob.score = 1;
+            group.add(rob);
         } else {
             // TODO show clock on target
         }

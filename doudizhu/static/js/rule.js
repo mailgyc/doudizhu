@@ -24,10 +24,10 @@ PG.Poker.comparePoker = function (a, b) {
     }
     a = a % 13;
     b = b % 13;
-    if (a == 1 || a == 0) {
+    if (a === 1 || a === 0) {
         a += 13;
     }
-    if (b == 1 || b == 0) {
+    if (b === 1 || b === 0) {
         b += 13;
     }
     return -(a - b);
@@ -40,10 +40,10 @@ PG.Poker.toCards = function (pokers) {
         if (pid instanceof Array) {
             pid = pid[0];
         }
-        if (pid == 52) {
-            cards.push('W');
-        } else if (pid == 53) {
+        if (pid === 52) {
             cards.push('w');
+        } else if (pid === 53) {
+            cards.push('W');
         } else {
             cards.push("A234567890JQK"[pid % 13]);
         }
@@ -76,13 +76,13 @@ PG.Poker.toPoker = function (card) {
 
     var cards = "A234567890JQK";
     for (var i = 0; i < 13; i++) {
-        if (card == cards[i]) {
+        if (card === cards[i]) {
             return [i, i + 13, i + 13 * 2, i + 13 * 3];
         }
     }
-    if (card == 'W') {
+    if (card === 'w') {
         return [52];
-    } else if (card == 'w') {
+    } else if (card === 'W') {
         return [53];
     }
     return [54];

@@ -46,25 +46,27 @@ class Player(object):
         self.name = name
         self.socket = socket
         self.room: Optional[Room] = None
-        self.ready = False
         self.seat = 0
-        self.is_called = False
-        self.role = FARMER
-        self.hand_pokers: List[int] = []
-
         self.state = State.INIT
+
+        self.ready = False
+        self.role = FARMER
+        self.rob = -1
+        self._hand_pokers: List[int] = []
 
     def reset(self):
         self.ready = False
-        self.is_called = False
         self.role = FARMER
-        self.hand_pokers: List[int] = []
+        self.rob = -1
+        self._hand_pokers: List[int] = []
 
     def on_message(self, packet):
         if self.state == State.INIT:
             self.handle_init(packet)
         elif self.state == State.WAITING:
             self.handle_waiting(packet)
+        elif self.state == State.CALL_SCORE:
+            self.handle_call_score(packet)
         elif self.state == State.PLAYING:
             self.handle_playing(packet)
         elif self.state == State.GAME_OVER:
@@ -115,21 +117,59 @@ class Player(object):
             self.ready = True
             self.write_message([Pt.RSP_READY])
             if self.room.is_ready():
-                self.change_state(State.PLAYING)
+                self.change_state(State.CALL_SCORE)
                 self.room.deal_poker()
         else:
             logging.info('ERROR STATE[%s] PACKET %s', self.state, packet)
 
-    def handle_playing(self, packet):
+    @shot_turn
+    def handle_call_score(self, packet):
         code = packet[0]
         if code == Pt.REQ_CALL_SCORE:
-            self.on_call_score(packet)
-        elif code == Pt.REQ_SHOT_POKER:
-            self.on_shot_poker(packet)
-            if not self.hand_pokers:
+            self.rob = packet[1]
+
+            call_end = self.room.is_rob_end()
+            response = [Pt.RSP_CALL_SCORE, self.uid, self.rob, call_end]
+            for p in self.room.players:
+                p.write_message(response)
+
+            if call_end:
+                self.change_state(State.PLAYING)
+                self.room.sync_call_end()
+
+        else:
+            logging.info('ERROR STATE[%s] PACKET %s', self.state, packet)
+
+    @shot_turn
+    def handle_playing(self, packet):
+        code = packet[0]
+        if code == Pt.REQ_SHOT_POKER:
+            pokers = packet[1]
+            if pokers:
+                if not rule.is_contains(self._hand_pokers, pokers):
+                    logger.warning('USER[%d] play non-exist poker', self.uid)
+                    return
+
+                if self.room.last_shot_seat != self.seat and rule.compare_poker(pokers, self.room.last_shot_poker) < 0:
+                    logger.warning('USER[%d] play small than last shot poker', self.uid)
+                    return
+
+                self.room.last_shot_seat = self.seat
+                self.room.last_shot_poker = pokers
+                for p in pokers:
+                    self._hand_pokers.remove(p)
+
+            response = [Pt.RSP_SHOT_POKER, self.uid, pokers]
+            for p in self.room.players:
+                p.write_message(response)
+            logger.info('USER[%d] shot[%s]', self.uid, str(pokers))
+
+            if self._hand_pokers:
+                self.room.go_next_turn()
+            else:
                 self.change_state(State.GAME_OVER)
                 self.room.on_game_over(self)
-                self.room.reset()
+
         elif code == Pt.REQ_CHEAT:
             self.on_cheat(packet[1])
         else:
@@ -149,7 +189,7 @@ class Player(object):
     def on_cheat(self, uid):
         for p in self.room.players:
             if p.uid == uid:
-                self.write_message([Pt.RSP_CHEAT, p.uid, p.hand_pokers])
+                self.write_message([Pt.RSP_CHEAT, p.uid, p._hand_pokers])
 
     def write_message(self, packet):
         self.socket.write_message(packet)
@@ -158,64 +198,11 @@ class Player(object):
     def allow_robot(self) -> bool:
         return self.socket.allow_robot
 
-    @shot_turn
-    def on_call_score(self, packet: List[Union[int, Any]]):
-        score = packet[1]
-        if 0 < score < self.room.call_score:
-            logger.warning('USER[%d] CALL SCORE[%d] CHEAT', self.uid, score)
-            return
-
-        if score > 3:
-            logger.warning('USER[%d] CALL SCORE[%d] CHEAT', self.uid, score)
-            return
-
-        self.is_called = True
-
-        next_seat = (self.seat + 1) % 3
-
-        call_end = score == 3 or self.room.is_call_end()
-        if not call_end:
-            self.room.whose_turn = next_seat
-        if score > 0:
-            self.room.last_shot_seat = self.seat
-        if score > self.room.max_call_score:
-            self.room.max_call_score = score
-            self.room.max_call_score_turn = self.seat
-        response = [Pt.RSP_CALL_SCORE, self.uid, score, call_end]
-        for p in self.room.players:
-            p.write_message(response)
-
-        if call_end:
-            self.room.call_score_end()
-
-    @shot_turn
-    def on_shot_poker(self, packet: List[Union[int, Any]]):
-        pokers = packet[1]
-        if pokers:
-            if not rule.is_contains(self.hand_pokers, pokers):
-                logger.warning('USER[%d] play non-exist poker', self.uid)
-                return
-
-            if self.room.last_shot_seat != self.seat and rule.compare_poker(pokers, self.room.last_shot_poker) < 0:
-                logger.warning('USER[%d] play small than last shot poker', self.uid)
-                return
-        if pokers:
-            self.room.last_shot_seat = self.seat
-            self.room.last_shot_poker = pokers
-            for p in pokers:
-                self.hand_pokers.remove(p)
-
-        if self.hand_pokers:
-            self.room.go_next_turn()
-
-        response = [Pt.RSP_SHOT_POKER, self.uid, pokers]
-        for p in self.room.players:
-            p.write_message(response)
-        logger.info('USER[%d] shot[%s]', self.uid, str(pokers))
-
     def sync_room(self):
-        sync = [p.sync_data() if p else {} for p in self.room.players]
-        response = [Pt.RSP_JOIN_ROOM, self.room.room_id, sync]
+        response = [Pt.RSP_JOIN_ROOM, {
+            'room': self.room.sync_data(),
+            'players': [p.sync_data() if p else {} for p in self.room.players]
+        }]
         for player in self.room.players:
             if player:
                 player.write_message(response)
@@ -242,7 +229,7 @@ class Player(object):
             self.room.on_leave(self)
         self.room = None
 
-    def __repr(self):
+    def __repr__(self):
         return self.__str__()
 
     def __str__(self):

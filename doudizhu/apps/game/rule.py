@@ -65,18 +65,18 @@ class Rule(object):
         cards = []
         for p in pokers:
             if p == 52:
-                cards.append('W')
-            elif p == 53:
                 cards.append('w')
+            elif p == 53:
+                cards.append('W')
             else:
                 cards.append('A234567890JQK'[p % 13])
         return Rule._sort_card(cards)
 
     @staticmethod
     def _to_poker(card):
-        if card == 'W':
-            return [52]
         if card == 'w':
+            return [52]
+        if card == 'W':
             return [53]
 
         cards = 'A234567890JQK'
