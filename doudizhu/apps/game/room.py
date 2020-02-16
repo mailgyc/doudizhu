@@ -1,26 +1,25 @@
+from __future__ import annotations
+
 import logging
 import random
 from typing import Optional, List, Dict
+from typing import TYPE_CHECKING
 
 from tornado.ioloop import IOLoop
 
-from .components.simple import AiPlayer
-from .player import Player
 from .protocol import Protocol as Pt
+
+if TYPE_CHECKING:
+    from .player import Player
 
 
 class Room(object):
-    WAITING = 0
-    PLAYING = 1
-    END = 2
-    CLOSED = 3
 
     def __init__(self, room_id, entrance_fee=1, allow_robot=True):
         self.room_id = room_id
         self.entrance_fee = entrance_fee
 
         self.players: List[Optional[Player]] = [None, None, None]
-        self.state = 0  # 0 waiting  1 playing 2 end 3 closed
         self.pokers: List[int] = []
         self.multiple = 1
         self.call_score = 0
@@ -29,9 +28,7 @@ class Room(object):
         self.whose_turn = 0
         self.last_shot_seat = 0
         self.last_shot_poker = []
-        self.history = [None, None, None]
-        if allow_robot:
-            IOLoop.current().call_later(0.1, self.add_robot, nth=1)
+        self.allow_robot = allow_robot
         logging.info('ROOM[%d] CREATED', room_id)
 
     def reset(self):
@@ -43,12 +40,9 @@ class Room(object):
         self.whose_turn = random.randint(0, 2)
         self.last_shot_seat = 0
         self.last_shot_poker = []
+
         for player in self.players:
             player.reset()
-        if self.is_full():
-            self.deal_poker()
-            RoomManager.on_room_changed(self)
-            logging.info('ROOM[%s] GAME BEGIN[%s]', self.room_id, self.players[0].uid)
 
     def add_robot(self, nth=1):
         size = self.size()
@@ -59,74 +53,70 @@ class Room(object):
             # only allow [human robot robot]
             return
 
-        p1 = AiPlayer(10 + nth, f'IDIOT-{nth}', self)
+        from .components.simple import RobotPlayer
+        p1 = RobotPlayer(10 + nth, f'IDIOT-{nth}', self)
         p1.to_server([Pt.REQ_JOIN_ROOM, self.room_id, 0])
 
         if nth == 1:
             IOLoop.current().call_later(1, self.add_robot, nth=2)
 
-    def arrange_seat(self, player: Player):
-        if self.is_full():
-            logging.error('Player[%d] JOIN Room[%d] FULL', player.uid, self.room_id)
+    def arrange_seat(self, target: Player):
+        for i, player in enumerate(self.players):
+            if player:
+                continue
+            target.seat = i
+            self.players[i] = target
+            return True
+        return False
 
-        # arrange seat
-        for i, p in enumerate(self.players):
-            if not p:
-                player.seat = i
-                self.players[i] = player
-                self.history[i] = []
-                break
-        self.sync_room()
+    def on_join(self, target: Player):
+        if self.arrange_seat(target):
+            if self.allow_robot:
+                IOLoop.current().call_later(0.1, self.add_robot, nth=1)
+            return True
+        return False
 
-    def on_leave(self, player: Player):
-        for i, p in enumerate(self.players):
-            if p == player:
-                self.players[i] = None
-                self.history[i] = None
-                break
+    def on_leave(self, target: Player):
+        from .components.simple import RobotPlayer
+        try:
+            for i, player in enumerate(self.players):
+                if player == target:
+                    self.players[i] = None
+                elif isinstance(player, RobotPlayer):
+                    self.players[i] = None
+            RoomManager.on_room_changed(self)
+            return True
+        except ValueError:
+            logging.error('Player[%d] NOT IN Room[%d]', target.uid, self.room_id)
+            return False
 
     def on_game_over(self, winner):
-        # if winner.hand_pokers:
-        #     return
-        coin = self.entrance_fee * self.call_score * self.multiple
-        for p in self.players:
-            response = [Pt.RSP_GAME_OVER, winner.uid, coin if p != winner else coin * 2 - 100]
-            for pp in self.players:
-                if pp != p:
-                    response.append([pp.uid, *pp.hand_pokers])
-            p.send(response)
-        # TODO deduct coin from database
-        # TODO store poker round to database
+        point = self.entrance_fee * self.call_score * self.multiple
+
+        response = [Pt.RSP_GAME_OVER, {
+            'winner': winner.uid,
+            'won_point': point,
+            'lost_point': -point,
+            'pokers': [],
+        }]
+        for target in self.players:
+            response[1]['pokers'] = [[p.uid, *p.hand_pokers] for p in self.players if p != target]
+            target.write_message(response)
         logging.info('Room[%d] GameOver[%d]', self.room_id, self.room_id)
 
-    def sync_room(self):
-        ps = []
-        for p in self.players:
-            if p:
-                ps.append((p.uid, p.name))
-            else:
-                ps.append((-1, ''))
-        response = [Pt.RSP_JOIN_ROOM, self.room_id, ps]
-        for player in self.players:
-            if player:
-                player.send(response)
-
     def deal_poker(self):
-        if not all(p and p.ready for p in self.players):
-            return
-
-        self.state = Room.PLAYING
         self.pokers = [i for i in range(54)]
         random.shuffle(self.pokers)
         for i in range(51):
             self.players[i % 3].hand_pokers.append(self.pokers.pop())
 
         self.whose_turn = random.randint(0, 2)
-        for p in self.players:
-            p.hand_pokers.sort()
+        for player in self.players:
+            player.hand_pokers.sort()
 
-            response = [Pt.RSP_DEAL_POKER, self.turn_player.uid, p.hand_pokers]
-            p.send(response)
+            response = [Pt.RSP_DEAL_POKER, self.turn_player.uid, player.hand_pokers]
+            player.write_message(response)
+            logging.info('ROOM[%s] DEAL[%s]', self.room_id, response)
 
     def call_score_end(self):
         self.call_score = self.max_call_score
@@ -135,7 +125,7 @@ class Room(object):
         self.turn_player.hand_pokers += self.pokers
         response = [Pt.RSP_SHOW_POKER, self.turn_player.uid, self.pokers]
         for p in self.players:
-            p.send(response)
+            p.write_message(response)
         logging.info('Player[%d] IS LANDLORD[%s]', self.turn_player.uid, str(self.pokers))
 
     def go_next_turn(self):
@@ -150,32 +140,18 @@ class Room(object):
     def handle_chat(self, player, msg):
         response = [Pt.RSP_CHAT, player.uid, msg]
         for p in self.players:
-            p.send(response)
+            p.write_message(response)
 
-    def remove(self, player):
-        for i, p in enumerate(self.players):
-            if p and p.uid == player.uid:
-                self.players[i] = None
-                self.history[i] = None
-        else:
-            logging.error('Player[%d] NOT IN Room[%d]', player.uid, self.room_id)
+    def is_call_end(self):
+        return all([p.is_called for p in self.players])
 
-        if all(p is None for p in self.players):
-            self.state = 3
-            logging.error('Room[%d] close', self.room_id)
-            return True
-        return False
+    def is_ready(self) -> bool:
+        return self.is_full() and all([p.ready for p in self.players])
 
-    def all_called(self):
-        for p in self.players:
-            if not p.is_called:
-                return False
-        return True
-
-    def is_full(self):
+    def is_full(self) -> bool:
         return self.size() == 3
 
-    def is_empty(self):
+    def is_empty(self) -> bool:
         return self.size() == 0
 
     def size(self):
@@ -218,9 +194,11 @@ class RoomManager(object):
         if room.is_full():
             cls.__waiting_rooms.pop(room.room_id, None)
             cls.__playing_rooms[room.room_id] = room
+            logging.info('Room[%d] full', room.room_id)
         if room.is_empty():
             cls.__playing_rooms.pop(room.room_id, None)
             cls.__waiting_rooms[room.room_id] = room
+            logging.info('Room[%d] closed', room.room_id)
 
     @classmethod
     def get_waiting_rooms(cls) -> Dict[int, Room]:

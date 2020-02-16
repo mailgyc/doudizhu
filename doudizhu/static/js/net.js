@@ -15,6 +15,9 @@ PG.Protocol = {
     REQ_JOIN_ROOM : 17,
     RSP_JOIN_ROOM : 18,
 
+    REQ_READY : 21,
+    RSP_READY : 22,
+
     REQ_DEAL_POKER : 31,
     RSP_DEAL_POKER : 32,
 

@@ -34,10 +34,10 @@ PG.Player.prototype.initUI = function (sx, sy) {
 
 PG.Player.prototype.updateInfo = function (uid, name) {
     this.uid = uid;
-    if (uid == -1) {
-        this.uiHead.frameName = 'icon_default.png';
-    } else {
+    if (uid) {
         this.uiHead.frameName = 'icon_farmer.png';
+    } else {
+        this.uiHead.frameName = 'icon_default.png';
     }
 };
 

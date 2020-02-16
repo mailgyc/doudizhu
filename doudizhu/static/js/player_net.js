@@ -121,10 +121,10 @@ PG.NetPlayer.prototype.initUI = function (sx, sy) {
 
 PG.NetPlayer.prototype.updateInfo = function (uid, name) {
     PG.Player.prototype.updateInfo.call(this, uid, name);
-    if (uid == -1) {
-        this.uiName.text = '等待玩家加入';
-    } else {
+    if (uid) {
         this.uiName.text = name;
+    } else {
+        this.uiName.text = '等待玩家加入';
     }
 };
 

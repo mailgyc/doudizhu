@@ -14,25 +14,23 @@ if TYPE_CHECKING:
     from ..room import Room
 
 
-class AiPlayer(Player):
+class RobotPlayer(Player):
 
     def __init__(self, uid: int, username: str, room: Room):
-        from ..views import LoopBackSocketHandler
-        super().__init__(uid, username, LoopBackSocketHandler(self))
+        super().__init__(uid, username, None)
         self.room = room
 
-    def to_server(self, message):
-        packet = json.dumps(message)
-        IOLoop.current().add_callback(self.socket.on_message, packet)
-        logging.info('AI[%d] REQ: %s', self.uid, message)
+    @property
+    def allow_robot(self) -> bool:
+        return True
 
-    def from_server(self, packet):
-        logging.info('AI[%d] ON: %s', self.uid, packet)
+    def to_server(self, packet):
+        IOLoop.current().add_callback(self.on_message, packet)
+
+    def write_message(self, packet):
         code = packet[0]
-        if code == Pt.RSP_LOGIN:
-            pass
-        elif code == Pt.RSP_JOIN_ROOM:
-            pass
+        if code == Pt.RSP_JOIN_ROOM:
+            IOLoop.current().add_callback(self.to_server, [Pt.REQ_READY])
         elif code == Pt.RSP_DEAL_POKER:
             if self.uid == packet[1]:
                 self.auto_call_score()
@@ -49,13 +47,11 @@ class AiPlayer(Player):
             if self.room.turn_player == self:
                 self.auto_shot_poker()
         elif code == Pt.RSP_SHOT_POKER:
-            if self.room.turn_player == self:
+            if self.room.turn_player == self and self.hand_pokers:
                 self.auto_shot_poker()
         elif code == Pt.RSP_GAME_OVER:
-            winner = packet[1]
-            coin = packet[2]
-        else:
-            logging.info('AI ERROR PACKET: %s', packet)
+            IOLoop.current().add_callback(self.to_server, [Pt.REQ_RESTART])
+            IOLoop.current().add_callback(self.to_server, [Pt.REQ_READY])
 
     def auto_call_score(self, score=0):
         # millis = random.randint(1000, 2000)
@@ -71,5 +67,4 @@ class AiPlayer(Player):
             pokers = rule.cards_above(self.hand_pokers, self.room.last_shot_poker)
 
         packet = [Pt.REQ_SHOT_POKER, pokers]
-        # IOLoop.current().add_callback(self.to_server, packet)
-        IOLoop.current().call_later(2, self.to_server, packet)
+        IOLoop.current().call_later(1, self.to_server, packet)
