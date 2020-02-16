@@ -1,4 +1,4 @@
-﻿PG = {
+PG = {
     music: null,
     playerInfo: {},
     orientated: false
@@ -63,8 +63,6 @@ PG.Preloader = {
         this.load.audio('music_lose', 'static/audio/end_lose.mp3');
         this.load.audio('f_score_0', 'static/audio/f_score_0.mp3');
         this.load.audio('f_score_1', 'static/audio/f_score_1.mp3');
-        this.load.audio('f_score_2', 'static/audio/f_score_2.mp3');
-        this.load.audio('f_score_3', 'static/audio/f_score_3.mp3');
         this.load.atlas('btn', 'static/i/btn.png', 'static/i/btn.json');
         this.load.image('bg', 'static/i/bg.png');
         this.load.spritesheet('poker', 'static/i/poker.png', 90, 120);
@@ -84,10 +82,10 @@ PG.Preloader = {
         } else {
             this.state.start('Login');
         }
-        // PG.music = this.game.add.audio('music_room');
-        // PG.music.loop = true;
-        // PG.music.loopFull();
-        // PG.music.play();
+        PG.music = this.game.add.audio('music_room');
+        PG.music.loop = true;
+        PG.music.loopFull();
+        PG.music.play();
     }
 };
 

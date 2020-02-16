@@ -94,7 +94,7 @@ class Room(object):
             return False
 
     def on_game_over(self, winner):
-        self.landlord_seat = (self.landlord_seat + 1) %3
+        self.landlord_seat = (self.landlord_seat + 1) % 3
 
         point = self.entrance_fee * self.multiple
 
@@ -105,23 +105,28 @@ class Room(object):
             'pokers': [],
         }]
         for target in self.players:
-            response[1]['pokers'] = [[p.uid, *p._hand_pokers] for p in self.players if p != target]
+            response[1]['pokers'] = [[p.uid, *p.hand_pokers] for p in self.players if p != target]
             target.write_message(response)
         logging.info('Room[%d] GameOver[%d]', self.room_id, self.room_id)
         self.reset()
 
     def deal_poker(self):
-        self.pokers = [i for i in range(54)]
-        random.shuffle(self.pokers)
+        try:
+            from .dealer import generate_pokers
+            self.pokers = generate_pokers(self.allow_robot)
+        except ModuleNotFoundError:
+            self.pokers = [i for i in range(54)]
+            random.shuffle(self.pokers)
+            logging.info('RANDOM POKERS')
 
-        for i in range(51):
-            self.players[i % 3]._hand_pokers.append(self.pokers.pop())
+        for i in range(3):
+            self.players[i].push_pokers(self.pokers[i * 17: (i + 1) * 17])
+
+        self.pokers = self.pokers[51:]
 
         self.whose_turn = self.landlord_seat
         for player in self.players:
-            player._hand_pokers.sort()
-
-            response = [Pt.RSP_DEAL_POKER, self.turn_player.uid, player._hand_pokers]
+            response = [Pt.RSP_DEAL_POKER, self.turn_player.uid, player.hand_pokers]
             player.write_message(response)
             logging.info('ROOM[%s] DEAL[%s]', self.room_id, response)
 

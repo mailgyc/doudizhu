@@ -147,9 +147,9 @@ PG.Game.prototype = {
                     this.whoseTurn = (this.whoseTurn + 1) % 3;
                     this.startCallScore();
                 }
-                if (rob == 1) {
+                if (rob === 1) {
                     let room = observer.get('room');
-                    room.mutiple *= 2;
+                    room.multiple *= 2;
                     observer.publish('room', room)
                 }
                 break;

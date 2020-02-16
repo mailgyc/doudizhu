@@ -60,6 +60,13 @@ class Player(object):
         self.rob = -1
         self._hand_pokers: List[int] = []
 
+    def push_pokers(self, pokers: List[int]):
+        self._hand_pokers += pokers
+
+    @property
+    def hand_pokers(self):
+        return self._hand_pokers
+
     def on_message(self, packet):
         if self.state == State.INIT:
             self.handle_init(packet)
