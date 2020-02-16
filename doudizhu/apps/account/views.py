@@ -14,7 +14,7 @@ class IndexHandler(RequestHandler):
         pass
 
     def get(self):
-        user = self.get_secure_cookie('user')
+        user = self.get_secure_cookie('user') or {}
         self.render('poker.html', user=user)
 
 
