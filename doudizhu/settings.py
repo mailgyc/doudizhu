@@ -31,7 +31,7 @@ LOGGING = {
     'disable_existing_loggers': False,
     'root': {
         'level': 'INFO',
-        'handlers': ['console'],
+        'handlers': ['console', 'file'],
         'propagate': True,
     },
     'formatters': {
@@ -46,6 +46,12 @@ LOGGING = {
         'console': {
             'level': 'INFO',
             'class': 'logging.StreamHandler',
+            'formatter': 'verbose'
+        },
+        'file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': 'ddz.log',
             'formatter': 'verbose'
         },
     }
