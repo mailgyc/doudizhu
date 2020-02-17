@@ -9,6 +9,29 @@ PG.getCookie = function (name) {
     return r ? r[1] : undefined;
 };
 
+function get(url, payload, callback) {
+    http('GET', url, payload, callback);
+}
+
+function post(url, payload, callback) {
+    http('POST', url, payload, callback);
+}
+
+function http(method, url, payload, callback) {
+    url = 'http://127.0.0.1:8080' + url;
+    const xhr = new XMLHttpRequest();
+    xhr.withCredentials = true;
+    xhr.open(method, url, true);
+    xhr.setRequestHeader('Content-type', 'application/json');
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState === XMLHttpRequest.DONE) {
+            const response = JSON.parse(xhr.responseText);
+            callback(xhr.status, response);
+        }
+    };
+    xhr.send(JSON.stringify(payload));
+}
+
 PG.PW = 90;
 PG.PH = 120;
 
@@ -71,17 +94,20 @@ PG.Preloader = {
 
     create: function () {
         PG.RuleList = this.cache.getJSON('rule');
-        let jsonVal = document.getElementById("user").value;
-        if (jsonVal) {
-            PG.playerInfo = JSON.parse(jsonVal);
-            if (PG.playerInfo['uid']) {
-                this.state.start('MainMenu');
+
+        const that = this;
+        get('/userinfo', {}, function(status, response){
+            if (status === 200) {
+                PG.playerInfo = response;
+                if (PG.playerInfo['uid']) {
+                    that.state.start('MainMenu');
+                } else {
+                    that.state.start('Login');
+                }
             } else {
-                this.state.start('Login');
+                that.state.start('Login');
             }
-        } else {
-            this.state.start('Login');
-        }
+        });
         PG.music = this.game.add.audio('music_room');
         PG.music.loop = true;
         PG.music.loopFull();
@@ -182,26 +208,19 @@ PG.Login = {
         }
 
         let that = this;
-        let xhr = new XMLHttpRequest();
-        xhr.open('POST', '/signup', true);
-        xhr.setRequestHeader('Content-type', 'application/json');
-        xhr.setRequestHeader('X-Csrftoken', PG.getCookie("_xsrf"));
-        xhr.onreadystatechange = function () {
-            if (xhr.readyState === XMLHttpRequest.DONE) {
-                const response = JSON.parse(xhr.responseText);
-                if (xhr.status === 200) {
-                    PG.playerInfo = response;
-                    that.state.start('MainMenu');
-                } else {
-                    that.errorText.text = response.detail;
-                }
-            }
-        };
-        xhr.send(JSON.stringify({
+        const payload = {
             "email": this.username.value,
             "username": this.username.value,
             "password": this.password.value,
             "password_repeat": this.password.value
-        }));
+        };
+        post('/signup', payload, function(status, response) {
+            if (status === 200) {
+                PG.playerInfo = response;
+                that.state.start('MainMenu');
+            } else {
+                that.errorText.text = response.detail;
+            }
+        })
     }
 };

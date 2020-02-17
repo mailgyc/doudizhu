@@ -3,7 +3,6 @@ import logging
 from typing import Optional, List, Union, Any
 
 from tornado.escape import json_decode
-from tornado.ioloop import IOLoop
 from tornado.web import authenticated
 from tornado.websocket import WebSocketHandler, WebSocketClosedError
 
@@ -20,6 +19,11 @@ class SocketHandler(WebSocketHandler):
         super().__init__(application, request, **kwargs)
         self.db: AsyncConnection = self.application.db
         self.player: Optional[Player] = None
+
+    async def get(self, *args: Any, **kwargs: Any) -> None:
+        self.request.headers['origin'] = None
+        self.request.headers['Sec-Websocket-Origin'] = None
+        await super().get(*args, **kwargs)
 
     def data_received(self, chunk):
         logging.info('socket data_received')

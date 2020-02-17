@@ -124,6 +124,7 @@ PG.Game.prototype = {
                 break;
             case PG.Protocol.RSP_READY:
                 // TODO: 显示玩家已准备状态
+                observer.get('room').multiple = 15;
                 observer.publish('ready', true);
                 break;
             case PG.Protocol.RSP_DEAL_POKER: {

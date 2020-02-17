@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from datetime import datetime, timedelta
-from typing import Optional, Awaitable, Dict, Union, Tuple, Any
+from typing import Optional, Awaitable, Dict, Union, Any
 
 import jwt
 from tornado.escape import json_encode, json_decode
@@ -20,14 +20,14 @@ class JwtMixin(object):
         return token.decode('ascii')
 
     @staticmethod
-    def jwt_decode(headers) -> Tuple[bool, str]:
-        token = JwtMixin.parse_token(headers)
+    def jwt_decode(token) -> Optional[Dict[str, Union[str, int]]]:
+        if not token:
+            return None
         try:
-            if token:
-                return True, jwt.decode(token, SECRET_KEY)
+            return jwt.decode(token, SECRET_KEY)
         except jwt.PyJWTError as e:
             logging.exception('JWT AUTH', e)
-            return False, str(e)
+            return None
 
     @staticmethod
     def parse_token(headers):
@@ -52,13 +52,13 @@ class RestfulHandler(RequestHandler):
 
     def set_default_headers(self):
         self.set_header('Content-Type', 'application/json')
-        self.set_header('Access-Control-Allow-Origin', '*')
+        self.set_header('Access-Control-Allow-Origin', self.request.headers.get('origin', '*'))
         self.set_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
         self.set_header('Access-Control-Allow-Headers', 'X-PINGOTHER, Content-Type')
+        self.set_header('Access-Control-Allow-Credentials', "true")
 
     def options(self):
         self.set_status(204)
-        # self.finish()
 
     def get_current_user(self):
         return json_decode(self.get_secure_cookie('user'))

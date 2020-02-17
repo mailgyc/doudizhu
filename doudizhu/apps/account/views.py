@@ -5,7 +5,7 @@ import pymysql
 from tornado.escape import json_encode
 from tornado.web import authenticated, RequestHandler
 
-from contrib.handlers import RestfulHandler, JwtMixin
+from contrib.handlers import RestfulHandler
 
 
 class IndexHandler(RequestHandler):
@@ -14,11 +14,10 @@ class IndexHandler(RequestHandler):
         pass
 
     def get(self):
-        user = self.get_secure_cookie('user') or {}
-        self.render('poker.html', user=user)
+        self.render('poker.html')
 
 
-class LoginHandler(RestfulHandler, JwtMixin):
+class LoginHandler(RestfulHandler):
     required_fields = ('username', 'password')
 
     async def post(self):
@@ -37,11 +36,24 @@ class LoginHandler(RestfulHandler, JwtMixin):
 
         uid, username = account.get('id'), account.get('username')
         self.set_secure_cookie('user', json_encode({'uid': uid, 'username': username}))
-        token = self.jwt_encode({'uid': uid})
-        self.write({'token': token, 'username': username})
+        self.write({'uid': uid, 'username': username})
 
 
-class SignupHandler(RestfulHandler, JwtMixin):
+class UserInfoHandler(RestfulHandler):
+
+    @authenticated
+    async def get(self):
+        account = await self.db.fetchone('SELECT id, username FROM account WHERE id=%s', self.current_user['uid'])
+        if not account:
+            self.clear_cookie('user')
+            self.redirect('/')
+
+        uid, username = account.get('id'), account.get('username')
+        self.set_secure_cookie('user', json_encode({'uid': uid, 'username': username}))
+        self.write({'uid': uid, 'username': username})
+
+
+class SignupHandler(RestfulHandler):
     required_fields = ('email', 'username', 'password', 'password_repeat')
 
     async def post(self):
@@ -56,7 +68,6 @@ class SignupHandler(RestfulHandler, JwtMixin):
         try:
             uid = await self.create_account(username, email, password)
             self.set_secure_cookie('user', json_encode({'uid': uid, 'username': username}))
-            # token = self.jwt_encode({'uid': uid})
             self.write({'uid': uid, 'username': username})
         except pymysql.IntegrityError as e:
             if await self.account_exists(email):
