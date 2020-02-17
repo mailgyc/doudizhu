@@ -18,7 +18,6 @@ function post(url, payload, callback) {
 }
 
 function http(method, url, payload, callback) {
-    url = 'http://127.0.0.1:8080' + url;
     const xhr = new XMLHttpRequest();
     xhr.withCredentials = true;
     xhr.open(method, url, true);
