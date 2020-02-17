@@ -15,8 +15,7 @@
 <script src="../static/js/generator.js"></script>
 <script>
     if (window.Poker) {
-        var container = document.getElementById('container'), domCanvas = document.createElement('canvas'),
-            canvas = domCanvas.getContext('2d');
+        var container = document.getElementById('container'), domCanvas = document.createElement('canvas'), canvas = domCanvas.getContext('2d');
         var commandArray = [[], [], [], [], [], [], [], [], [], [], [], [], []], param = {};
         container.appendChild(domCanvas);
         function showpoker(size) {
@@ -33,8 +32,8 @@
                 }
                 x = 0, y += h;
             }
-            drawPokerCard(x = 0, y, h, 'hearts', 'joker');
-            drawPokerCard(x += w, y, h, 'spades', 'joker');
+            drawPokerCard(x = 0, y, h, 'spades', 'joker');
+            drawPokerCard(x += w, y, h, 'hearts', 'joker');
             drawPokerBack(x += w, y, h, '#b55', '#a22');
             drawPokerBack(x += w, y, h, '#F9CD9C', '#EB870D');
             drawPokerBack(x += w, y, h, '#A464B8', '#5E0C78');
