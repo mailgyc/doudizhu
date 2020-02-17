@@ -164,11 +164,11 @@ PG.Rule.sorter = function (a, b) {
 };
 
 PG.Rule.index_of = function (array, ele) {
-    if (array[0].length != ele.length) {
+    if (array[0].length !== ele.length) {
         return -1;
     }
     for (var i = 0, l = array.length; i < l; i++) {
-        if (array[i] == ele) {
+        if (array[i] === ele) {
             return i;
         }
     }

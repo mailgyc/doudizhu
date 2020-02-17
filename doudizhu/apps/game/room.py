@@ -154,7 +154,7 @@ class Room(object):
         next_seat = (self.whose_turn + 1) % 3
         return self.players[next_seat]
 
-    def sync_call_end(self):
+    def sync_rob_end(self):
         response = [Pt.RSP_SHOW_POKER, self.turn_player.uid, self.pokers]
         for p in self.players:
             p.write_message(response)
@@ -169,8 +169,7 @@ class Room(object):
             # 每人抢地主, 第一个人是地主
             if self.turn_player.rob == 1 or i == 2:
                 self.turn_player.role = 2
-                self.turn_player._hand_pokers += self.pokers
-                self.turn_player._hand_pokers.sort()
+                self.turn_player.push_pokers(self.pokers)
                 self.last_shot_seat = self.whose_turn
                 return True
             self.go_prev_turn()
@@ -186,7 +185,7 @@ class Room(object):
             return False
 
         # 抢了一圈, 处理第一个人多抢一次
-        if self.next_player == self.landlord_seat:
+        if self.next_player.seat == self.landlord_seat:
             # 第一个人第一次没有抢, 结束
             if self.next_player.rob == 0:
                 return True

@@ -142,8 +142,7 @@ class Player(object):
 
             if call_end:
                 self.change_state(State.PLAYING)
-                self.room.sync_call_end()
-
+                self.room.sync_rob_end()
         else:
             logging.info('ERROR STATE[%s] PACKET %s', self.state, packet)
 

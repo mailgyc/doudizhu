@@ -27,17 +27,20 @@ class RobotPlayer(Player):
         IOLoop.current().add_callback(self.on_message, packet)
 
     def write_message(self, packet):
+        IOLoop.current().add_callback(self._write_message, packet)
+
+    def _write_message(self, packet):
         code = packet[0]
         if code == Pt.RSP_JOIN_ROOM:
             IOLoop.current().add_callback(self.to_server, [Pt.REQ_READY])
         elif code == Pt.RSP_DEAL_POKER:
             if self.uid == packet[1]:
-                self.auto_call_score()
+                IOLoop.current().add_callback(self.auto_call_score)
         elif code == Pt.RSP_CALL_SCORE:
             if self.room.turn_player == self:
                 call_end = packet[3]
                 if not call_end:
-                    self.auto_call_score()
+                    IOLoop.current().add_callback(self.auto_call_score)
         elif code == Pt.RSP_SHOW_POKER:
             if self.room.turn_player == self:
                 IOLoop.current().call_later(3, self.auto_shot_poker)
@@ -48,9 +51,9 @@ class RobotPlayer(Player):
             IOLoop.current().add_callback(self.to_server, [Pt.REQ_RESTART])
             IOLoop.current().add_callback(self.to_server, [Pt.REQ_READY])
 
-    def auto_call_score(self, score=0):
+    def auto_call_score(self):
         packet = [Pt.REQ_CALL_SCORE, randint(0, 1)]
-        IOLoop.current().add_callback(self.to_server, packet)
+        IOLoop.current().call_later(1, self.to_server, packet)
 
     def auto_shot_poker(self):
         pokers = []
