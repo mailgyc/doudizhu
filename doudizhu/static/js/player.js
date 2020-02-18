@@ -1,6 +1,6 @@
 PG.createPlay = function (seat, game) {
-    var player = seat == 0 ? new PG.Player(seat, game) : new PG.NetPlayer(seat, game);
-    var xy = [
+    let player = seat == 0 ? new PG.Player(seat, game) : new PG.NetPlayer(seat, game);
+    let xy = [
         PG.PW / 2, game.world.height - PG.PH - 10,
         game.world.width - PG.PW / 2, 94,
         PG.PW / 2, 94
@@ -43,10 +43,10 @@ PG.Player.prototype.updateInfo = function (uid, name) {
 
 PG.Player.prototype.cleanPokers = function () {
 
-    var length = this.pokerInHand.length;
-    for (var i = 0; i < length; i++) {
-        var pid = this.pokerInHand[i];
-        var p = this.findAPoker(pid);
+    let length = this.pokerInHand.length;
+    for (let i = 0; i < length; i++) {
+        let pid = this.pokerInHand[i];
+        let p = this.findAPoker(pid);
         p.kill();
         }
     this.pokerInHand = [];
@@ -54,16 +54,16 @@ PG.Player.prototype.cleanPokers = function () {
 
 PG.Player.prototype.initShotLayer = function () {
     this.shotLayer = this.game.add.group();
-    var group = this.shotLayer;
+    let group = this.shotLayer;
 
-    var sy = this.game.world.height * 0.6;
-    var pass = this.game.make.button(0, sy, "btn", this.onPass, this, 'pass.png', 'pass.png', 'pass.png');
+    let sy = this.game.world.height * 0.6;
+    let pass = this.game.make.button(0, sy, "btn", this.onPass, this, 'pass.png', 'pass.png', 'pass.png');
     pass.anchor.set(0.5, 0);
     group.add(pass);
-    var hint = this.game.make.button(0, sy, "btn", this.onHint, this, 'hint.png', 'hint.png', 'hint.png');
+    let hint = this.game.make.button(0, sy, "btn", this.onHint, this, 'hint.png', 'hint.png', 'hint.png');
     hint.anchor.set(0.5, 0);
     group.add(hint);
-    var shot = this.game.make.button(0, sy, "btn", this.onShot, this, 'shot.png', 'shot.png', 'shot.png');
+    let shot = this.game.make.button(0, sy, "btn", this.onShot, this, 'shot.png', 'shot.png', 'shot.png');
     shot.anchor.set(0.5, 0);
     group.add(shot);
 
@@ -79,10 +79,10 @@ PG.Player.prototype.setLandlord = function () {
 
 PG.Player.prototype.say = function (str) {
 
-    var style = {font: "22px Arial", fill: "#ffffff", align: "center"};
-    var sx = this.uiHead.x + this.uiHead.width / 2 + 10;
-    var sy = this.uiHead.y - this.uiHead.height * 0.5;
-    var text = this.game.add.text(sx, sy, str, style);
+    let style = {font: "22px Arial", fill: "#ffffff", align: "center"};
+    let sx = this.uiHead.x + this.uiHead.width / 2 + 10;
+    let sy = this.uiHead.y - this.uiHead.height * 0.5;
+    let text = this.game.add.text(sx, sy, str, style);
     if (this.uiHead.scale.x == -1) {
         text.x = text.x - text.width - 10;
     }
@@ -106,7 +106,7 @@ PG.Player.prototype.onInputOver = function (poker, pointer) {
 };
 
 PG.Player.prototype.onSelectPoker = function (poker, pointer) {
-    var index = this.hintPoker.indexOf(poker.id);
+    let index = this.hintPoker.indexOf(poker.id);
     if (index == -1) {
         poker.y = this.game.world.height - PG.PH * 0.8;
         this.hintPoker.push(poker.id);
@@ -134,7 +134,7 @@ PG.Player.prototype.onHint = function (btn) {
             this.hintPoker = [];
         }
     }
-    var bigger = this.hint(this.hintPoker);
+    let bigger = this.hint(this.hintPoker);
     if (bigger.length == 0) {
         if (this.hintPoker == this.lastTurnPoker) {
             this.say("没有能大过的牌");
@@ -151,7 +151,7 @@ PG.Player.prototype.onShot = function (btn) {
     if (this.hintPoker.length == 0) {
         return;
     }
-    var code = this.canPlay(this.game.isLastShotPlayer() ? [] : this.game.tablePoker, this.hintPoker);
+    let code = this.canPlay(this.game.isLastShotPlayer() ? [] : this.game.tablePoker, this.hintPoker);
     if (code) {
         this.say(code);
         return;
@@ -165,8 +165,8 @@ PG.Player.prototype.onShot = function (btn) {
 
 
 PG.Player.prototype.hint = function (lastTurnPoker) {
-    var cards;
-    var handCards = PG.Poker.toCards(this.pokerInHand);
+    let cards;
+    let handCards = PG.Poker.toCards(this.pokerInHand);
     if (lastTurnPoker.length === 0) {
         cards = PG.Rule.bestShot(handCards);
     } else {
@@ -177,16 +177,16 @@ PG.Player.prototype.hint = function (lastTurnPoker) {
 };
 
 PG.Player.prototype.canPlay = function (lastTurnPoker, shotPoker) {
-    var cardsA = PG.Poker.toCards(shotPoker);
-    var valueA = PG.Rule.cardsValue(cardsA);
+    let cardsA = PG.Poker.toCards(shotPoker);
+    let valueA = PG.Rule.cardsValue(cardsA);
     if (!valueA[0]){
         return '出牌不合法';
     }
-    var cardsB = PG.Poker.toCards(lastTurnPoker);
+    let cardsB = PG.Poker.toCards(lastTurnPoker);
     if (cardsB.length == 0) {
         return '';
     }
-    var valueB = PG.Rule.cardsValue(cardsB);
+    let valueB = PG.Rule.cardsValue(cardsB);
     if (valueA[0] != valueB[0] && valueA[1] < 1000) {
         return '出牌类型跟上家不一致';
     }
@@ -200,20 +200,20 @@ PG.Player.prototype.canPlay = function (lastTurnPoker, shotPoker) {
 PG.Player.prototype.playPoker = function (lastTurnPoker) {
     this.lastTurnPoker = lastTurnPoker;
 
-    var group = this.shotLayer;
-    var step = this.game.world.width / 6;
-    var sx = this.game.world.width / 2 - 0.5 * step;
+    let group = this.shotLayer;
+    let step = this.game.world.width / 6;
+    let sx = this.game.world.width / 2 - 0.5 * step;
     if (!this.game.isLastShotPlayer()) {
         sx -= 0.5 * step;
-        var pass = group.getAt(0);
+        let pass = group.getAt(0);
         pass.centerX = sx;
         sx += step;
         pass.revive();
     }
-    var hint = group.getAt(1);
+    let hint = group.getAt(1);
     hint.centerX = sx;
     hint.revive();
-    var shot = group.getAt(2);
+    let shot = group.getAt(2);
     shot.centerX = sx + step;
     shot.revive();
 
@@ -226,10 +226,10 @@ PG.Player.prototype.sortPoker = function () {
 
 PG.Player.prototype.dealPoker = function () {
     this.sortPoker();
-    var length = this.pokerInHand.length;
-    for (var i = 0; i < length; i++) {
-        var pid = this.pokerInHand[i];
-        var p = new PG.Poker(this.game, pid, pid);
+    let length = this.pokerInHand.length;
+    for (let i = 0; i < length; i++) {
+        let pid = this.pokerInHand[i];
+        let p = new PG.Poker(this.game, pid, pid);
         this.game.world.add(p);
         this.pushAPoker(p);
         this.dealPokerAnim(p, i);
@@ -245,11 +245,11 @@ PG.Player.prototype.dealPokerAnim = function (p, i) {
 };
 
 PG.Player.prototype.arrangePoker = function () {
-    var count = this.pokerInHand.length;
-    var gap = Math.min(this.game.world.width / count, PG.PW * 0.44);
-    for (var i = 0; i < count; i++) {
-        var pid = this.pokerInHand[i];
-        var p = this.findAPoker(pid);
+    let count = this.pokerInHand.length;
+    let gap = Math.min(this.game.world.width / count, PG.PW * 0.44);
+    for (let i = 0; i < count; i++) {
+        let pid = this.pokerInHand[i];
+        let p = this.findAPoker(pid);
         p.bringToTop();
         this.game.add.tween(p).to({x: this.game.world.width / 2 + (i - count / 2) * gap}, 600, Phaser.Easing.Default, true);
     }
@@ -264,8 +264,8 @@ PG.Player.prototype.pushAPoker = function (poker) {
 };
 
 PG.Player.prototype.removeAPoker = function (pid) {
-    var length = this.pokerInHand.length;
-    for (var i = 0; i < length; i++) {
+    let length = this.pokerInHand.length;
+    for (let i = 0; i < length; i++) {
         if (this.pokerInHand[i] === pid) {
             this.pokerInHand.splice(i, 1);
             delete this._pokerPic[pid];
@@ -276,8 +276,8 @@ PG.Player.prototype.removeAPoker = function (pid) {
 };
 
 PG.Player.prototype.removeAllPoker = function () {
-    var length = this.pokerInHand.length;
-    for (var i = 0; i < length; i++) {
+    let length = this.pokerInHand.length;
+    for (let i = 0; i < length; i++) {
             this.pokerInHand.splice(i, 1);
             delete this._pokerPic[pid];
         }
@@ -286,7 +286,7 @@ PG.Player.prototype.removeAllPoker = function () {
 
 
 PG.Player.prototype.findAPoker = function (pid) {
-    var poker = this._pokerPic[pid];
+    let poker = this._pokerPic[pid];
     if (poker === undefined) {
         console.log('Error: FIND POKER ', pid);
     }
@@ -294,23 +294,23 @@ PG.Player.prototype.findAPoker = function (pid) {
 };
 
 PG.Player.prototype.enableInput = function () {
-    var length = this.pokerInHand.length;
-    for (var i = 0; i < length; i++) {
-        var p = this.findAPoker(this.pokerInHand[i]);
+    let length = this.pokerInHand.length;
+    for (let i = 0; i < length; i++) {
+        let p = this.findAPoker(this.pokerInHand[i]);
         p.inputEnabled = true;
     }
 };
 
 PG.Player.prototype.pokerSelected = function (pokers) {
-    for (var i = 0; i < pokers.length; i++) {
-        var p = this.findAPoker(pokers[i]);
+    for (let i = 0; i < pokers.length; i++) {
+        let p = this.findAPoker(pokers[i]);
         p.y = this.game.world.height - PG.PH * 0.8;
     }
 };
 
 PG.Player.prototype.pokerUnSelected = function (pokers) {
-    for (var i = 0; i < pokers.length; i++) {
-        var p = this.findAPoker(pokers[i]);
+    for (let i = 0; i < pokers.length; i++) {
+        let p = this.findAPoker(pokers[i]);
         p.y = this.game.world.height - PG.PH / 2;
     }
 };

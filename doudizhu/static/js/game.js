@@ -190,7 +190,7 @@ PG.Game.prototype = {
                 this.game.time.events.add(2000, gameOver, this);
                 break;
             case PG.Protocol.RSP_CHEAT:
-                var seat = this.uidToSeat(packet[1]);
+                let seat = this.uidToSeat(packet[1]);
                 this.players[seat].replacePoker(packet[2], 0);
                 this.players[seat].reDealPoker();
                 break;
@@ -244,16 +244,16 @@ PG.Game.prototype = {
 
     dealPoker: function (pokers) {
 
-        for (var i = 0; i < 3; i++) {
-            var p = new PG.Poker(this, 54, 54);
+        for (let i = 0; i < 3; i++) {
+            let p = new PG.Poker(this, 55, 55);
             this.game.world.add(p);
             this.tablePoker[i] = p.id;
             this.tablePoker[i + 3] = p;
         }
 
-        for (var i = 0; i < 17; i++) {
-            this.players[2].pokerInHand.push(54);
-            this.players[1].pokerInHand.push(54);
+        for (let i = 0; i < 17; i++) {
+            this.players[2].pokerInHand.push(55);
+            this.players[1].pokerInHand.push(55);
             this.players[0].pokerInHand.push(pokers.pop());
         }
 
@@ -267,31 +267,31 @@ PG.Game.prototype = {
     },
 
     showLastThreePoker: function () {
-        for (var i = 0; i < 3; i++) {
-            var pokerId = this.tablePoker[i];
-            var p = this.tablePoker[i + 3];
+        for (let i = 0; i < 3; i++) {
+            let pokerId = this.tablePoker[i];
+            let p = this.tablePoker[i + 3];
             p.id = pokerId;
-            p.frame = pokerId;
+            p.frame = pokerId - 1;
             this.game.add.tween(p).to({x: this.game.world.width / 2 + (i - 1) * 60}, 600, Phaser.Easing.Default, true);
         }
         this.game.time.events.add(1500, this.dealLastThreePoker, this);
     },
 
     dealLastThreePoker: function () {
-        var turnPlayer = this.players[this.whoseTurn];
+        let turnPlayer = this.players[this.whoseTurn];
 
-        for (var i = 0; i < 3; i++) {
-            var pid = this.tablePoker[i];
-            var poker = this.tablePoker[i + 3];
+        for (let i = 0; i < 3; i++) {
+            let pid = this.tablePoker[i];
+            let poker = this.tablePoker[i + 3];
             turnPlayer.pokerInHand.push(pid);
             turnPlayer.pushAPoker(poker);
         }
         turnPlayer.sortPoker();
-        if (this.whoseTurn == 0) {
+        if (this.whoseTurn === 0) {
             turnPlayer.arrangePoker();
-            for (var i = 0; i < 3; i++) {
-                var p = this.tablePoker[i + 3];
-                var tween = this.game.add.tween(p).to({y: this.game.world.height - PG.PH * 0.8}, 400, Phaser.Easing.Default, true);
+            for (let i = 0; i < 3; i++) {
+                let p = this.tablePoker[i + 3];
+                let tween = this.game.add.tween(p).to({y: this.game.world.height - PG.PH * 0.8}, 400, Phaser.Easing.Default, true);
 
                 function adjust(p) {
                     this.game.add.tween(p).to({y: this.game.world.height - PG.PH / 2}, 400, Phaser.Easing.Default, true, 400);
@@ -299,37 +299,37 @@ PG.Game.prototype = {
                 tween.onComplete.add(adjust, this, p);
             }
         } else {
-            var first = turnPlayer.findAPoker(54);
-            for (var i = 0; i < 3; i++) {
-                var p = this.tablePoker[i + 3];
-                p.frame = 54;
-                p.frame = 54;
+            let first = turnPlayer.findAPoker(54);
+            for (let i = 0; i < 3; i++) {
+                let p = this.tablePoker[i + 3];
+                p.frame = 55 - 1;
+                p.frame = 55 - 1;
                 this.game.add.tween(p).to({x: first.x, y: first.y}, 200, Phaser.Easing.Default, true);
             }
         }
 
         this.tablePoker = [];
         this.lastShotPlayer = turnPlayer;
-        if (this.whoseTurn == 0) {
+        if (this.whoseTurn === 0) {
             this.startPlay();
         }
     },
 
     handleShotPoker: function (packet) {
         this.whoseTurn = this.uidToSeat(packet[1]);
-        var turnPlayer = this.players[this.whoseTurn];
-        var pokers = packet[2];
-        if (pokers.length == 0) {
+        let turnPlayer = this.players[this.whoseTurn];
+        let pokers = packet[2];
+        if (pokers.length === 0) {
             this.players[this.whoseTurn].say("不出");
         } else {
-            var pokersPic = {};
+            let pokersPic = {};
             pokers.sort(PG.Poker.comparePoker);
-            var count = pokers.length;
-            var gap = Math.min((this.game.world.width - PG.PW * 2) / count, PG.PW * 0.36);
-            for (var i = 0; i < count; i++) {
-                var p = turnPlayer.findAPoker(pokers[i]);
+            let count = pokers.length;
+            let gap = Math.min((this.game.world.width - PG.PW * 2) / count, PG.PW * 0.36);
+            for (let i = 0; i < count; i++) {
+                let p = turnPlayer.findAPoker(pokers[i]);
                 p.id = pokers[i];
-                p.frame = pokers[i];
+                p.frame = pokers[i] - 1;
                 p.bringToTop();
                 this.game.add.tween(p).to({
                     x: this.game.world.width / 2 + (i - count / 2) * gap,
@@ -340,8 +340,8 @@ PG.Game.prototype = {
                 pokersPic[p.id] = p;
             }
 
-            for (var i = 0; i < this.tablePoker.length; i++) {
-                var p = this.tablePokerPic[this.tablePoker[i]];
+            for (let i = 0; i < this.tablePoker.length; i++) {
+                let p = this.tablePokerPic[this.tablePoker[i]];
                 // p.kill();
                 p.destroy();
             }
