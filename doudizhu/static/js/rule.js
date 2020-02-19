@@ -124,8 +124,7 @@ PG.Rule.bestShot = function (handCards) {
 
     handCards.sort(this.sorter);
     let shot = '';
-    let len = this._CardsType.length;
-    for (let i = 2; i < len; i++) {
+    for (let i = 2; i < this._CardsType.length; i++) {
         let oneRule = PG.RuleList[this._CardsType[i]];
         for (let j = 0; j < oneRule.length; j++) {
             if (oneRule[j].length > shot.length && this.containsAll(handCards, oneRule[j])) {
@@ -154,7 +153,7 @@ PG.Rule._CardsType = [
     'seq_single5', 'seq_single6', 'seq_single7', 'seq_single8', 'seq_single9', 'seq_single10', 'seq_single11', 'seq_single12',
     'seq_pair3', 'seq_pair4', 'seq_pair5', 'seq_pair6', 'seq_pair7', 'seq_pair8', 'seq_pair9', 'seq_pair10',
     'seq_trio2', 'seq_trio3', 'seq_trio4', 'seq_trio5', 'seq_trio6',
-    'seq_trio_pair2', 'seq_trio_pair3', 'seq_trio_pair4', 'seq_trio_pair5',
+    'seq_trio_pair2', 'seq_trio_pair3', 'seq_trio_pair4',
     'seq_trio_single2', 'seq_trio_single3', 'seq_trio_single4', 'seq_trio_single5',
     'bomb_pair', 'bomb_single'];
 

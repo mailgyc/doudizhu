@@ -9,7 +9,7 @@ class Observer {
         return this.state[key];
     }
 
-    publish(key, val) {
+    set(key, val) {
         this.state[key] = val;
 
         const subscribers = this.subscribers;
@@ -60,7 +60,7 @@ PG.Game = function (game) {
 PG.Game.prototype = {
 
     init: function (baseScore) {
-        observer.publish('baseScore', baseScore);
+        observer.set('baseScore', baseScore);
     },
 
     create: function () {
@@ -79,18 +79,40 @@ PG.Game.prototype = {
             titleBar.text = `房间号:${room.id} 底分: ${room.base} 倍数: ${room.multiple}`;
         });
 
+        // 创建准备按钮
         const sx = this.game.world.width / 2;
         const sy = this.game.world.height * 0.6;
+
         let ready = this.game.make.button(sx, sy, "btn", function() {
-            // this.restart();
-            this.send_message([PG.Protocol.REQ_READY]);
+            this.send_message([PG.Protocol.REQ_READY, 1]);
         }, this, 'ready.png', 'ready.png', 'ready.png');
         ready.anchor.set(0.5, 0);
         this.game.world.add(ready);
 
         observer.subscribe('ready', function(is_ready) {
             ready.visible = !is_ready;
-        })
+        });
+
+        // 创建抢地主按钮
+        const group = this.game.add.group();
+        let pass = this.game.make.button(this.game.world.width * 0.4, sy, "btn", function () {
+            this.game.add.audio('f_score_0').play();
+            this.send_message([PG.Protocol.REQ_CALL_SCORE, 0]);
+        }, this, 'score_0.png', 'score_0.png', 'score_0.png');
+        pass.anchor.set(0.5, 0);
+        group.add(pass);
+
+        const rob = this.game.make.button(this.game.world.width * 0.6, sy, "btn", function() {
+            this.game.add.audio('f_score_1').play();
+            this.send_message([PG.Protocol.REQ_CALL_SCORE, 1]);
+        }, this, 'score_1.png', 'score_1.png', 'score_1.png');
+        rob.anchor.set(0.5, 0);
+        group.add(rob);
+        group.visible = false;
+
+        observer.subscribe('rob', function(is_rob) {
+            group.visible = is_rob;
+        });
     },
 
     onopen: function () {
@@ -110,7 +132,7 @@ PG.Game.prototype = {
         const code = packet[0];
         switch (code) {
             case PG.Protocol.RSP_JOIN_ROOM:
-                observer.publish('room', packet[1]['room']);
+                observer.set('room', packet[1]['room']);
                 const syncInfo = packet[1]['players'];
                 for (let i = 0; i < syncInfo.length; i++) {
                     if (syncInfo[i].uid === this.players[0].uid) {
@@ -124,45 +146,47 @@ PG.Game.prototype = {
                 break;
             case PG.Protocol.RSP_READY:
                 // TODO: 显示玩家已准备状态
-                observer.get('room').multiple = 15;
-                observer.publish('ready', true);
+                if (packet[1]['uid'] === this.players[0].uid) {
+                    observer.get('room').multiple = 15;
+                    observer.set('ready', true);
+                }
                 break;
             case PG.Protocol.RSP_DEAL_POKER: {
-                const playerId = packet[1];
-                const pokers = packet[2];
-                console.log(pokers);
+                const playerId = packet[1]['uid'];
+                const pokers = packet[1]['pokers'];
                 this.dealPoker(pokers);
                 this.whoseTurn = this.uidToSeat(playerId);
                 this.startCallScore();
                 break;
             }
             case PG.Protocol.RSP_CALL_SCORE: {
-                const playerId = packet[1];
-                const rob = packet[2];
-                const isCallEnd = packet[3];
+                const playerId = packet[1]['uid'];
+                const rob = packet[1]['rob'];
+                const landlord = packet[1]['landlord'];
                 this.whoseTurn = this.uidToSeat(playerId);
 
                 const hanzi = ['不抢', "抢地主"];
                 this.players[this.whoseTurn].say(hanzi[rob]);
-                if (!isCallEnd) {
+
+                observer.set('rob', false);
+                if (landlord === -1) {
                     this.whoseTurn = (this.whoseTurn + 1) % 3;
                     this.startCallScore();
+                } else {
+                    this.whoseTurn = this.uidToSeat(landlord);
+                    this.tablePoker[0] = packet[1]['pokers'][0];
+                    this.tablePoker[1] = packet[1]['pokers'][1];
+                    this.tablePoker[2] = packet[1]['pokers'][2];
+                    this.players[this.whoseTurn].setLandlord();
+                    this.showLastThreePoker();
                 }
                 if (rob === 1) {
                     let room = observer.get('room');
                     room.multiple *= 2;
-                    observer.publish('room', room)
+                    observer.set('room', room)
                 }
                 break;
             }
-            case PG.Protocol.RSP_SHOW_POKER:
-                this.whoseTurn = this.uidToSeat(packet[1]);
-                this.tablePoker[0] = packet[2][0];
-                this.tablePoker[1] = packet[2][1];
-                this.tablePoker[2] = packet[2][2];
-                this.players[this.whoseTurn].setLandlord();
-                this.showLastThreePoker();
-                break;
             case PG.Protocol.RSP_SHOT_POKER:
                 this.handleShotPoker(packet);
                 break;
@@ -182,8 +206,7 @@ PG.Game.prototype = {
                 this.whoseTurn = this.uidToSeat(winner);
                 function gameOver() {
                     alert(this.players[this.whoseTurn].isLandlord ? "地主赢" : "农民赢");
-                    PG.Socket.send([PG.Protocol.REQ_RESTART]);
-                    observer.publish('ready', false);
+                    observer.set('ready', false);
                     this.cleanWorld();
                 }
 
@@ -289,13 +312,14 @@ PG.Game.prototype = {
         turnPlayer.sortPoker();
         if (this.whoseTurn === 0) {
             turnPlayer.arrangePoker();
+            const that = this;
             for (let i = 0; i < 3; i++) {
                 let p = this.tablePoker[i + 3];
                 let tween = this.game.add.tween(p).to({y: this.game.world.height - PG.PH * 0.8}, 400, Phaser.Easing.Default, true);
 
                 function adjust(p) {
-                    this.game.add.tween(p).to({y: this.game.world.height - PG.PH / 2}, 400, Phaser.Easing.Default, true, 400);
-                };
+                    that.game.add.tween(p).to({y: that.game.world.height - PG.PH / 2}, 400, Phaser.Easing.Default, true, 400);
+                }
                 tween.onComplete.add(adjust, this, p);
             }
         } else {
@@ -316,9 +340,9 @@ PG.Game.prototype = {
     },
 
     handleShotPoker: function (packet) {
-        this.whoseTurn = this.uidToSeat(packet[1]);
+        this.whoseTurn = this.uidToSeat(packet[1]['uid']);
         let turnPlayer = this.players[this.whoseTurn];
-        let pokers = packet[2];
+        let pokers = packet[1]['pokers'];
         if (pokers.length === 0) {
             this.players[this.whoseTurn].say("不出");
         } else {
@@ -359,27 +383,8 @@ PG.Game.prototype = {
     },
 
     startCallScore: function () {
-        function btnTouch(btn) {
-            this.send_message([PG.Protocol.REQ_CALL_SCORE, btn.score]);
-            btn.parent.destroy();
-            const audio = this.game.add.audio('f_score_' + btn.score);
-            audio.play();
-        }
-
         if (this.whoseTurn === 0) {
-            const sy = this.game.world.height * 0.6;
-            const group = this.game.add.group();
-            let pass = this.game.make.button(this.game.world.width * 0.4, sy, "btn", btnTouch, this, 'score_0.png', 'score_0.png', 'score_0.png');
-            pass.anchor.set(0.5, 0);
-            pass.score = 0;
-            group.add(pass);
-
-            const rob = this.game.make.button(this.game.world.width * 0.6, sy, "btn", btnTouch, this, 'score_1.png', 'score_1.png', 'score_1.png');
-            rob.anchor.set(0.5, 0);
-            rob.score = 1;
-            group.add(rob);
-        } else {
-            // TODO show clock on target
+            observer.set('rob', true);
         }
 
     },
@@ -397,7 +402,7 @@ PG.Game.prototype = {
     },
 
     isLastShotPlayer: function () {
-        return this.players[this.whoseTurn] == this.lastShotPlayer;
+        return this.players[this.whoseTurn] === this.lastShotPlayer;
     },
 
     quitGame: function () {
@@ -405,7 +410,7 @@ PG.Game.prototype = {
     },
 
     onJoin: function (btn) {
-        if (btn.tableId == -1) {
+        if (btn.tableId === -1) {
             this.send_message([PG.Protocol.REQ_NEW_TABLE]);
         } else {
             this.send_message([PG.Protocol.REQ_JOIN_TABLE, btn.tableId]);

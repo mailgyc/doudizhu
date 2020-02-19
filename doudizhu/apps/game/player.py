@@ -3,7 +3,7 @@ from __future__ import annotations
 import functools
 import logging
 from enum import IntEnum, auto
-from typing import TYPE_CHECKING, List, Optional, Union, Any
+from typing import TYPE_CHECKING, List, Optional
 
 from .protocol import Protocol as Pt
 from .room import RoomManager
@@ -54,10 +54,11 @@ class Player(object):
         self.rob = -1
         self._hand_pokers: List[int] = []
 
-    def reset(self):
+    def restart(self):
         self.ready = False
         self.role = FARMER
         self.rob = -1
+        self.state = State.WAITING
         self._hand_pokers: List[int] = []
 
     def push_pokers(self, pokers: List[int]):
@@ -121,8 +122,8 @@ class Player(object):
     def handle_waiting(self, packet):
         code = packet[0]
         if code == Pt.REQ_READY:
-            self.ready = True
-            self.write_message([Pt.RSP_READY])
+            self.ready = bool(packet[1])
+            self.room.broadcast([Pt.RSP_READY, {"uid": self.uid, "ready": int(self.ready)}])
             if self.room.is_ready():
                 self.change_state(State.CALL_SCORE)
                 self.room.deal_poker()
@@ -135,14 +136,18 @@ class Player(object):
         if code == Pt.REQ_CALL_SCORE:
             self.rob = packet[1]
 
-            call_end = self.room.is_rob_end()
-            response = [Pt.RSP_CALL_SCORE, self.uid, self.rob, call_end]
-            for p in self.room.players:
-                p.write_message(response)
-
-            if call_end:
+            is_end = self.room.is_rob_end()
+            if is_end:
                 self.change_state(State.PLAYING)
-                self.room.sync_rob_end()
+                logging.info('ROB END LANDLORD[%s]', self.room.landlord.uid)
+
+            response = [Pt.RSP_CALL_SCORE, {
+                'uid': self.uid,
+                'rob': self.rob,
+                'landlord': self.room.landlord.uid if is_end else -1,
+                'pokers': self.room.pokers if is_end else [],
+            }]
+            self.room.broadcast(response)
         else:
             logging.info('ERROR STATE[%s] PACKET %s', self.state, packet)
 
@@ -165,7 +170,7 @@ class Player(object):
                 for p in pokers:
                     self._hand_pokers.remove(p)
 
-            response = [Pt.RSP_SHOT_POKER, self.uid, pokers]
+            response = [Pt.RSP_SHOT_POKER, {'uid': self.uid, 'pokers': pokers}]
             for p in self.room.players:
                 p.write_message(response)
             logger.info('USER[%d] shot[%s]', self.uid, str(pokers))
@@ -182,11 +187,7 @@ class Player(object):
             logging.info('ERROR STATE[%s] PACKET %s', self.state, packet)
 
     def handle_game_over(self, packet):
-        code = packet[0]
-        if code == Pt.REQ_RESTART:
-            self.state = State.WAITING
-        else:
-            logging.info('ERROR STATE[%s] PACKET %s', self.state, packet)
+        logging.info('ERROR STATE[%s] PACKET %s', self.state, packet)
 
     def change_state(self, state: State):
         for player in self.room.players:

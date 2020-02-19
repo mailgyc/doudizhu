@@ -32,9 +32,6 @@ class Protocol(IntEnum):
     REQ_CALL_SCORE = 33
     RSP_CALL_SCORE = 34
 
-    REQ_SHOW_POKER = 35
-    RSP_SHOW_POKER = 36
-
     REQ_SHOT_POKER = 37
     RSP_SHOT_POKER = 38
 
@@ -43,7 +40,4 @@ class Protocol(IntEnum):
 
     REQ_CHAT = 43
     RSP_CHAT = 44
-
-    REQ_RESTART = 45
-    RSP_RESTART = 46
 

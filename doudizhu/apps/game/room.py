@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 class Room(object):
 
-    def __init__(self, room_id, entrance_fee=1, allow_robot=True):
+    def __init__(self, room_id, entrance_fee=10, allow_robot=True):
         self.room_id = room_id
         self.entrance_fee = entrance_fee
 
@@ -33,11 +33,11 @@ class Room(object):
     def sync_data(self):
         return {
             'id': self.room_id,
-            'base': 10,
-            'multiple': 15,
+            'base': self.entrance_fee,
+            'multiple': self.multiple,
         }
 
-    def reset(self):
+    def restart(self):
         self.pokers: List[int] = []
         self.multiple = 15
 
@@ -45,7 +45,12 @@ class Room(object):
         self.last_shot_poker = []
 
         for player in self.players:
-            player.reset()
+            player.restart()
+
+    def broadcast(self, response):
+        for p in self.players:
+            if p:
+                p.write_message(response)
 
     def add_robot(self, nth=1):
         size = self.size()
@@ -108,14 +113,15 @@ class Room(object):
             response[1]['pokers'] = [[p.uid, *p.hand_pokers] for p in self.players if p != target]
             target.write_message(response)
         logging.info('Room[%d] GameOver[%d]', self.room_id, self.room_id)
-        self.reset()
+
+        IOLoop.current().add_callback(self.restart)
 
     def deal_poker(self):
         try:
             from .dealer import generate_pokers
             self.pokers = generate_pokers(self.allow_robot)
         except ModuleNotFoundError:
-            self.pokers = [i for i in range(54)]
+            self.pokers = list(range(1, 55))
             random.shuffle(self.pokers)
             logging.info('RANDOM POKERS')
 
@@ -126,7 +132,7 @@ class Room(object):
 
         self.whose_turn = self.landlord_seat
         for player in self.players:
-            response = [Pt.RSP_DEAL_POKER, self.turn_player.uid, player.hand_pokers]
+            response = [Pt.RSP_DEAL_POKER, {'uid': self.turn_player.uid, 'pokers': player.hand_pokers}]
             player.write_message(response)
             logging.info('ROOM[%s] DEAL[%s]', self.room_id, response)
 
@@ -139,6 +145,13 @@ class Room(object):
         self.whose_turn -= 1
         if self.whose_turn == -1:
             self.whose_turn = 2
+
+    @property
+    def landlord(self):
+        for player in self.players:
+            if player.role == 2:
+                return player
+        return None
 
     @property
     def prev_player(self):
@@ -154,13 +167,7 @@ class Room(object):
         next_seat = (self.whose_turn + 1) % 3
         return self.players[next_seat]
 
-    def sync_rob_end(self):
-        response = [Pt.RSP_SHOW_POKER, self.turn_player.uid, self.pokers]
-        for p in self.players:
-            p.write_message(response)
-        logging.info('Player[%d] IS LANDLORD[%s]', self.turn_player.uid, str(self.pokers))
-
-    def is_rob_end(self):
+    def is_rob_end(self) -> bool:
         if not self._is_rob_end():
             self.go_next_turn()
             return False
