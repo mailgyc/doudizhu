@@ -3,7 +3,7 @@ from enum import IntEnum
 
 class Protocol(IntEnum):
 
-    RSP_ERROR = 0
+    ERROR = 0
 
     REQ_CHEAT = 1
     RSP_CHEAT = 2

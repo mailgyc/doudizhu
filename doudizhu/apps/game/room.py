@@ -15,37 +15,48 @@ if TYPE_CHECKING:
 
 class Room(object):
 
-    def __init__(self, room_id, entrance_fee=10, allow_robot=True):
+    def __init__(self, room_id, level=10, allow_robot=True):
         self.room_id = room_id
-        self.entrance_fee = entrance_fee
+        self.base = level * 10
+        self.multiple = 0
 
         self.players: List[Optional[Player]] = [None, None, None]
         self.pokers: List[int] = []
-        self.multiple = 15
+
+        self.timer = 30
         self.whose_turn = 0
         self.landlord_seat = 0
 
         self.last_shot_seat = 0
         self.last_shot_poker = []
         self.allow_robot = allow_robot
-        logging.info('ROOM[%d] CREATED', room_id)
-
-    def sync_data(self):
-        return {
-            'id': self.room_id,
-            'base': self.entrance_fee,
-            'multiple': self.multiple,
-        }
 
     def restart(self):
-        self.pokers: List[int] = []
         self.multiple = 15
+        self.pokers: List[int] = []
+
+        self.timer = 30
+        self.whose_turn = 0
+        self.landlord_seat = (self.landlord_seat + 1) % 3
 
         self.last_shot_seat = 0
         self.last_shot_poker = []
 
         for player in self.players:
             player.restart()
+
+    def sync_data(self):
+        return {
+            'id': self.room_id,
+            'base': self.base,
+            'multiple': self.multiple,
+            'state': self.players[0].state,
+            'landlord_uid': self.seat_to_uid(self.landlord_seat),
+            'whose_turn': self.seat_to_uid(self.whose_turn),
+            'timer': self.timer,
+            'last_shot_uid': self.seat_to_uid(self.last_shot_seat),
+            'last_shot_poker': self.last_shot_poker,
+        }
 
     def broadcast(self, response):
         for p in self.players:
@@ -63,7 +74,7 @@ class Room(object):
 
         from .components.simple import RobotPlayer
         p1 = RobotPlayer(10 + nth, f'IDIOT-{nth}', self)
-        p1.to_server([Pt.REQ_JOIN_ROOM, self.room_id, 0])
+        p1.to_server([Pt.REQ_JOIN_ROOM, {'room': self.room_id, 'level': 1}])
 
         if nth == 1:
             IOLoop.current().call_later(1, self.add_robot, nth=2)
@@ -99,9 +110,7 @@ class Room(object):
             return False
 
     def on_game_over(self, winner):
-        self.landlord_seat = (self.landlord_seat + 1) % 3
-
-        point = self.entrance_fee * self.multiple
+        point = self.base * self.multiple
 
         response = [Pt.RSP_GAME_OVER, {
             'winner': winner.uid,
@@ -132,7 +141,11 @@ class Room(object):
 
         self.whose_turn = self.landlord_seat
         for player in self.players:
-            response = [Pt.RSP_DEAL_POKER, {'uid': self.turn_player.uid, 'pokers': player.hand_pokers}]
+            response = [Pt.RSP_DEAL_POKER, {
+                'uid': self.turn_player.uid,
+                'timer': self.timer,
+                'pokers': player.hand_pokers
+            }]
             player.write_message(response)
             logging.info('ROOM[%s] DEAL[%s]', self.room_id, response)
 
@@ -146,10 +159,15 @@ class Room(object):
         if self.whose_turn == -1:
             self.whose_turn = 2
 
+    def seat_to_uid(self, seat):
+        if self.players[seat]:
+            return self.players[seat].uid
+        return -1
+
     @property
     def landlord(self):
         for player in self.players:
-            if player.role == 2:
+            if player.landlord == 1:
                 return player
         return None
 
@@ -175,7 +193,7 @@ class Room(object):
         for i in range(3):
             # 每人抢地主, 第一个人是地主
             if self.turn_player.rob == 1 or i == 2:
-                self.turn_player.role = 2
+                self.turn_player.landlord = 1
                 self.turn_player.push_pokers(self.pokers)
                 self.last_shot_seat = self.whose_turn
                 return True
@@ -250,6 +268,7 @@ class RoomManager(object):
     def new_room(cls, entrance_fee: int, allow_robot: bool) -> Room:
         room = Room(cls.gen_room_id(), entrance_fee, allow_robot)
         cls.__waiting_rooms[room.room_id] = room
+        logging.info('ROOM[%s] CREATED', room)
         return room
 
     @classmethod

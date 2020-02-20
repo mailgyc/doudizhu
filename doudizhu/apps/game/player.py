@@ -3,7 +3,7 @@ from __future__ import annotations
 import functools
 import logging
 from enum import IntEnum, auto
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, List, Optional, Dict, Any
 
 from .protocol import Protocol as Pt
 from .room import RoomManager
@@ -15,28 +15,25 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__file__)
 
-FARMER = 1
-LANDLORD = 2
-
 
 def shot_turn(method):
     @functools.wraps(method)
-    def wrapper(player, packet):
+    def wrapper(player, *args, **kwargs):
         if player.seat == player.room.whose_turn:
-            method(player, packet)
+            method(player, *args, **kwargs)
         else:
+            player.write_message([Pt.ERROR, {'reason': 'NOT YOUR TURN'}])
             logging.warning('USER[%d] TURN CHEAT', player.uid)
 
     return wrapper
 
 
 class State(IntEnum):
-    INIT = auto()
-    WAITING = auto()
-    CALL_SCORE = auto()
-    PLAYING = auto()
-    GAME_OVER = auto()
-    DISCONNECT = auto()
+    INIT = 0
+    WAITING = 1
+    CALL_SCORE = 2
+    PLAYING = 3
+    GAME_OVER = 4
 
 
 class Player(object):
@@ -46,65 +43,72 @@ class Player(object):
         self.name = name
         self.socket = socket
         self.room: Optional[Room] = None
-        self.seat = 0
+        self.seat = -1
         self.state = State.INIT
 
-        self.ready = False
-        self.role = FARMER
+        self.ready = 0
+        self.landlord = 0
         self.rob = -1
         self._hand_pokers: List[int] = []
 
     def restart(self):
-        self.ready = False
-        self.role = FARMER
+        self.ready = 0
         self.rob = -1
+        self.landlord = 0
         self.state = State.WAITING
         self._hand_pokers: List[int] = []
+
+    def sync_data(self) -> Dict[str, str]:
+        return {
+            'uid': self.uid,
+            'seat': self.seat,
+            'name': self.name,
+            'icon': '',
+            'ready': self.ready,
+            'rob': self.rob,
+            'landlord': self.landlord
+        }
 
     def push_pokers(self, pokers: List[int]):
         self._hand_pokers += pokers
 
     @property
-    def hand_pokers(self):
+    def hand_pokers(self) -> List[int]:
         return self._hand_pokers
 
-    def on_message(self, packet):
+    def on_message(self, message):
+        if len(message) < 2 or not (isinstance(message[0], int) and isinstance(message[1], dict)):
+            self.write_message([Pt.ERROR, {'reason': 'Protocol cannot be resolved.'}])
+            logging.error('Protocol[%s] cannot be resolved', message)
+            return
+
+        code, packet = message[0], message[1]
         if self.state == State.INIT:
-            self.handle_init(packet)
+            self.handle_init(code, packet)
         elif self.state == State.WAITING:
-            self.handle_waiting(packet)
+            self.handle_waiting(code, packet)
         elif self.state == State.CALL_SCORE:
-            self.handle_call_score(packet)
+            self.handle_call_score(code, packet)
         elif self.state == State.PLAYING:
-            self.handle_playing(packet)
+            self.handle_playing(code, packet)
         elif self.state == State.GAME_OVER:
-            self.handle_game_over(packet)
-        elif self.state == State.DISCONNECT:
+            self.handle_game_over(code, packet)
+
+    def handle_init(self, code: int, packet: Dict[str, Any]):
+        if code == Pt.REQ_LOGIN:
             pass
 
-    def handle_init(self, packet):
-        code = packet[0]
-        if code == Pt.REQ_LOGIN:
-            response = [Pt.RSP_LOGIN, self.uid, self.name]
-            self.write_message(response)
-
         elif code == Pt.REQ_ROOM_LIST:
-            self.write_message([Pt.RSP_ROOM_LIST, RoomManager.get_waiting_rooms()])
+            pass
 
         elif code == Pt.REQ_NEW_ROOM:
-            # TODO: check target was already in a room.
-            entrance_fee = packet[1]
-            room = RoomManager.new_room(entrance_fee, self.allow_robot)
-            if self.join_room(room):
-                self.sync_room()
-            logging.info('PLAYER[%s] NEW ROOM[%d]', self.uid, room.room_id)
-            self.write_message([Pt.RSP_NEW_ROOM, room.room_id])
+            pass
 
         elif code == Pt.REQ_JOIN_ROOM:
-            room_id, entrance_fee = packet[1], packet[2]
-            room = RoomManager.find_waiting_room(room_id, entrance_fee, self.allow_robot)
+            room_id, level = packet.get('room', -1), packet.get('level', 1)
+            room = RoomManager.find_waiting_room(room_id, level, self.allow_robot)
             if not room:
-                self.write_message([Pt.RSP_ERROR, 'ROOM NOT FOUND'])
+                self.write_message([Pt.RSP_JOIN_ROOM, {'room': {}, 'player': []}])
                 logging.info('PLAYER[%d] JOIN ROOM[%d] NOT FOUND', self.uid, packet[1])
                 return
 
@@ -119,27 +123,26 @@ class Player(object):
         else:
             logging.info('ERROR STATE[%s] PACKET %s', self.state, packet)
 
-    def handle_waiting(self, packet):
-        code = packet[0]
+    def handle_waiting(self, code: int, packet: Dict[str, Any]):
         if code == Pt.REQ_READY:
-            self.ready = bool(packet[1])
-            self.room.broadcast([Pt.RSP_READY, {"uid": self.uid, "ready": int(self.ready)}])
+            self.ready = packet.get('ready')
+            self.room.broadcast([Pt.RSP_READY, {"uid": self.uid, "ready": self.ready}])
             if self.room.is_ready():
                 self.change_state(State.CALL_SCORE)
                 self.room.deal_poker()
         else:
+            self.write_message([Pt.ERROR, {'reason': 'STATE[%s]' % self.state}])
             logging.info('ERROR STATE[%s] PACKET %s', self.state, packet)
 
     @shot_turn
-    def handle_call_score(self, packet):
-        code = packet[0]
+    def handle_call_score(self, code: int, packet: Dict[str, Any]):
         if code == Pt.REQ_CALL_SCORE:
-            self.rob = packet[1]
+            self.rob = packet.get('rob')
 
             is_end = self.room.is_rob_end()
             if is_end:
                 self.change_state(State.PLAYING)
-                logging.info('ROB END LANDLORD[%s]', self.room.landlord.uid)
+                logging.info('ROB END LANDLORD[%s]', self.room.landlord)
 
             response = [Pt.RSP_CALL_SCORE, {
                 'uid': self.uid,
@@ -149,13 +152,13 @@ class Player(object):
             }]
             self.room.broadcast(response)
         else:
+            self.write_message([Pt.ERROR, {'reason': 'STATE[%s]' % self.state}])
             logging.info('ERROR STATE[%s] PACKET %s', self.state, packet)
 
     @shot_turn
-    def handle_playing(self, packet):
-        code = packet[0]
+    def handle_playing(self, code, packet):
         if code == Pt.REQ_SHOT_POKER:
-            pokers = packet[1]
+            pokers = packet.get('pokers')
             if pokers:
                 if not rule.is_contains(self._hand_pokers, pokers):
                     logger.warning('USER[%d] play non-exist poker', self.uid)
@@ -180,25 +183,24 @@ class Player(object):
             else:
                 self.change_state(State.GAME_OVER)
                 self.room.on_game_over(self)
-
-        elif code == Pt.REQ_CHEAT:
-            self.on_cheat(packet[1])
         else:
+            self.write_message([Pt.ERROR, {'reason': 'STATE[%s]' % self.state}])
             logging.info('ERROR STATE[%s] PACKET %s', self.state, packet)
 
-    def handle_game_over(self, packet):
+    def handle_game_over(self, code: int, packet: Dict[str, Any]):
+        self.write_message([Pt.ERROR, {'reason': 'STATE[%s]' % self.state}])
         logging.info('ERROR STATE[%s] PACKET %s', self.state, packet)
 
     def change_state(self, state: State):
         for player in self.room.players:
             player.state = state
 
-    def on_cheat(self, uid):
+    def on_cheat(self, uid: int):
         for p in self.room.players:
             if p.uid == uid:
                 self.write_message([Pt.RSP_CHEAT, p.uid, p._hand_pokers])
 
-    def write_message(self, packet):
+    def write_message(self, packet: List[int, Dict[str, Any]]):
         self.socket.write_message(packet)
 
     @property
@@ -210,17 +212,7 @@ class Player(object):
             'room': self.room.sync_data(),
             'players': [p.sync_data() if p else {} for p in self.room.players]
         }]
-        for player in self.room.players:
-            if player:
-                player.write_message(response)
-
-    def sync_data(self):
-        return {
-            'uid': self.uid,
-            'name': self.name,
-            'icon': '',
-            'ready': self.ready,
-        }
+        self.room.broadcast(response)
 
     def join_room(self, room: Room):
         if room.is_full():
@@ -231,7 +223,7 @@ class Player(object):
         return room.on_join(self)
 
     def leave_room(self):
-        self.ready = False
+        self.ready = 0
         if self.room:
             self.room.on_leave(self)
         self.room = None

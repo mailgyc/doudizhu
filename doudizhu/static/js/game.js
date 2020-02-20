@@ -84,7 +84,7 @@ PG.Game.prototype = {
         const sy = this.game.world.height * 0.6;
 
         let ready = this.game.make.button(sx, sy, "btn", function() {
-            this.send_message([PG.Protocol.REQ_READY, 1]);
+            this.send_message([PG.Protocol.REQ_READY, {"ready": 1}]);
         }, this, 'ready.png', 'ready.png', 'ready.png');
         ready.anchor.set(0.5, 0);
         this.game.world.add(ready);
@@ -97,14 +97,14 @@ PG.Game.prototype = {
         const group = this.game.add.group();
         let pass = this.game.make.button(this.game.world.width * 0.4, sy, "btn", function () {
             this.game.add.audio('f_score_0').play();
-            this.send_message([PG.Protocol.REQ_CALL_SCORE, 0]);
+            this.send_message([PG.Protocol.REQ_CALL_SCORE, {"rob": 0}]);
         }, this, 'score_0.png', 'score_0.png', 'score_0.png');
         pass.anchor.set(0.5, 0);
         group.add(pass);
 
         const rob = this.game.make.button(this.game.world.width * 0.6, sy, "btn", function() {
             this.game.add.audio('f_score_1').play();
-            this.send_message([PG.Protocol.REQ_CALL_SCORE, 1]);
+            this.send_message([PG.Protocol.REQ_CALL_SCORE, {"rob": 1}]);
         }, this, 'score_1.png', 'score_1.png', 'score_1.png');
         rob.anchor.set(0.5, 0);
         group.add(rob);
@@ -117,7 +117,7 @@ PG.Game.prototype = {
 
     onopen: function () {
         console.log('socket onopen');
-        PG.Socket.send([PG.Protocol.REQ_JOIN_ROOM, -1, observer.get('baseScore')]);
+        PG.Socket.send([PG.Protocol.REQ_JOIN_ROOM, {"room": -1, "level": observer.get('baseScore')}]);
     },
 
     onerror: function () {
@@ -128,12 +128,12 @@ PG.Game.prototype = {
         PG.Socket.send(request);
     },
 
-    onmessage: function (packet) {
-        const code = packet[0];
+    onmessage: function (message) {
+        const code = message[0], packet = message[1];
         switch (code) {
             case PG.Protocol.RSP_JOIN_ROOM:
-                observer.set('room', packet[1]['room']);
-                const syncInfo = packet[1]['players'];
+                observer.set('room', packet['room']);
+                const syncInfo = packet['players'];
                 for (let i = 0; i < syncInfo.length; i++) {
                     if (syncInfo[i].uid === this.players[0].uid) {
                         let info_1 = syncInfo[(i + 1) % 3];
@@ -146,23 +146,23 @@ PG.Game.prototype = {
                 break;
             case PG.Protocol.RSP_READY:
                 // TODO: 显示玩家已准备状态
-                if (packet[1]['uid'] === this.players[0].uid) {
+                if (packet['uid'] === this.players[0].uid) {
                     observer.get('room').multiple = 15;
                     observer.set('ready', true);
                 }
                 break;
             case PG.Protocol.RSP_DEAL_POKER: {
-                const playerId = packet[1]['uid'];
-                const pokers = packet[1]['pokers'];
+                const playerId = packet['uid'];
+                const pokers = packet['pokers'];
                 this.dealPoker(pokers);
                 this.whoseTurn = this.uidToSeat(playerId);
                 this.startCallScore();
                 break;
             }
             case PG.Protocol.RSP_CALL_SCORE: {
-                const playerId = packet[1]['uid'];
-                const rob = packet[1]['rob'];
-                const landlord = packet[1]['landlord'];
+                const playerId = packet['uid'];
+                const rob = packet['rob'];
+                const landlord = packet['landlord'];
                 this.whoseTurn = this.uidToSeat(playerId);
 
                 const hanzi = ['不抢', "抢地主"];
@@ -174,9 +174,9 @@ PG.Game.prototype = {
                     this.startCallScore();
                 } else {
                     this.whoseTurn = this.uidToSeat(landlord);
-                    this.tablePoker[0] = packet[1]['pokers'][0];
-                    this.tablePoker[1] = packet[1]['pokers'][1];
-                    this.tablePoker[2] = packet[1]['pokers'][2];
+                    this.tablePoker[0] = packet['pokers'][0];
+                    this.tablePoker[1] = packet['pokers'][1];
+                    this.tablePoker[2] = packet['pokers'][2];
                     this.players[this.whoseTurn].setLandlord();
                     this.showLastThreePoker();
                 }
@@ -191,7 +191,7 @@ PG.Game.prototype = {
                 this.handleShotPoker(packet);
                 break;
             case PG.Protocol.RSP_GAME_OVER:
-                const gameResult = packet[1];
+                const gameResult = packet;
                 const winner = gameResult.winner;
                 const pokers = gameResult.pokers;
 
@@ -258,7 +258,7 @@ PG.Game.prototype = {
 
     uidToSeat: function (uid) {
         for (let i = 0; i < 3; i++) {
-            if (uid == this.players[i].uid)
+            if (uid === this.players[i].uid)
                 return i;
         }
         console.log('ERROR uidToSeat:' + uid);
@@ -283,10 +283,6 @@ PG.Game.prototype = {
         this.players[0].dealPoker();
         this.players[1].dealPoker();
         this.players[2].dealPoker();
-        //this.game.time.events.add(1000, function() {
-        //    this.send_message([PG.Protocol.REQ_CHEAT, this.players[1].uid]);
-        //    this.send_message([PG.Protocol.REQ_CHEAT, this.players[2].uid]);
-        //}, this);
     },
 
     showLastThreePoker: function () {
@@ -340,9 +336,9 @@ PG.Game.prototype = {
     },
 
     handleShotPoker: function (packet) {
-        this.whoseTurn = this.uidToSeat(packet[1]['uid']);
+        this.whoseTurn = this.uidToSeat(packet['uid']);
         let turnPlayer = this.players[this.whoseTurn];
-        let pokers = packet[1]['pokers'];
+        let pokers = packet['pokers'];
         if (pokers.length === 0) {
             this.players[this.whoseTurn].say("不出");
         } else {
@@ -398,7 +394,7 @@ PG.Game.prototype = {
     },
 
     finishPlay: function (pokers) {
-        this.send_message([PG.Protocol.REQ_SHOT_POKER, pokers]);
+        this.send_message([PG.Protocol.REQ_SHOT_POKER, {"pokers": pokers}]);
     },
 
     isLastShotPlayer: function () {
@@ -407,15 +403,6 @@ PG.Game.prototype = {
 
     quitGame: function () {
         this.state.start('MainMenu');
-    },
-
-    onJoin: function (btn) {
-        if (btn.tableId === -1) {
-            this.send_message([PG.Protocol.REQ_NEW_TABLE]);
-        } else {
-            this.send_message([PG.Protocol.REQ_JOIN_TABLE, btn.tableId]);
-        }
-        btn.parent.destroy();
     }
 };
 

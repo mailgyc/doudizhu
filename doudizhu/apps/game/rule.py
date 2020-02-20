@@ -14,7 +14,7 @@ CARD_TYPES = [
     'seq_single12',
     'seq_pair3', 'seq_pair4', 'seq_pair5', 'seq_pair6', 'seq_pair7', 'seq_pair8', 'seq_pair9', 'seq_pair10',
     'seq_trio2', 'seq_trio3', 'seq_trio4', 'seq_trio5', 'seq_trio6',
-    'seq_trio_pair2', 'seq_trio_pair3', 'seq_trio_pair4', 'seq_trio_pair5',
+    'seq_trio_pair2', 'seq_trio_pair3', 'seq_trio_pair4',
     'seq_trio_single2', 'seq_trio_single3', 'seq_trio_single4', 'seq_trio_single5',
     'bomb_pair', 'bomb_single'
 ]
@@ -27,6 +27,15 @@ class Rule(object):
 
     def analysis(self, hand_pokers: List[int]):
         hand_cards = self._to_cards(hand_pokers)
+
+        # 1. 选取单顺
+        # seq_single5_list, available = self.find_spec_type(hand_cards, 'seq_single5')
+
+        # 2. 扩展单顺
+        # longer_seq_list, available = self.expand_seq(seq_single5_list, available)
+
+        # 3. 合并单顺
+        # longer_seq_list, available = self.merge_seq()
 
     def find_spec_type(self, hand_cards: List[str], card_type: str) -> Tuple[List[str], List[str]]:
         available = [c for c in hand_cards]

@@ -21,8 +21,8 @@ class LoginHandler(RestfulHandler):
     required_fields = ('username', 'password')
 
     async def post(self):
-        email = self.get_body_argument('username')
-        password = self.get_body_argument("password")
+        email = self.json.get('username')
+        password = self.json.get("password")
 
         account = await self.db.fetchone('SELECT id, username, password FROM account WHERE email=%s', email)
         if not account:
@@ -46,9 +46,9 @@ class UserInfoHandler(RestfulHandler):
         account = await self.db.fetchone('SELECT id, username FROM account WHERE id=%s', self.current_user['uid'])
         if not account:
             self.clear_cookie('user')
-            self.redirect('/')
+            self.send_error(404, reason='User not found')
 
-        uid, username = account.get('id'), account.get('username')
+        uid, username = account.get('id'), account.get('username') or ''
         self.set_secure_cookie('user', json_encode({'uid': uid, 'username': username}))
         self.write({'uid': uid, 'username': username})
 
@@ -57,10 +57,10 @@ class SignupHandler(RestfulHandler):
     required_fields = ('email', 'username', 'password', 'password_repeat')
 
     async def post(self):
-        email = self.get_body_argument('email')
-        username = self.get_body_argument('username')
-        password = self.get_body_argument('password')
-        password_repeat = self.get_body_argument('password_repeat')
+        email = self.json.get('email')
+        username = self.json.get('username')
+        password = self.json.get('password')
+        password_repeat = self.json.get('password_repeat')
         if password != password_repeat:
             self.send_error(400, reason='The password does not match')
             return
@@ -90,4 +90,4 @@ class LogoutHandler(RestfulHandler):
     @authenticated
     def post(self):
         self.clear_cookie('user')
-        self.redirect(self.get_argument("next", "/"))
+        self.write({})

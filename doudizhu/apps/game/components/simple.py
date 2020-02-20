@@ -32,26 +32,29 @@ class RobotPlayer(Player):
     def _write_message(self, packet):
         code = packet[0]
         if code == Pt.RSP_JOIN_ROOM:
-            IOLoop.current().add_callback(self.to_server, [Pt.REQ_READY, 1])
+            self.auto_ready()
         elif code == Pt.RSP_DEAL_POKER:
-            if self.uid == packet[1]:
-                IOLoop.current().add_callback(self.auto_call_score)
+            if self.uid == packet[1]['uid']:
+                self.auto_call_score()
         elif code == Pt.RSP_CALL_SCORE:
             if self.room.turn_player == self:
                 landlord = packet[1]['landlord']
                 if landlord == -1:
-                    IOLoop.current().add_callback(self.auto_call_score)
+                    self.auto_call_score()
                 elif self.room.turn_player == self:
-                    IOLoop.current().call_later(3, self.auto_shot_poker)
+                    IOLoop.current().call_later(1, self.auto_shot_poker)
         elif code == Pt.RSP_SHOT_POKER:
             if self.room.turn_player == self and self._hand_pokers:
                 self.auto_shot_poker()
         elif code == Pt.RSP_GAME_OVER:
-            IOLoop.current().add_callback(self.to_server, [Pt.REQ_READY, 1])
+            self.auto_ready()
+
+    def auto_ready(self):
+        IOLoop.current().add_callback(self.to_server, [Pt.REQ_READY, {'ready': 1}])
 
     def auto_call_score(self):
-        packet = [Pt.REQ_CALL_SCORE, randint(0, 1)]
-        IOLoop.current().call_later(1, self.to_server, packet)
+        packet = [Pt.REQ_CALL_SCORE, {'rob': randint(0, 1)}]
+        IOLoop.current().call_later(1.5, self.to_server, packet)
 
     def auto_shot_poker(self):
         pokers = []
@@ -60,5 +63,5 @@ class RobotPlayer(Player):
         else:
             pokers = rule.cards_above(self._hand_pokers, self.room.last_shot_poker)
 
-        packet = [Pt.REQ_SHOT_POKER, pokers]
-        IOLoop.current().call_later(1, self.to_server, packet)
+        packet = [Pt.REQ_SHOT_POKER, {'pokers': pokers}]
+        IOLoop.current().call_later(2, self.to_server, packet)

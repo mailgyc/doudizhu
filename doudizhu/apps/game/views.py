@@ -51,8 +51,7 @@ class SocketHandler(WebSocketHandler):
 
     def on_message(self, message):
         packet = json.loads(message)
-        logging.info('REQ[%d]: %s', self.uid, packet)
-
+        logging.info('REQ[%d]: %s', self.uid, message)
         self.player.on_message(packet)
 
     def on_close(self):
