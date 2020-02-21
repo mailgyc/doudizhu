@@ -93,8 +93,8 @@ class Player(object):
 
         code, packet = message[0], message[1]
         if self.leave == 1:
-            self.handle_leave(code, packet)
-            return
+            if self.handle_leave(code, packet):
+                return
 
         if self.state == State.INIT:
             self.handle_init(code, packet)
@@ -122,14 +122,13 @@ class Player(object):
         if code == Pt.REQ_JOIN_ROOM:
             room_id, level = packet.get('room', -1), packet.get('level', 1)
             room = Storage.find_room(room_id, level, self.allow_robot)
-
-            if room.room_id != room_id:
-                self.leave = 0
+            if room.room_id == room_id:
+                self.sync_room()
+                logging.info('PLAYER[%s] REJOIN ROOM[%d]', self.uid, room.room_id)
+            else:
                 logging.error('PLAYER[%d] REJOIN ROOM[%d] NOT FOUND', self.uid, room_id)
-                return
-
-            self.sync_room()
-            logging.info('PLAYER[%s] REJOIN ROOM[%d]', self.uid, room.room_id)
+                return False
+        return True
 
     def handle_init(self, code: int, packet: Dict[str, Any]):
         from .storage import Storage
