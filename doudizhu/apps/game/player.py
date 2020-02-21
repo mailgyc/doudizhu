@@ -196,11 +196,15 @@ class Player(object):
             pokers = packet.get('pokers')
             if pokers:
                 if not rule.is_contains(self._hand_pokers, pokers):
-                    logger.warning('USER[%d] play non-exist poker', self.uid)
+                    self.write_error('Poker does not exist')
+                    return
+
+                if pokers and rule.get_poker_spec(pokers) is None:
+                    self.write_error('Rules error')
                     return
 
                 if self.room.last_shot_seat != self.seat and rule.compare_pokers(pokers, self.room.last_shot_poker) < 0:
-                    logger.warning('USER[%d] play small than last shot poker', self.uid)
+                    self.write_error('Poker small than last shot')
                     return
 
                 self.room.last_shot_seat = self.seat

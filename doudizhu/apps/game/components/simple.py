@@ -44,7 +44,7 @@ class RobotPlayer(Player):
                 elif self.room.turn_player == self:
                     IOLoop.current().call_later(1, self.auto_shot_poker)
         elif code == Pt.RSP_SHOT_POKER:
-            if self.room.turn_player == self and self._hand_pokers:
+            if self.room.turn_player == self and self.hand_pokers:
                 self.auto_shot_poker()
         elif code == Pt.RSP_GAME_OVER:
             self.auto_ready()
@@ -57,11 +57,11 @@ class RobotPlayer(Player):
         IOLoop.current().call_later(1.5, self.to_server, packet)
 
     def auto_shot_poker(self):
-        pokers = []
         if not self.room.last_shot_poker or self.room.last_shot_seat == self.seat:
-            pokers.append(self._hand_pokers[0])
+            pokers = rule.find_best_shot(self.hand_pokers)
         else:
-            pokers = rule.cards_above(self._hand_pokers, self.room.last_shot_poker)
+            follow = not self.room.players[self.room.last_shot_seat].landlord == 1
+            pokers = rule.cards_above(self.hand_pokers, self.room.last_shot_poker, follow)
 
         packet = [Pt.REQ_SHOT_POKER, {'pokers': pokers}]
         IOLoop.current().call_later(2, self.to_server, packet)

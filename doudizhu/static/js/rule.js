@@ -105,7 +105,7 @@ PG.Rule.cardsAbove = function (handCards, turnCards) {
         }
     }
 
-    if (turnValue[1] < 1000) {
+    if (turnValue[1] < 10000) {
         oneRule = PG.RuleList['bomb'];
         for (let i = 0; i < oneRule.length; i++) {
             if (this.containsAll(handCards, oneRule[i])) {
@@ -176,7 +176,7 @@ PG.Rule.index_of = function (array, ele) {
 
 PG.Rule.containsAll = function (parent, child) {
     let index = 0;
-    for (let i = 0, l = child.length; i < l; i++) {
+    for (let i = 0; i < child.length; i++) {
         index = parent.indexOf(child[i], index);
         if (index === -1) {
             return false;
@@ -194,11 +194,11 @@ PG.Rule.cardsValue = function (cards) {
     }
 
     if (cards === 'wW')
-        return ['rocket', 2000];
+        return ['rocket', 20000];
 
     let index = this.index_of(PG.RuleList['bomb'], cards);
     if (index >= 0)
-        return ['bomb', 1000 + index];
+        return ['bomb', 10000 + index];
 
     let length = this._CardsType.length;
     for (let i = 2; i < length; i++) {
@@ -226,7 +226,7 @@ PG.Rule.compare = function (cardsA, cardsB) {
     let valueA = this.cardsValue(cardsA);
     let valueB = this.cardsValue(cardsB);
 
-    if ((valueA[1] < 1000 && valueB[1] < 1000) && (valueA[0] !== valueB[0])) {
+    if ((valueA[1] < 10000 && valueB[1] < 10000) && (valueA[0] !== valueB[0])) {
         console.log('Error: Compare ', cardsA, cardsB);
     }
 
