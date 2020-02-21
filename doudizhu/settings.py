@@ -31,13 +31,10 @@ LOGGING = {
     'disable_existing_loggers': False,
     'root': {
         'level': 'INFO',
-        'handlers': ['console', 'file'],
+        'handlers': ['console'],
         'propagate': True,
     },
     'formatters': {
-        'simple': {
-            'format': '%(asctime).19s %(message)s'
-        },
         'verbose': {
             'format': '%(asctime)s %(levelname)s %(module)s %(message)s'
         },
@@ -48,11 +45,11 @@ LOGGING = {
             'class': 'logging.StreamHandler',
             'formatter': 'verbose'
         },
-        'file': {
-            'level': 'INFO',
-            'class': 'logging.FileHandler',
-            'filename': 'ddz.log',
-            'formatter': 'verbose'
+    },
+    'loggers': {
+        'tornado.general': {
+            'handlers': ['console'],
+            'propagate': True,
         },
     }
 }

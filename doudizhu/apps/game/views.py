@@ -58,9 +58,12 @@ class SocketHandler(WebSocketHandler, JwtMixin):
         logging.info('SOCKET[%s] OPEN', self.player.uid)
 
     def on_message(self, message):
-        packet = json.loads(message)
-        logging.info('REQ[%d]: %s', self.uid, message)
-        self.player.on_message(packet)
+        if message == 'ping':
+            self.write_message('pong')
+        else:
+            packet = json.loads(message)
+            logging.info('REQ[%d]: %s', self.uid, message)
+            self.player.on_message(packet)
 
     def on_close(self):
         self.player.on_disconnect()
