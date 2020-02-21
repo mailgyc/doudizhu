@@ -63,10 +63,14 @@ class Rule(object):
                     return longer_seq_list[0]
                 return seq_single[0]
 
-        for spec in ['seq_trio_single4', 'seq_trio_single3', 'seq_trio_single2', 'trio_single',
-                     'seq_trio_pair3', 'seq_trio_pair2', 'trio_pair']:
+        for spec in ['seq_trio_single4', 'seq_trio_single3', 'seq_trio_single2', 'trio_single']:
             seq_trio, after_cards = self.find_spec_type(small_cards, spec)
             if seq_trio and self.count_single(after_cards) < total_single:
+                return seq_trio[0]
+
+        for spec in ['seq_trio_pair3', 'seq_trio_pair2', 'trio_pair']:
+            seq_trio, after_cards = self.find_spec_type(small_cards, spec)
+            if seq_trio and self.count_single(after_cards) <= total_single:
                 return seq_trio[0]
 
         for spec in ['seq_pair9', 'seq_pair8', 'seq_pair7', 'seq_pair6', 'seq_pair5', 'seq_pair4', 'seq_pair3']:
@@ -259,9 +263,9 @@ with open('static/rule.json', 'r') as f:
     rule = Rule(json.load(f))
     from random import sample
 
-    print(rule._find_best_shot('345677890JQQKAAA2'))
-    print(rule._find_best_shot('34456788990JJQKAW'))
-    print(rule._find_best_shot('3344555678990JQKK'))
-
-    rnd = sample(list(range(1, 55)), k=17)
-    print(''.join(rule._to_cards(rnd)), ''.join(rule._to_cards(rule.find_best_shot(rnd))))
+    # print(rule._find_best_shot('345677890JQQKAAA2'))
+    # print(rule._find_best_shot('34456788990JJQKAW'))
+    # print(rule._find_best_shot('3344555678990JQKK'))
+    #
+    # rnd = sample(list(range(1, 55)), k=17)
+    # print(''.join(rule._to_cards(rnd)), ''.join(rule._to_cards(rule.find_best_shot(rnd))))
