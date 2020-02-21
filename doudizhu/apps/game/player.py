@@ -17,11 +17,10 @@ logger = logging.getLogger(__file__)
 def shot_turn(method):
     @functools.wraps(method)
     def wrapper(player, *args, **kwargs):
-        if player.seat == player.room.whose_turn:
+        if player.room and player.room.whose_turn == player.seat:
             method(player, *args, **kwargs)
         else:
             player.write_error('NOT YOUR TURN')
-            logging.warning('USER[%d] TURN CHEAT', player.uid)
 
     return wrapper
 
@@ -88,7 +87,6 @@ class Player(object):
     def on_message(self, message):
         if len(message) < 2 or not (isinstance(message[0], int) and isinstance(message[1], dict)):
             self.write_error('Protocol cannot be resolved.')
-            logging.error('Protocol[%s] cannot be resolved', message)
             return
 
         code, packet = message[0], message[1]
@@ -121,13 +119,16 @@ class Player(object):
         from .storage import Storage
         if code == Pt.REQ_JOIN_ROOM:
             room_id, level = packet.get('room', -1), packet.get('level', 1)
+            if room_id == -1:
+                self.leave_room()
+                return False
+
             room = Storage.find_room(room_id, level, self.allow_robot)
             if room.room_id == room_id:
                 self.sync_room()
-                logging.info('PLAYER[%s] REJOIN ROOM[%d]', self.uid, room.room_id)
+                logger.info('PLAYER[%s] REJOIN ROOM[%d]', self.uid, room.room_id)
             else:
-                logging.error('PLAYER[%d] REJOIN ROOM[%d] NOT FOUND', self.uid, room_id)
-                return False
+                self.write_error('Room[%s] Not Found' % room_id)
         return True
 
     def handle_init(self, code: int, packet: Dict[str, Any]):
@@ -146,13 +147,13 @@ class Player(object):
             self.state = State.WAITING
             if self.join_room(room):
                 self.sync_room()
-            logging.info('PLAYER[%s] JOIN ROOM[%d]', self.uid, room.room_id)
+            logger.info('PLAYER[%s] JOIN ROOM[%d]', self.uid, room.room_id)
 
             if room.is_full():
                 Storage.on_room_changed(room)
-                logging.info('ROOM[%s] FULL[%s]', room.room_id, room.players)
+                logger.info('ROOM[%s] FULL[%s]', room.room_id, room.players)
         else:
-            logging.info('ERROR STATE[%s] PACKET %s', self.state, packet)
+            logger.info('ERROR STATE[%s] PACKET %s', self.state, packet)
 
     def handle_waiting(self, code: int, packet: Dict[str, Any]):
         if code == Pt.REQ_READY:
@@ -165,7 +166,6 @@ class Player(object):
             self.leave_room()
         else:
             self.write_error('STATE[%s]' % self.state)
-            logging.info('ERROR STATE[%s] PACKET %s', self.state, packet)
 
     @shot_turn
     def handle_call_score(self, code: int, packet: Dict[str, Any]):
@@ -175,7 +175,7 @@ class Player(object):
             is_end = self.room.is_rob_end()
             if is_end:
                 self.change_state(State.PLAYING)
-                logging.info('ROB END LANDLORD[%s]', self.room.landlord)
+                logger.info('ROB END LANDLORD[%s]', self.room.landlord)
 
             response = [Pt.RSP_CALL_SCORE, {
                 'uid': self.uid,
@@ -189,7 +189,6 @@ class Player(object):
 
         else:
             self.write_error('STATE[%s]' % self.state)
-            logging.info('ERROR STATE[%s] PACKET %s', self.state, packet)
 
     @shot_turn
     def handle_playing(self, code, packet):
@@ -221,11 +220,9 @@ class Player(object):
             self.leave = 1
         else:
             self.write_error('STATE[%s]' % self.state)
-            logging.info('ERROR STATE[%s] PACKET %s', self.state, packet)
 
     def handle_game_over(self, code: int, packet: Dict[str, Any]):
         self.write_error('STATE[%s]' % self.state)
-        logging.info('ERROR STATE[%s] PACKET %s', self.state, packet)
 
     def change_state(self, state: State):
         for player in self.room.players:
@@ -237,6 +234,7 @@ class Player(object):
     def write_error(self, reason: str):
         if self.socket:
             self.socket.write_message([Pt.ERROR, {'reason': reason}])
+        logger.error('USER[%d] %s', self.uid, reason)
 
     @property
     def allow_robot(self) -> bool:
@@ -251,7 +249,7 @@ class Player(object):
 
     def join_room(self, room: Room):
         if room.is_full():
-            logging.error('USER[%d] Join Room[%d] FULL', self.uid, room.room_id)
+            self.write_error('Room[%s] FULL' % room.room_id)
             return False
 
         self.leave = 0

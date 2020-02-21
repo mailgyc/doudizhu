@@ -254,7 +254,7 @@ class Room(object):
         return sum([p is not None for p in self.players])
 
     def __str__(self):
-        return f'[{self.room_id}: {self.players}]'
+        return f'[{self.room_id}: {self.players if any(self.players) else []}]'
 
     def __hash__(self):
         return self.room_id
