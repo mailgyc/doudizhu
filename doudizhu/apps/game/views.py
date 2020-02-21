@@ -7,13 +7,14 @@ from tornado.web import authenticated
 from tornado.websocket import WebSocketHandler, WebSocketClosedError
 
 from contrib.db import AsyncConnection
-from contrib.handlers import RestfulHandler
+from contrib.handlers import RestfulHandler, JwtMixin
 from .player import Player
 from .protocol import Protocol
 from .room import Room
+from .storage import Storage
 
 
-class SocketHandler(WebSocketHandler):
+class SocketHandler(WebSocketHandler, JwtMixin):
 
     def __init__(self, application, request, **kwargs):
         super().__init__(application, request, **kwargs)
@@ -29,7 +30,13 @@ class SocketHandler(WebSocketHandler):
         logging.info('socket data_received')
 
     def get_current_user(self):
-        return json_decode(self.get_secure_cookie("user"))
+        token = self.get_argument('token', None)
+        if token:
+            return self.jwt_decode(token)
+        cookie = self.get_secure_cookie("user")
+        if cookie:
+            return json_decode(cookie)
+        return None
 
     @property
     def uid(self) -> int:
@@ -46,7 +53,8 @@ class SocketHandler(WebSocketHandler):
     @authenticated
     def open(self):
         user = self.current_user
-        self.player = Player(user['uid'], user['username'], self)
+        self.player = Storage.find_or_create_player(user['uid'], user['username'])
+        self.player.socket = self
         logging.info('SOCKET[%s] OPEN', self.player.uid)
 
     def on_message(self, message):
@@ -55,7 +63,7 @@ class SocketHandler(WebSocketHandler):
         self.player.on_message(packet)
 
     def on_close(self):
-        self.player.leave_room()
+        self.player.on_disconnect()
         logging.info('SOCKET[%s] CLOSE', self.player.uid)
 
     def write_message(self, message: List[Union[Protocol, Any]], binary=False):

@@ -117,11 +117,12 @@ PG.Game.prototype = {
 
     onopen: function () {
         console.log('socket onopen');
-        PG.Socket.send([PG.Protocol.REQ_JOIN_ROOM, {"room": -1, "level": observer.get('baseScore')}]);
+        PG.Socket.send([PG.Protocol.REQ_JOIN_ROOM, {"room": PG.playerInfo['room'], "level": observer.get('baseScore')}]);
     },
 
     onerror: function () {
-        console.log('socket connect onerror');
+        console.log('socket onerror, try reconnect.');
+        PG.Socket.connect(this.onopen.bind(this), this.onmessage.bind(this), this.onerror.bind(this));
     },
 
     send_message: function (request) {

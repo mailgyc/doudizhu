@@ -96,7 +96,7 @@ class Rule(object):
                 return [53, 54]
         return []
 
-    def compare_poker(self, a_pokers, b_pokers) -> int:
+    def compare_pokers(self, a_pokers, b_pokers) -> int:
         if not a_pokers or not b_pokers:
             if a_pokers == b_pokers:
                 return 0

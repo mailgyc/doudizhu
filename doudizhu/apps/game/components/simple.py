@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 class RobotPlayer(Player):
 
     def __init__(self, uid: int, username: str, room: Room):
-        super().__init__(uid, username, None)
+        super().__init__(uid, username)
         self.room = room
 
     @property

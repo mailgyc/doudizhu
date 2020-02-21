@@ -5,7 +5,8 @@ import pymysql
 from tornado.escape import json_encode
 from tornado.web import authenticated, RequestHandler
 
-from contrib.handlers import RestfulHandler
+from apps.game.storage import Storage
+from contrib.handlers import RestfulHandler, JwtMixin
 
 
 class IndexHandler(RequestHandler):
@@ -17,7 +18,7 @@ class IndexHandler(RequestHandler):
         self.render('poker.html')
 
 
-class LoginHandler(RestfulHandler):
+class LoginHandler(RestfulHandler, JwtMixin):
     required_fields = ('username', 'password')
 
     async def post(self):
@@ -36,7 +37,12 @@ class LoginHandler(RestfulHandler):
 
         uid, username = account.get('id'), account.get('username')
         self.set_secure_cookie('user', json_encode({'uid': uid, 'username': username}))
-        self.write({'uid': uid, 'username': username})
+        self.write({
+            'uid': uid,
+            'username': username,
+            'room': Storage.find_player_room_id(uid),
+            'token': self.jwt_encode({'uid': uid, 'username': username})
+        })
 
 
 class UserInfoHandler(RestfulHandler):
@@ -50,7 +56,7 @@ class UserInfoHandler(RestfulHandler):
 
         uid, username = account.get('id'), account.get('username') or ''
         self.set_secure_cookie('user', json_encode({'uid': uid, 'username': username}))
-        self.write({'uid': uid, 'username': username})
+        self.write({'uid': uid, 'username': username, 'room': Storage.find_player_room_id(uid)})
 
 
 class SignupHandler(RestfulHandler):

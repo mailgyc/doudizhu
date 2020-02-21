@@ -5,17 +5,11 @@ PG.Protocol = {
      */
     ERROR: 0,
 
-    REQ_CHEAT : 1,
-    RSP_CHEAT : 2,
+    REQ_ROOM_LIST  : 1001,
+    RSP_ROOM_LIST  : 1002,
 
-    REQ_LOGIN : 11,
-    RSP_LOGIN : 12,
-
-    REQ_ROOM_LIST  : 13,
-    RSP_ROOM_LIST  : 14,
-
-    REQ_NEW_ROOM : 15,
-    RSP_NEW_ROOM : 16,
+    REQ_NEW_ROOM : 1003,
+    RSP_NEW_ROOM : 1004,
 
 
     /**
@@ -23,94 +17,111 @@ PG.Protocol = {
      * [REQ_JOIN_ROOM, {"room": int 房间号 (-1表示快速加入), "level": int (1/2/3 初/中/高级场)}]
      *
      */
-    REQ_JOIN_ROOM : 17,
+    REQ_JOIN_ROOM : 1005,
     /**
-     *  返回房间状态, 每有新玩家加入就会通知
+     *  用户进入房间广播
      *  [RSP_JOIN_ROOM, {
      *      'room': {
      *          "id": int 房间号,
      *          "base": int 底分,
      *          "multiple": int 倍数,
      *          "state": int 房间状态 (1/2/3/4 WAITING/CALL_SCORE/PLAYING/GAME_OVER),
-     *          "landlord_uid": int 本轮叫地主玩家,
-     *          "whose_turn": int 正在叫分/出牌玩家 UID,
+     *          "landlord_uid": int 本轮叫地主用户,
+     *          "whose_turn": int 正在叫分/出牌用户 UID,
      *          "timer": int 倒计时,
      *          "last_shot_uid": int 房间状态,
      *          "last_shot_poker": int 房间状态,
      *      },
      *      'player': [{
-     *          "uid": 用户ID,
+     *          "room_id": 用户ID,
      *          "seat": 用户座位,
      *          "name": 用户名,
      *          "icon": 头像,
      *          "ready": int 是否准备(1 准备 0 未准备),
      *          "rob":  int 是否抢地主 (-1/0/1),
+     *          "leave": int 是否离开房间 (1 离开离开 0 在房间)
      *          "landlord":  int 是否是地主 (0/1),
      *      }, {}, {}]
      *  }]
      */
-    RSP_JOIN_ROOM : 18,
+    RSP_JOIN_ROOM : 1006,
 
     /**
-     * 点击准备按钮 [REQ_READY, {"ready": int (1 准备 0 取消准备)}]
+     * 请求离开房间
+     * [REQ_LEAVE_ROOM, {}]
      */
-    REQ_READY : 21,
+    REQ_LEAVE_ROOM: 1007,
+
     /**
-     * 通知有玩家进入/取消准备状态
-     * [RSP_READY, {"uid": 用户ID, "ready": int(0/1)}]
+     * 离开房间广播
+     * [REQ_LEAVE_ROOM, {"room_id": int 用户ID}]
      */
-    RSP_READY : 22,
+    RSP_LEAVE_ROOM: 1007,
+
+    /**
+     * 用户进入准备状态
+     * [REQ_READY, {"ready": int (1 准备 0 取消准备)}]
+     */
+    REQ_READY : 2001,
+    /**
+     * 用户准备/取消准备状态广播
+     * [RSP_READY, {"room_id": 用户ID, "ready": int(0/1)}]
+     */
+    RSP_READY : 2002,
 
 
     /**
-     *  发牌, 当玩家全部准备就绪，服务器主动下发
+     *  发牌, 当用户全部进去准备状态，服务器主动下发
      *  [RSP_DEAL_POKER, {
-     *      "uid": 用户ID 开始抢地主的玩家, 客户端判断是否是自己,
+     *      "room_id": 用户ID 开始抢地主的用户, 客户端判断是否是自己,
      *      "timer": int 倒计时开始,
      *      "pokers": [int 17张扑克牌]
      *  }]
      */
-    RSP_DEAL_POKER : 32,
+    RSP_DEAL_POKER : 2004,
 
 
     /**
      *  是否抢地主
      *  [REQ_CALL_SCORE, {"rob": int (0 不抢  1 抢地主)}]
      */
-    REQ_CALL_SCORE : 33,
+    REQ_CALL_SCORE : 2005,
 
     /**
+     * 抢地主广播
      * [RSP_CALL_SCORE, {
-     *      "uid": 叫地主用户ID,
+     *      "room_id": 叫地主用户ID,
      *      "rob": int 是否抢地主,
      *      "landlord": 用户ID, -1表示继续抢地主, 否则返回地主用户ID
      *      "pokers": [int 抢地主结束时返回三张底牌]}
      *      }]
      */
-    RSP_CALL_SCORE : 34,
+    RSP_CALL_SCORE : 2006,
 
 
     /**
+     * 请求出牌
      * [REQ_SHOT_POKER, {"pokers": [int 扑克牌]}]
      */
-    REQ_SHOT_POKER : 37,
+    REQ_SHOT_POKER : 3001,
     /**
-     *  [RSP_SHOT_POKER, {'uid': 用户ID 出牌玩家, 'pokers': [int 扑克牌]}]
+     * 出牌广播
+     *  [RSP_SHOT_POKER, {'room_id': 用户ID 出牌用户, 'pokers': [int 扑克牌]}]
      */
-    RSP_SHOT_POKER : 38,
+    RSP_SHOT_POKER : 3002,
 
 
     /**
-     *  游戏结束, 服务器主动下发
+     *  游戏结束广播, 服务器主动下发
      *  pokers 为最后展示手牌用, 可以忽略
      *  [RSP_GAME_OVER, {
      *      "winner": 获胜的用户ID,
      *      "won_point": 赢了多少分,
      *      "lost_point": 输了多少分,
-     *      "pokers": [[用户ID, 玩家剩的牌], [用户ID， 玩家剩的牌]],
+     *      "pokers": [[用户ID, 手牌], [用户ID， 手牌]],
      *  }]
      */
-    RSP_GAME_OVER : 42,
+    RSP_GAME_OVER : 4002,
 };
 
 PG.Socket = {
@@ -121,7 +132,7 @@ PG.Socket = {
 const logging_pretty = function(tag, packet) {
     for (key in PG.Protocol) {
         if (packet[0] === PG.Protocol[key])
-            console.log(`${tag}: ${key} ${packet.slice(1)}`)
+            console.log(`${tag}: ${key} ${JSON.stringify(packet.slice(1))}`)
     }
 };
 
@@ -140,13 +151,15 @@ PG.Socket.connect = function(onopen, onmessage, onerror) {
     };
     
     this.websocket.onerror = function(evt) { 
-        console.log('CONNECT ERROR: ' + evt.data); 
+        console.log('CONNECT ERROR: ' + evt.data);
+        this.websocket = null;
         onerror();
     };
     
     this.websocket.onclose = function(evt) {
         console.log("DISCONNECTED"); 
         this.websocket = null;
+        onerror();
     };
 
     this.websocket.onmessage = function(evt) {

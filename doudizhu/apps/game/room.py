@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 import random
-from typing import Optional, List, Dict
+from typing import Optional, List
 from typing import TYPE_CHECKING
 
 from tornado.ioloop import IOLoop
@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 class Room(object):
 
-    def __init__(self, room_id, level=10, allow_robot=True):
+    def __init__(self, room_id, level=1, allow_robot=True):
         self.room_id = room_id
         self.base = level * 10
         self.multiple = 0
@@ -43,7 +43,10 @@ class Room(object):
         self.last_shot_poker = []
 
         for player in self.players:
-            player.restart()
+            if player.leave == 0:
+                player.restart()
+            else:
+                IOLoop.current().add_callback(player.leave_room)
 
     def sync_data(self):
         return {
@@ -60,7 +63,7 @@ class Room(object):
 
     def broadcast(self, response):
         for p in self.players:
-            if p:
+            if p and p.leave == 0:
                 p.write_message(response)
 
     def add_robot(self, nth=1):
@@ -97,13 +100,16 @@ class Room(object):
 
     def on_leave(self, target: Player):
         from .components.simple import RobotPlayer
+        from .storage import Storage
         try:
             for i, player in enumerate(self.players):
                 if player == target:
                     self.players[i] = None
                 elif isinstance(player, RobotPlayer):
                     self.players[i] = None
-            RoomManager.on_room_changed(self)
+
+            Storage.remove_player(target.uid)
+            Storage.on_room_changed(self)
             return True
         except ValueError:
             logging.error('Player[%d] NOT IN Room[%d]', target.uid, self.room_id)
@@ -120,7 +126,8 @@ class Room(object):
         }]
         for target in self.players:
             response[1]['pokers'] = [[p.uid, *p.hand_pokers] for p in self.players if p != target]
-            target.write_message(response)
+            if target.leave == 0:
+                target.write_message(response)
         logging.info('Room[%d] GameOver[%d]', self.room_id, self.room_id)
 
         IOLoop.current().add_callback(self.restart)
@@ -146,7 +153,8 @@ class Room(object):
                 'timer': self.timer,
                 'pokers': player.hand_pokers
             }]
-            player.write_message(response)
+            if player.leave == 0:
+                player.write_message(response)
             logging.info('ROOM[%s] DEAL[%s]', self.room_id, response)
 
     def go_next_turn(self):
@@ -259,48 +267,3 @@ class Room(object):
         return not (self == other)
 
 
-class RoomManager(object):
-    __total_room_count = 0
-    __waiting_rooms: Dict[int, Room] = {}
-    __playing_rooms: Dict[int, Room] = {}
-
-    @classmethod
-    def new_room(cls, entrance_fee: int, allow_robot: bool) -> Room:
-        room = Room(cls.gen_room_id(), entrance_fee, allow_robot)
-        cls.__waiting_rooms[room.room_id] = room
-        logging.info('ROOM[%s] CREATED', room)
-        return room
-
-    @classmethod
-    def find_waiting_room(cls, uid: int, entrance_fee: int, allow_robot: bool) -> Room:
-        if uid == -1:
-            for _, room in cls.__waiting_rooms.items():
-                if room.has_robot():
-                    continue
-                return room
-            return cls.new_room(entrance_fee, allow_robot)
-        return cls.__waiting_rooms.get(uid)
-
-    @classmethod
-    def on_room_changed(cls, room: Room):
-        if room.is_full():
-            cls.__waiting_rooms.pop(room.room_id, None)
-            cls.__playing_rooms[room.room_id] = room
-            logging.info('Room[%d] full', room.room_id)
-        if room.is_empty():
-            cls.__playing_rooms.pop(room.room_id, None)
-            cls.__waiting_rooms[room.room_id] = room
-            logging.info('Room[%d] closed', room.room_id)
-
-    @classmethod
-    def get_waiting_rooms(cls) -> Dict[int, Room]:
-        return cls.__waiting_rooms
-
-    @classmethod
-    def get_playing_rooms(cls) -> Dict[int, Room]:
-        return cls.__playing_rooms
-
-    @classmethod
-    def gen_room_id(cls) -> int:
-        cls.__total_room_count += 1
-        return cls.__total_room_count
