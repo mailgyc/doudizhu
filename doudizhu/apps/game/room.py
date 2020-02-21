@@ -108,7 +108,6 @@ class Room(object):
                 elif isinstance(player, RobotPlayer):
                     self.players[i] = None
 
-            Storage.remove_player(target.uid)
             Storage.on_room_changed(self)
             return True
         except ValueError:

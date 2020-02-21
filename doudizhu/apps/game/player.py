@@ -10,7 +10,6 @@ from .rule import rule
 
 if TYPE_CHECKING:
     from .room import Room
-    from .views import SocketHandler
 
 logger = logging.getLogger(__file__)
 
@@ -110,7 +109,7 @@ class Player(object):
 
     def on_disconnect(self):
         if self.state == State.INIT:
-            pass
+            self.leave_room()
         elif self.state == State.WAITING:
             self.leave_room()
         elif self.state == State.CALL_SCORE or self.state == State.PLAYING:
@@ -125,14 +124,12 @@ class Player(object):
             room = Storage.find_room(room_id, level, self.allow_robot)
 
             if room.room_id != room_id:
-                logging.error('PLAYER[%d] JOIN ROOM[%d] NOT FOUND', self.uid, room_id)
+                self.leave = 0
+                logging.error('PLAYER[%d] REJOIN ROOM[%d] NOT FOUND', self.uid, room_id)
+                return
 
             self.sync_room()
-            logging.info('PLAYER[%s] JOIN ROOM[%d]', self.uid, room.room_id)
-
-            if room.is_full():
-                Storage.on_room_changed(room)
-                logging.info('ROOM[%s] FULL[%s]', room.room_id, room.players)
+            logging.info('PLAYER[%s] REJOIN ROOM[%d]', self.uid, room.room_id)
 
     def handle_init(self, code: int, packet: Dict[str, Any]):
         from .storage import Storage
@@ -263,11 +260,13 @@ class Player(object):
         return room.on_join(self)
 
     def leave_room(self):
+        from .storage import Storage
         self.ready = 0
         if self.room:
             self.room.on_leave(self)
             self.leave = 1
             self.room = None
+        Storage.remove_player(self.uid)
 
     def __repr__(self):
         return self.__str__()
