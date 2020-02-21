@@ -53,8 +53,9 @@ class UserInfoHandler(RestfulHandler):
         if not account:
             self.clear_cookie('user')
             self.send_error(404, reason='User not found')
+            return
 
-        uid, username = account.get('id'), account.get('username') or ''
+        uid, username = account.get('id'), account.get('username')
         self.set_secure_cookie('user', json_encode({'uid': uid, 'username': username}))
         self.write({'uid': uid, 'username': username, 'room': Storage.find_player_room_id(uid)})
 
