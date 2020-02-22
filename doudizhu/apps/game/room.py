@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import logging
 import random
-from typing import Optional, List
+from functools import reduce
+from operator import mul
+from typing import Optional, List, Dict
 from typing import TYPE_CHECKING
 
 from tornado.ioloop import IOLoop
@@ -18,8 +20,16 @@ class Room(object):
 
     def __init__(self, room_id, level=1, allow_robot=True):
         self.room_id = room_id
-        self.base = level * 10
-        self.multiple = 0
+        self._multiple_details: Dict[str, int] = {
+            'origin': 15,
+            'di': 1,
+            'ming': 1,
+            'bomb': 1,
+            'rob': 1,
+            'spring': 1,
+            'landlord': 1,
+            'farmer': 1,
+        }
 
         self.players: List[Optional[Player]] = [None, None, None]
         self.pokers: List[int] = []
@@ -36,7 +46,11 @@ class Room(object):
         self.allow_robot = allow_robot
 
     def restart(self):
-        self.multiple = 15
+        for key, val in self._multiple_details.items():
+            if key == 'origin':
+                continue
+            self._multiple_details[key] = 1
+
         self.pokers: List[int] = []
 
         self.timer = 30
@@ -57,7 +71,7 @@ class Room(object):
     def sync_data(self):
         return {
             'id': self.room_id,
-            'base': self.base,
+            'origin': self._multiple_details['origin'],
             'multiple': self.multiple,
             'state': self.players[0].state,
             'landlord_uid': self.seat_to_uid(self.landlord_seat),
@@ -113,6 +127,25 @@ class Room(object):
             return True
         return False
 
+    def on_rob(self, target: Player) -> bool:
+        if target.rob == 1:
+            self._multiple_details['rob'] *= 2
+
+        if not self._is_rob_end():
+            self.go_next_turn()
+            return False
+
+        for i in range(3):
+            # 每个人都抢地主, 第一个人是地主
+            if self.turn_player.rob == 1 or i == 2:
+                self.turn_player.landlord = 1
+                self.turn_player.push_pokers(self.pokers)
+                self.last_shot_seat = self.whose_turn
+                self.re_multiple()
+                return True
+            self.go_prev_turn()
+        return True
+
     def on_shot(self, seat: int, pokers: List[int]) -> str:
         if pokers:
             spec = rule.get_poker_spec(pokers)
@@ -123,7 +156,7 @@ class Room(object):
                 return 'Poker small than last shot'
 
             if spec == 'bomb' or spec == 'rocket':
-                self.multiple *= self.bomb_multiple
+                self._multiple_details['bomb'] *= 2
 
             self.last_shot_seat = seat
             self.last_shot_poker = pokers
@@ -155,26 +188,51 @@ class Room(object):
         spring = self.is_spring(winner)
         anti_spring = self.anti_spring(winner)
         if spring or anti_spring:
-            self.multiple *= 3
+            self._multiple_details['spring'] *= 3
 
-        point = self.base * self.multiple
         response = [Pt.RSP_GAME_OVER, {
             'winner': winner.uid,
             'spring': int(self.is_spring(winner)),
             'antispring': int(self.anti_spring(winner)),
-            'multiple': self.multiple,
+            'multiple': self._multiple_details,
             'players': [],
         }]
         for player in self.players:
             response[1]['players'].append({
                 'uid': player.uid,
-                'point': point,
+                'point': self.get_point(winner, player),
                 'pokers': player.hand_pokers,
             })
         self.broadcast(response)
         logging.info('Room[%d] GameOver', self.room_id)
 
         IOLoop.current().add_callback(self.restart)
+
+    @property
+    def multiple(self) -> int:
+        return reduce(mul, self._multiple_details.values(), 1) // self._multiple_details['origin']
+
+    def re_multiple(self):
+        joker_number = rule.count_joker(self.pokers)
+        if joker_number > 0:
+            self._multiple_details['di'] *= 2 * joker_number
+            return
+
+        if rule.is_same_color(self.pokers):
+            self._multiple_details['di'] *= 3
+
+    def get_point(self, winner: Player, player: Player) -> int:
+        point = reduce(mul, self._multiple_details.values(), 1)
+        if self.landlord == winner:
+            if winner == player:
+                return point * 2
+            else:
+                return -point
+        else:
+            if winner == player:
+                return point
+            else:
+                return -point * 2
 
     def is_spring(self, winner: Player) -> bool:
         if self.landlord == winner:
@@ -257,32 +315,6 @@ class Room(object):
     def next_player(self):
         next_seat = (self.whose_turn + 1) % 3
         return self.players[next_seat]
-
-    def is_rob_end(self) -> bool:
-        if not self._is_rob_end():
-            self.go_next_turn()
-            return False
-
-        for i in range(3):
-            # 每个人都抢地主, 第一个人是地主
-            if self.turn_player.rob == 1 or i == 2:
-                self.turn_player.landlord = 1
-                self.turn_player.push_pokers(self.pokers)
-                self.last_shot_seat = self.whose_turn
-                self.re_multiple()
-                return True
-            self.go_prev_turn()
-        return True
-
-    def re_multiple(self):
-        joker_number = rule.count_joker(self.pokers)
-        if joker_number > 0:
-            self.multiple = self.multiple * 2 * joker_number
-            return
-
-        if rule.is_same_color(self.pokers):
-            self.multiple *= 2
-            self.bomb_multiple = 4
 
     def _is_rob_end(self) -> bool:
         """

@@ -156,7 +156,7 @@ class Player(object):
                 Storage.on_room_changed(room)
                 logger.info('ROOM[%s] FULL[%s]', room.room_id, room.players)
         else:
-            logger.info('ERROR STATE[%s] PACKET %s', self.state, packet)
+            self.write_error('ERROR STATE[%s]' % self.state)
 
     def handle_waiting(self, code: int, packet: Dict[str, Any]):
         if code == Pt.REQ_READY:
@@ -174,7 +174,7 @@ class Player(object):
         if code == Pt.REQ_CALL_SCORE:
             self.rob = packet.get('rob')
 
-            is_end = self.room.is_rob_end()
+            is_end = self.room.on_rob(self)
             if is_end:
                 self.change_state(State.PLAYING)
                 logger.info('ROB END LANDLORD[%s]', self.room.landlord)
@@ -189,7 +189,6 @@ class Player(object):
             self.room.broadcast(response)
         elif code == Pt.REQ_LEAVE_ROOM:
             self.leave = 1
-
         else:
             self.write_error('STATE[%s]' % self.state)
 
@@ -243,20 +242,20 @@ class Player(object):
         return self._ready
 
     @ready.setter
-    def ready(self, r):
-        self._ready = r
+    def ready(self, val):
+        self._ready = val
         if self.room:
-            self.room.broadcast([Pt.RSP_READY, {'uid': self.uid, 'ready': r}])
+            self.room.broadcast([Pt.RSP_READY, {'uid': self.uid, 'ready': self._ready}])
 
     @property
     def leave(self) -> int:
         return self._leave
 
     @leave.setter
-    def leave(self, r: int):
-        self._leave = r
+    def leave(self, val: int):
         if self.room:
             self.room.broadcast([Pt.RSP_LEAVE_ROOM, {'uid': self.uid}])
+        self._leave = val
 
     @property
     def allow_robot(self) -> bool:

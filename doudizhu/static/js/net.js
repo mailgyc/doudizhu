@@ -1,15 +1,14 @@
-
 PG.Protocol = {
     /**
      * [ERROR, {"reason": 错误原因}]
      */
     ERROR: 0,
 
-    REQ_ROOM_LIST  : 1001,
-    RSP_ROOM_LIST  : 1002,
+    REQ_ROOM_LIST: 1001,
+    RSP_ROOM_LIST: 1002,
 
-    REQ_NEW_ROOM : 1003,
-    RSP_NEW_ROOM : 1004,
+    REQ_NEW_ROOM: 1003,
+    RSP_NEW_ROOM: 1004,
 
 
     /**
@@ -17,13 +16,13 @@ PG.Protocol = {
      * [REQ_JOIN_ROOM, {"room": int 房间号 (-1表示快速加入), "level": int (1/2/3 初/中/高级场)}]
      *
      */
-    REQ_JOIN_ROOM : 1005,
+    REQ_JOIN_ROOM: 1005,
     /**
      *  用户进入房间广播
      *  [RSP_JOIN_ROOM, {
      *      "room": {
      *          "id": int 房间号,
-     *          "base": int 底分,
+     *          "origin": int 底分,
      *          "multiple": int 倍数,
      *          "state": int 房间状态 (1/2/3/4 WAITING/CALL_SCORE/PLAYING/GAME_OVER),
      *          "landlord_uid": int 本轮叫地主用户,
@@ -44,7 +43,7 @@ PG.Protocol = {
      *      }, {}, {}]
      *  }]
      */
-    RSP_JOIN_ROOM : 1006,
+    RSP_JOIN_ROOM: 1006,
 
     /**
      * 请求离开房间
@@ -62,12 +61,12 @@ PG.Protocol = {
      * 用户进入准备状态
      * [REQ_READY, {"ready": int (1 准备 0 取消准备)}]
      */
-    REQ_READY : 2001,
+    REQ_READY: 2001,
     /**
      * 用户准备/取消准备状态广播
      * [RSP_READY, {"uid": 用户ID, "ready": int(0/1)}]
      */
-    RSP_READY : 2002,
+    RSP_READY: 2002,
 
 
     /**
@@ -78,14 +77,14 @@ PG.Protocol = {
      *      "pokers": [int 17张扑克牌]
      *  }]
      */
-    RSP_DEAL_POKER : 2004,
+    RSP_DEAL_POKER: 2004,
 
 
     /**
      *  是否抢地主
      *  [REQ_CALL_SCORE, {"rob": int (0 不抢  1 抢地主)}]
      */
-    REQ_CALL_SCORE : 2005,
+    REQ_CALL_SCORE: 2005,
 
     /**
      * 抢地主广播
@@ -97,19 +96,19 @@ PG.Protocol = {
      *      "pokers": [int 抢地主结束时返回三张底牌]}
      *      }]
      */
-    RSP_CALL_SCORE : 2006,
+    RSP_CALL_SCORE: 2006,
 
 
     /**
      * 请求出牌
      * [REQ_SHOT_POKER, {"pokers": [int 扑克牌]}]
      */
-    REQ_SHOT_POKER : 3001,
+    REQ_SHOT_POKER: 3001,
     /**
      * 出牌广播
      *  [RSP_SHOT_POKER, {"uid": 用户ID 出牌用户, "pokers": [int 扑克牌], "multiple": int 当前倍数}]
      */
-    RSP_SHOT_POKER : 3002,
+    RSP_SHOT_POKER: 3002,
 
 
     /**
@@ -119,11 +118,20 @@ PG.Protocol = {
      *      "winner": int 获胜的用户ID,
      *      "spring": int 是否春天 1/0,
      *      "antispring": int 是否反春 1/0,
-     *      "multiple": int 倍数,
+     *      "multiple": {
+     *         "origin": int 初始,
+     *         "di": int   底牌,
+     *         "ming": int 明牌,
+     *         "bomb": int 炸弹,
+     *         "rob": int  抢地主,
+     *         "spring": int 春天,
+     *         "landlord": int 地主加倍,
+     *         "farmer": int 农民加倍
+     *      },
      *      "players": [{"uid": int用户ID, "point": int 输赢分数, "pokers": [int 手牌]}, {}, {}],
      *  }]
      */
-    RSP_GAME_OVER : 4002,
+    RSP_GAME_OVER: 4002,
 };
 
 PG.Socket = {
@@ -131,47 +139,47 @@ PG.Socket = {
     onmessage: null
 };
 
-const logging_pretty = function(tag, packet) {
+const logging_pretty = function (tag, packet) {
     for (key in PG.Protocol) {
         if (packet[0] === PG.Protocol[key])
             console.log(`${tag}: ${key} ${JSON.stringify(packet.slice(1))}`)
     }
 };
 
-PG.Socket.connect = function(onopen, onmessage, onerror) {
+PG.Socket.connect = function (onopen, onmessage, onerror) {
 
     if (this.websocket != null) {
         return;
     }
 
-    const protocol = location.protocol.startsWith('https') ? 'wss://' : 'ws://';
+    const protocol = location.protocol.startsWith("https") ? "wss://" : "ws://";
     this.websocket = new WebSocket(protocol + location.host + "/ws");
-    this.websocket.binaryType = 'arraybuffer';
-    this.websocket.onopen = function(evt) {
+    this.websocket.binaryType = "arraybuffer";
+    this.websocket.onopen = function (evt) {
         console.log("CONNECTED");
         onopen();
     };
-    
-    this.websocket.onerror = function(evt) { 
-        console.log('CONNECT ERROR: ' + evt.data);
-        this.websocket = null;
-        onerror();
-    };
-    
-    this.websocket.onclose = function(evt) {
-        console.log("DISCONNECTED"); 
+
+    this.websocket.onerror = function (evt) {
+        console.log("CONNECT ERROR: " + evt.data);
         this.websocket = null;
         onerror();
     };
 
-    this.websocket.onmessage = function(evt) {
+    this.websocket.onclose = function (evt) {
+        console.log("DISCONNECTED");
+        this.websocket = null;
+        onerror();
+    };
+
+    this.websocket.onmessage = function (evt) {
         const packet = JSON.parse(evt.data);
-        logging_pretty('RSP', packet);
+        logging_pretty("RSP", packet);
         onmessage(packet);
     };
 };
 
-PG.Socket.send = function(packet) {
-    logging_pretty('REQ', packet);
+PG.Socket.send = function (packet) {
+    logging_pretty("REQ", packet);
     this.websocket.send(JSON.stringify(packet));
 };

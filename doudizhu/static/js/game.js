@@ -10,12 +10,18 @@ class Observer {
     }
 
     set(key, val) {
-        this.state[key] = val;
-
+        const keys = key.split('.');
+        if (keys.length === 1) {
+            this.state[key] = val;
+        } else {
+            this.state[keys[0]][keys[1]] = val;
+            key = keys[0];
+        }
+        const newVal = this.state[key];
         const subscribers = this.subscribers;
         if (subscribers.hasOwnProperty(key)) {
             subscribers[key].forEach(function (cb) {
-                if (cb) cb(val);
+                if (cb) cb(newVal);
             });
         }
     }
@@ -47,8 +53,6 @@ const observer = new Observer();
 PG.Game = function (game) {
     this.players = [];
 
-    this.tableId = 0;
-
     this.tablePoker = [];
     this.tablePokerPic = {};
 
@@ -76,7 +80,7 @@ PG.Game.prototype = {
         let titleBar = this.game.add.text(this.game.world.centerX, 0, `房间号:${0} 底分: 0 倍数: 0`, style);
         titleBar.anchor.set(0.5, 0);
         observer.subscribe('room', function (room) {
-            titleBar.text = `房间号:${room.id} 底分: ${room.base} 倍数: ${room.multiple}`;
+            titleBar.text = `房间号:${room.id} 底分: ${room.origin} 倍数: ${room.multiple}`;
         });
 
         // 创建准备按钮
@@ -148,7 +152,6 @@ PG.Game.prototype = {
             case PG.Protocol.RSP_READY:
                 // TODO: 显示玩家已准备状态
                 if (packet['uid'] === this.players[0].uid) {
-                    observer.get('room').multiple = 15;
                     observer.set('ready', true);
                 }
                 break;
@@ -181,24 +184,22 @@ PG.Game.prototype = {
                     this.players[this.whoseTurn].setLandlord();
                     this.showLastThreePoker();
                 }
-                if (rob === 1) {
-                    let room = observer.get('room');
-                    room.multiple *= 2;
-                    observer.set('room', room)
-                }
+                observer.set('room.multiple', packet['multiple']);
                 break;
             }
             case PG.Protocol.RSP_SHOT_POKER:
                 this.handleShotPoker(packet);
+                observer.set('room.multiple', packet['multiple']);
                 break;
             case PG.Protocol.RSP_GAME_OVER: {
                 const winner = packet['winner'];
-                const spring = packet['spring'];
                 const that = this;
                 packet['players'].forEach(function(player){
                     const seat = that.uidToSeat(player['uid']);
-                    that.players[seat].replacePoker(player['pokers'], 1);
-                    that.players[seat].reDealPoker();
+                    if (seat > 0) {
+                        that.players[seat].replacePoker(player['pokers'], 0);
+                        that.players[seat].reDealPoker();
+                    }
                 });
 
                 this.whoseTurn = this.uidToSeat(winner);

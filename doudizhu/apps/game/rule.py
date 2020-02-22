@@ -63,27 +63,43 @@ class Rule(object):
                     return longer_seq_list[0]
                 return seq_single[0]
 
-        for spec in ['seq_trio_single4', 'seq_trio_single3', 'seq_trio_single2', 'trio_single']:
-            seq_trio, after_cards = self.find_spec_type(small_cards, spec)
-            if seq_trio and self.count_single(after_cards) < total_single:
-                return seq_trio[0]
+        shot_order = (
+            (['seq_trio_single4', 'seq_trio_single3', 'seq_trio_single2', 'trio_single'], -1),
+            (['seq_trio_pair3', 'seq_trio_pair2', 'trio_pair'], 0),
+            (['seq_trio_pair3', 'seq_trio_pair2', 'trio_pair'], 0),
+            (['seq_pair9', 'seq_pair8', 'seq_pair7', 'seq_pair6', 'seq_pair5', 'seq_pair4', 'seq_pair3'], 0)
+        )
 
-        for spec in ['seq_trio_pair3', 'seq_trio_pair2', 'trio_pair']:
-            seq_trio, after_cards = self.find_spec_type(small_cards, spec)
-            if seq_trio and self.count_single(after_cards) <= total_single:
-                return seq_trio[0]
+        for specs, less in shot_order:
+            best_shot = self._find_spec_shot(small_cards, specs, total_single + less)
+            if best_shot:
+                return best_shot
 
-        for spec in ['seq_pair9', 'seq_pair8', 'seq_pair7', 'seq_pair6', 'seq_pair5', 'seq_pair4', 'seq_pair3']:
-            seq_pair, after_cards = self.find_spec_type(small_cards, spec)
-            if seq_pair and self.count_single(after_cards) < total_single:
-                return seq_trio[0]
+        if small_cards:
+            if len(small_cards) == 1:
+                return small_cards[0]
+            if small_cards[0] == small_cards[1]:
+                return small_cards[0] + small_cards[1]
+            return small_cards[0]
+
+        for specs, less in shot_order:
+            best_shot = self._find_spec_shot(hand_cards, specs, total_single + less)
+            if best_shot:
+                return best_shot
 
         for spec in ['pair', 'trio', 'single']:
-            pair, after_cards = self.find_spec_type(small_cards, spec)
-            if pair and self.count_single(after_cards) <= total_single:
-                return pair[0]
+            trio, after_cards = self.find_spec_type(hand_cards, spec)
+            if trio and self.count_single(after_cards) <= total_single:
+                return trio[0]
 
         return hand_cards[0]
+
+    def _find_spec_shot(self, hand_cards: List[str], specs: List[str], single: int) -> Optional[str]:
+        for spec in specs:
+            seq, after_cards = self.find_spec_type(hand_cards, spec)
+            if seq and self.count_single(after_cards) <= single:
+                return seq[0]
+        return None
 
     def find_spec_type(self, hand_cards: List[str], card_type: str) -> Tuple[List[str], List[str]]:
         available = [c for c in hand_cards]
@@ -136,7 +152,7 @@ class Rule(object):
 
         for i, spec in enumerate(self.rules[card_type]):
             if i > card_value and self.is_contains(hand_cards, spec):
-                if follow and i * 1.0 / len(self.rules[card_type]) > 0.8:
+                if follow and i * 1.0 / len(self.rules[card_type]) > 0.6:
                     return []
                 cards = self._to_pokers(hand_pokers, spec)
                 return cards
