@@ -272,7 +272,7 @@ class Player(object):
 
     def leave_room(self):
         from .storage import Storage
-        self.ready = 0
+        self.restart()
         self.state = State.INIT
         if self.room:
             self.room.on_leave(self)
