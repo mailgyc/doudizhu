@@ -42,30 +42,33 @@ class Player(object):
         self.seat = -1
         self.state = State.INIT
 
-        self.ready = 0
-        self.landlord = 0
+        self._ready = 0
+        self._leave = 0
+
         self.rob = -1
-        self.leave = 0
+        self.landlord = 0
         self._hand_pokers: List[int] = []
 
         self.socket = None
 
     def restart(self):
-        self.ready = 0
+        self._ready = 0
+        self._hand_pokers: List[int] = []
+
         self.rob = -1
         self.landlord = 0
         self.state = State.WAITING
-        self._hand_pokers: List[int] = []
 
-    def sync_data(self) -> Dict[str, str]:
+    def sync_data(self, real=True) -> Dict[str, str]:
         return {
             'uid': self.uid,
-            'seat': self.seat,
             'name': self.name,
             'icon': '',
             'ready': self.ready,
             'rob': self.rob,
-            'landlord': self.landlord
+            'leave': self.leave,
+            'landlord': self.landlord,
+            'pokers': self.hand_pokers if real else [0] * len(self.hand_pokers),
         }
 
     def push_pokers(self, pokers: List[int]):
@@ -125,7 +128,7 @@ class Player(object):
 
             room = Storage.find_room(room_id, level, self.allow_robot)
             if room.room_id == room_id:
-                self.sync_room()
+                self.room.sync_room()
                 logger.info('PLAYER[%s] REJOIN ROOM[%d]', self.uid, room.room_id)
             else:
                 self.write_error('Room[%s] Not Found' % room_id)
@@ -146,7 +149,7 @@ class Player(object):
 
             self.state = State.WAITING
             if self.join_room(room):
-                self.sync_room()
+                self.room.sync_room()
             logger.info('PLAYER[%s] JOIN ROOM[%d]', self.uid, room.room_id)
 
             if room.is_full():
@@ -158,7 +161,6 @@ class Player(object):
     def handle_waiting(self, code: int, packet: Dict[str, Any]):
         if code == Pt.REQ_READY:
             self.ready = packet.get('ready')
-            self.room.broadcast([Pt.RSP_READY, {"uid": self.uid, "ready": self.ready}])
             if self.room.is_ready():
                 self.change_state(State.CALL_SCORE)
                 self.room.deal_poker()
@@ -194,26 +196,21 @@ class Player(object):
     def handle_playing(self, code, packet):
         if code == Pt.REQ_SHOT_POKER:
             pokers = packet.get('pokers')
-            if pokers:
-                if not rule.is_contains(self._hand_pokers, pokers):
-                    self.write_error('Poker does not exist')
-                    return
 
-                if pokers and rule.get_poker_spec(pokers) is None:
-                    self.write_error('Rules error')
-                    return
+            if not rule.is_contains(self._hand_pokers, pokers):
+                self.write_error('Poker does not exist')
+                return
 
-                if self.room.last_shot_seat != self.seat and rule.compare_pokers(pokers, self.room.last_shot_poker) < 0:
-                    self.write_error('Poker small than last shot')
-                    return
+            error = self.room.on_shot(self.seat, pokers)
+            if error:
+                self.write_error(error)
+                return
 
-                self.room.last_shot_seat = self.seat
-                self.room.last_shot_poker = pokers
-                for p in pokers:
-                    self._hand_pokers.remove(p)
+            for p in pokers:
+                self._hand_pokers.remove(p)
 
-            self.room.broadcast([Pt.RSP_SHOT_POKER, {'uid': self.uid, 'pokers': pokers}])
-            logger.info('USER[%d] shot[%s]', self.uid, str(pokers))
+            self.room.broadcast([Pt.RSP_SHOT_POKER, {'uid': self.uid, 'pokers': pokers, 'multiple': self.room.multiple}])
+            logger.info('USER[%d] shot %s', self.uid, pokers)
 
             if self._hand_pokers:
                 self.room.go_next_turn()
@@ -241,15 +238,28 @@ class Player(object):
         logger.error('USER[%d] %s', self.uid, reason)
 
     @property
+    def ready(self) -> int:
+        return self._ready
+
+    @ready.setter
+    def ready(self, r):
+        self._ready = r
+        if self.room:
+            self.room.broadcast([Pt.RSP_READY, {'uid': self.uid, 'ready': r}])
+
+    @property
+    def leave(self) -> int:
+        return self._leave
+
+    @leave.setter
+    def leave(self, r: int):
+        self._leave = r
+        if self.room:
+            self.room.broadcast([Pt.RSP_LEAVE_ROOM, {'uid': self.uid}])
+
+    @property
     def allow_robot(self) -> bool:
         return self.socket.allow_robot
-
-    def sync_room(self):
-        response = [Pt.RSP_JOIN_ROOM, {
-            'room': self.room.sync_data(),
-            'players': [p.sync_data() if p else {} for p in self.room.players]
-        }]
-        self.room.broadcast(response)
 
     def join_room(self, room: Room):
         if room.is_full():
@@ -274,3 +284,9 @@ class Player(object):
 
     def __str__(self):
         return f'{self.uid}-{self.name}'
+
+    def __eq__(self, other):
+        return self.uid == other.uid
+
+    def __ne__(self, other):
+        return not (self == other)

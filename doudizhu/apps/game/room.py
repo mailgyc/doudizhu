@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 from tornado.ioloop import IOLoop
 
 from .protocol import Protocol as Pt
+from .rule import rule
 
 if TYPE_CHECKING:
     from .player import Player
@@ -28,7 +29,9 @@ class Room(object):
         self.landlord_seat = 0
 
         self.last_shot_seat = 0
-        self.last_shot_poker = []
+        self.last_shot_poker: List[int] = []
+        self.shot_round: List[List[int]] = []
+
         self.allow_robot = allow_robot
 
     def restart(self):
@@ -41,6 +44,7 @@ class Room(object):
 
         self.last_shot_seat = 0
         self.last_shot_poker = []
+        self.shot_round = []
 
         for player in self.players:
             if player.leave == 0:
@@ -62,9 +66,18 @@ class Room(object):
         }
 
     def broadcast(self, response):
-        for p in self.players:
-            if p and p.leave == 0:
-                p.write_message(response)
+        for player in self.players:
+            if player and player.leave == 0:
+                player.write_message(response)
+
+    def sync_room(self):
+        for player in self.players:
+            if player and player.leave == 0:
+                response = [Pt.RSP_JOIN_ROOM, {
+                    'room': self.sync_data(),
+                    'players': [p.sync_data(p == player) if p else {} for p in self.players]
+                }]
+                player.write_message(response)
 
     def add_robot(self, nth=1):
         size = self.size()
@@ -82,7 +95,7 @@ class Room(object):
         if nth == 1:
             IOLoop.current().call_later(1, self.add_robot, nth=2)
 
-    def arrange_seat(self, target: Player):
+    def _on_join(self, target: Player):
         for i, player in enumerate(self.players):
             if player:
                 continue
@@ -92,11 +105,32 @@ class Room(object):
         return False
 
     def on_join(self, target: Player):
-        if self.arrange_seat(target):
+        if self._on_join(target):
             if self.allow_robot:
                 IOLoop.current().call_later(0.1, self.add_robot, nth=1)
             return True
         return False
+
+    def on_shot(self, seat: int, pokers: List[int]) -> str:
+        if pokers:
+            spec = rule.get_poker_spec(pokers)
+            if spec is None:
+                return 'Poker does not comply with the rules'
+
+            if seat != self.last_shot_seat and rule.compare_pokers(pokers, self.last_shot_poker) < 0:
+                return 'Poker small than last shot'
+
+            if spec == 'bomb' or spec == 'rocket':
+                self.multiple *= 2
+
+            self.last_shot_seat = seat
+            self.last_shot_poker = pokers
+        else:
+            if seat == self.last_shot_seat:
+                return 'Last shot player does not allow pass'
+
+        self.shot_round.append(pokers)
+        return ''
 
     def on_leave(self, target: Player):
         from .components.simple import RobotPlayer
@@ -114,11 +148,12 @@ class Room(object):
             logging.error('Player[%d] NOT IN Room[%d]', target.uid, self.room_id)
             return False
 
-    def on_game_over(self, winner):
+    def on_game_over(self, winner: Player):
         point = self.base * self.multiple
         response = [Pt.RSP_GAME_OVER, {
             'winner': winner.uid,
-            'spring': 0,
+            'spring': int(self.is_spring(winner)),
+            'antispring': int(self.anti_spring(winner)),
             'multiple': self.multiple,
             'players': [],
         }]
@@ -132,6 +167,27 @@ class Room(object):
         logging.info('Room[%d] GameOver', self.room_id)
 
         IOLoop.current().add_callback(self.restart)
+
+    def is_spring(self, winner: Player) -> bool:
+        if self.landlord == winner:
+            for i, poker in enumerate(self.shot_round):
+                if i % 3 == 0:
+                    continue
+                if poker:
+                    return False
+            return True
+        return False
+
+    def anti_spring(self, winner: Player) -> bool:
+        if self.landlord == winner:
+            return False
+
+        for i, poker in enumerate(self.shot_round):
+            if i == 0:
+                continue
+            if i % 3 == 0 and poker:
+                return False
+        return True
 
     def deal_poker(self):
         try:
@@ -256,7 +312,7 @@ class Room(object):
         return sum([p is not None for p in self.players])
 
     def __str__(self):
-        return f'[{self.room_id}: {self.players if any(self.players) else []}]'
+        return f'[{self.room_id}{[p or "-" for p in self.players]}]'
 
     def __hash__(self):
         return self.room_id
@@ -266,5 +322,3 @@ class Room(object):
 
     def __ne__(self, other):
         return not (self == other)
-
-

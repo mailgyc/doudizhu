@@ -191,33 +191,30 @@ PG.Game.prototype = {
             case PG.Protocol.RSP_SHOT_POKER:
                 this.handleShotPoker(packet);
                 break;
-            case PG.Protocol.RSP_GAME_OVER:
-                const gameResult = packet;
-                const winner = gameResult.winner;
-                const pokers = gameResult.pokers;
-
-                let loserASeat = this.uidToSeat(pokers[0][0]);
-                this.players[loserASeat].replacePoker(pokers[0], 1);
-                this.players[loserASeat].reDealPoker();
-
-                let loserBSeat = this.uidToSeat(pokers[1][0]);
-                this.players[loserBSeat].replacePoker(pokers[1], 1);
-                this.players[loserBSeat].reDealPoker();
+            case PG.Protocol.RSP_GAME_OVER: {
+                const winner = packet['winner'];
+                const spring = packet['spring'];
+                const that = this;
+                packet['players'].forEach(function(player){
+                    const seat = that.uidToSeat(player['uid']);
+                    that.players[seat].replacePoker(player['pokers'], 1);
+                    that.players[seat].reDealPoker();
+                });
 
                 this.whoseTurn = this.uidToSeat(winner);
                 function gameOver() {
-                    alert(this.players[this.whoseTurn].isLandlord ? "地主赢" : "农民赢");
+                    alert(that.players[that.whoseTurn].isLandlord ? "地主赢" : "农民赢");
                     observer.set('ready', false);
                     this.cleanWorld();
                 }
-
                 this.game.time.events.add(2000, gameOver, this);
                 break;
-            case PG.Protocol.RSP_CHEAT:
-                let seat = this.uidToSeat(packet[1]);
-                this.players[seat].replacePoker(packet[2], 0);
-                this.players[seat].reDealPoker();
-                break;
+            }
+            // case PG.Protocol.RSP_CHEAT:
+            //     let seat = this.uidToSeat(packet[1]);
+            //     this.players[seat].replacePoker(packet[2], 0);
+            //     this.players[seat].reDealPoker();
+            //     break;
             default:
                 console.log("UNKNOWN PACKET:", packet)
         }

@@ -21,7 +21,7 @@ PG.Protocol = {
     /**
      *  用户进入房间广播
      *  [RSP_JOIN_ROOM, {
-     *      'room': {
+     *      "room": {
      *          "id": int 房间号,
      *          "base": int 底分,
      *          "multiple": int 倍数,
@@ -32,15 +32,15 @@ PG.Protocol = {
      *          "last_shot_uid": int 房间状态,
      *          "last_shot_poker": int 房间状态,
      *      },
-     *      'player': [{
-     *          "room_id": 用户ID,
-     *          "seat": 用户座位,
+     *      "players": [{
+     *          "uid": 用户ID,
      *          "name": 用户名,
      *          "icon": 头像,
      *          "ready": int 是否准备(1 准备 0 未准备),
      *          "rob":  int 是否抢地主 (-1/0/1),
      *          "leave": int 是否离开房间 (1 离开离开 0 在房间)
      *          "landlord":  int 是否是地主 (0/1),
+     *          "pokers": [int 手牌]
      *      }, {}, {}]
      *  }]
      */
@@ -54,7 +54,7 @@ PG.Protocol = {
 
     /**
      * 离开房间广播
-     * [REQ_LEAVE_ROOM, {"room_id": int 用户ID}]
+     * [REQ_LEAVE_ROOM, {"uid": int 用户ID}]
      */
     RSP_LEAVE_ROOM: 1007,
 
@@ -65,7 +65,7 @@ PG.Protocol = {
     REQ_READY : 2001,
     /**
      * 用户准备/取消准备状态广播
-     * [RSP_READY, {"room_id": 用户ID, "ready": int(0/1)}]
+     * [RSP_READY, {"uid": 用户ID, "ready": int(0/1)}]
      */
     RSP_READY : 2002,
 
@@ -106,7 +106,7 @@ PG.Protocol = {
     REQ_SHOT_POKER : 3001,
     /**
      * 出牌广播
-     *  [RSP_SHOT_POKER, {'room_id': 用户ID 出牌用户, 'pokers': [int 扑克牌]}]
+     *  [RSP_SHOT_POKER, {"uid": 用户ID 出牌用户, "pokers": [int 扑克牌], "multiple": int 当前倍数}]
      */
     RSP_SHOT_POKER : 3002,
 
@@ -117,6 +117,7 @@ PG.Protocol = {
      *  [RSP_GAME_OVER, {
      *      "winner": int 获胜的用户ID,
      *      "spring": int 是否春天 1/0,
+     *      "antispring": int 是否反春 1/0,
      *      "multiple": int 倍数,
      *      "players": [{"uid": int用户ID, "point": int 输赢分数, "pokers": [int 手牌]}, {}, {}],
      *  }]

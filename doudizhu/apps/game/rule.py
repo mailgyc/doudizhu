@@ -245,8 +245,7 @@ class Rule(object):
             return -1
 
     @staticmethod
-    def is_contains(parent: List[str], child: str) -> bool:
-
+    def is_contains(parent: Iterable, child: Iterable) -> bool:
         parent, child = Counter(parent), Counter(child)
         for k, cnt in child.items():
             if k not in parent or cnt > parent[k]:
@@ -261,8 +260,7 @@ class Rule(object):
 
 with open('static/rule.json', 'r') as f:
     rule = Rule(json.load(f))
-    from random import sample
-
+    # from random import sample
     # print(rule._find_best_shot('345677890JQQKAAA2'))
     # print(rule._find_best_shot('34456788990JJQKAW'))
     # print(rule._find_best_shot('3344555678990JQKK'))

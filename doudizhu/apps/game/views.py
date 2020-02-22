@@ -59,7 +59,7 @@ class SocketHandler(WebSocketHandler, JwtMixin):
 
     def on_message(self, message):
         if message == 'ping':
-            self.write_message('pong')
+            self._write_message('pong')
         else:
             packet = json.loads(message)
             logging.info('REQ[%d]: %s', self.uid, message)
@@ -70,19 +70,17 @@ class SocketHandler(WebSocketHandler, JwtMixin):
         logging.info('SOCKET[%s] CLOSE', self.player.uid)
 
     def write_message(self, message: List[Union[Protocol, Any]], binary=False):
+        packet = json.dumps(message)
+        self._write_message(packet, binary)
+
+    def _write_message(self, message, binary=False):
         if self.ws_connection is None:
             return
-        packet = json.dumps(message)
         try:
-            future = self.ws_connection.write_message(packet, binary=binary)
+            future = self.ws_connection.write_message(message, binary=binary)
             logging.info('RSP[%d]: %s', self.uid, message)
         except WebSocketClosedError:
             logging.error('WebSockedClosed[%s][%s]', self.uid, message)
-
-    # def send_updates(cls, chat):
-    #     logging.info('sending message to %d waiters', len(cls.waiters))
-    #     for waiter in cls.waiters:
-    #         waiter.write_message('tornado:' + chat)
 
 
 class AdminHandler(RestfulHandler):
