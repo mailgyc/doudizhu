@@ -55,7 +55,7 @@ PG.Protocol = {
      * 离开房间广播
      * [REQ_LEAVE_ROOM, {"uid": int 用户ID}]
      */
-    RSP_LEAVE_ROOM: 1007,
+    RSP_LEAVE_ROOM: 1008,
 
     /**
      * 用户进入准备状态

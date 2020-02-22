@@ -253,7 +253,7 @@ class Player(object):
 
     @leave.setter
     def leave(self, val: int):
-        if self.room:
+        if self.room and val == 1:
             self.room.broadcast([Pt.RSP_LEAVE_ROOM, {'uid': self.uid}])
         self._leave = val
 
