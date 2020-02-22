@@ -93,7 +93,7 @@ class Player(object):
             return
 
         code, packet = message[0], message[1]
-        if self.leave == 1:
+        if self.is_left():
             if self.handle_leave(code, packet):
                 return
 
@@ -109,21 +109,18 @@ class Player(object):
             self.handle_game_over(code, packet)
 
     def on_disconnect(self):
-        if self.state == State.INIT:
-            self.leave_room()
-        elif self.state == State.WAITING:
-            self.leave_room()
-        elif self.state == State.CALL_SCORE or self.state == State.PLAYING:
-            self.leave = 1
-        elif self.state == State.GAME_OVER:
-            self.leave_room()
+        self.set_left()
 
     def handle_leave(self, code: int, packet: Dict[str, Any]):
         from .storage import Storage
         if code == Pt.REQ_JOIN_ROOM:
             room_id, level = packet.get('room', -1), packet.get('level', 1)
             if room_id == -1:
-                self.leave_room()
+                self.restart()
+                self.state = State.INIT
+                if self.room:
+                    self.room.on_leave(self)
+                    self.room = None
                 return False
 
             room = Storage.find_room(room_id, level, self.allow_robot)
@@ -188,7 +185,7 @@ class Player(object):
             }]
             self.room.broadcast(response)
         elif code == Pt.REQ_LEAVE_ROOM:
-            self.leave = 1
+            self.set_left()
         else:
             self.write_error('STATE[%s]' % self.state)
 
@@ -218,7 +215,7 @@ class Player(object):
                 self.change_state(State.GAME_OVER)
                 self.room.on_game_over(self)
         elif code == Pt.REQ_LEAVE_ROOM:
-            self.leave = 1
+            self.set_left()
         else:
             self.write_error('STATE[%s]' % self.state)
 
@@ -247,15 +244,15 @@ class Player(object):
         if self.room:
             self.room.broadcast([Pt.RSP_READY, {'uid': self.uid, 'ready': self._ready}])
 
-    @property
-    def leave(self) -> int:
-        return self._leave
+    def is_left(self) -> bool:
+        return self._leave == 1
 
-    @leave.setter
-    def leave(self, val: int):
-        if self.room and val == 1:
-            self.room.broadcast([Pt.RSP_LEAVE_ROOM, {'uid': self.uid}])
-        self._leave = val
+    def set_left(self, is_left=1):
+        self._leave = is_left
+        if is_left:
+            from .storage import Storage
+            if self.room:
+                self.room.broadcast([Pt.RSP_LEAVE_ROOM, {'uid': self.uid}])
 
     @property
     def allow_robot(self) -> bool:
@@ -266,19 +263,9 @@ class Player(object):
             self.write_error('Room[%s] FULL' % room.room_id)
             return False
 
-        self.leave = 0
+        self.set_left(0)
         self.room = room
         return room.on_join(self)
-
-    def leave_room(self):
-        from .storage import Storage
-        self.restart()
-        self.state = State.INIT
-        if self.room:
-            self.room.on_leave(self)
-            self.leave = 1
-            self.room = None
-        Storage.remove_player(self.uid)
 
     def __repr__(self):
         return self.__str__()
@@ -287,7 +274,7 @@ class Player(object):
         return f'{self.uid}-{self.name}'
 
     def __eq__(self, other):
-        return self.uid == other.uid
+        return other and self.uid == other.uid
 
     def __ne__(self, other):
         return not (self == other)
