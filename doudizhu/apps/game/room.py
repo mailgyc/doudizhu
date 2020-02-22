@@ -116,18 +116,20 @@ class Room(object):
 
     def on_game_over(self, winner):
         point = self.base * self.multiple
-
         response = [Pt.RSP_GAME_OVER, {
             'winner': winner.uid,
-            'won_point': point,
-            'lost_point': -point,
-            'pokers': [],
+            'spring': 0,
+            'multiple': self.multiple,
+            'players': [],
         }]
-        for target in self.players:
-            response[1]['pokers'] = [[p.uid, *p.hand_pokers] for p in self.players if p != target]
-            if target.leave == 0:
-                target.write_message(response)
-        logging.info('Room[%d] GameOver[%d]', self.room_id, self.room_id)
+        for player in self.players:
+            response[1]['players'].append({
+                'uid': player.uid,
+                'point': point,
+                'pokers': player.hand_pokers,
+            })
+        self.broadcast(response)
+        logging.info('Room[%d] GameOver', self.room_id)
 
         IOLoop.current().add_callback(self.restart)
 

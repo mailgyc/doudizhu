@@ -115,10 +115,10 @@ PG.Protocol = {
      *  游戏结束广播, 服务器主动下发
      *  pokers 为最后展示手牌用, 可以忽略
      *  [RSP_GAME_OVER, {
-     *      "winner": 获胜的用户ID,
-     *      "won_point": 赢了多少分,
-     *      "lost_point": 输了多少分,
-     *      "pokers": [[用户ID, 手牌], [用户ID， 手牌]],
+     *      "winner": int 获胜的用户ID,
+     *      "spring": int 是否春天 1/0,
+     *      "multiple": int 倍数,
+     *      "players": [{"uid": int用户ID, "point": int 输赢分数, "pokers": [int 手牌]}, {}, {}],
      *  }]
      */
     RSP_GAME_OVER : 4002,
