@@ -20,7 +20,7 @@ def shot_turn(method):
         if player.room and player.room.whose_turn == player.seat:
             method(player, *args, **kwargs)
         else:
-            player.write_error('NOT YOUR TURN')
+            player.write_error('TURN ERROR')
 
     return wrapper
 
@@ -235,7 +235,7 @@ class Player(object):
     def write_error(self, reason: str):
         if self.socket:
             self.socket.write_message([Pt.ERROR, {'reason': reason}])
-        logger.error('USER[%d] %s', self.uid, reason)
+        logger.error('USER[%d][%s] %s', self.uid, self.state, reason)
 
     @property
     def ready(self) -> int:
@@ -273,6 +273,7 @@ class Player(object):
     def leave_room(self):
         from .storage import Storage
         self.ready = 0
+        self.state = State.INIT
         if self.room:
             self.room.on_leave(self)
             self.leave = 1
