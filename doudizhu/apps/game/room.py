@@ -63,7 +63,7 @@ class Room(object):
         self.shot_round = []
 
         for player in self.players:
-            if player.leave == 0:
+            if not player.is_left():
                 player.restart()
             else:
                 IOLoop.current().add_callback(player.leave_room)
@@ -83,12 +83,12 @@ class Room(object):
 
     def broadcast(self, response):
         for player in self.players:
-            if player and player.leave == 0:
+            if player and not player.is_left():
                 player.write_message(response)
 
     def sync_room(self):
         for player in self.players:
-            if player and player.leave == 0:
+            if player and not player.is_left():
                 response = [Pt.RSP_JOIN_ROOM, {
                     'room': self.sync_data(),
                     'players': [p.sync_data(p == player) if p else {} for p in self.players]
@@ -276,7 +276,7 @@ class Room(object):
                 'timer': self.timer,
                 'pokers': player.hand_pokers
             }]
-            if player.leave == 0:
+            if not player.is_left():
                 player.write_message(response)
             logging.info('ROOM[%s] DEAL[%s]', self.room_id, response)
 

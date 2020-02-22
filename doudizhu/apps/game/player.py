@@ -66,7 +66,7 @@ class Player(object):
             'icon': '',
             'ready': self.ready,
             'rob': self.rob,
-            'leave': self.leave,
+            'leave': self._leave,
             'landlord': self.landlord,
             'pokers': self.hand_pokers if real else [0] * len(self.hand_pokers),
         }
