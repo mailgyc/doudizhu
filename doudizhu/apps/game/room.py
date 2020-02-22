@@ -27,6 +27,7 @@ class Room(object):
         self.timer = 30
         self.whose_turn = 0
         self.landlord_seat = 0
+        self.bomb_multiple = 2
 
         self.last_shot_seat = 0
         self.last_shot_poker: List[int] = []
@@ -41,6 +42,7 @@ class Room(object):
         self.timer = 30
         self.whose_turn = 0
         self.landlord_seat = (self.landlord_seat + 1) % 3
+        self.bomb_multiple = 2
 
         self.last_shot_seat = 0
         self.last_shot_poker = []
@@ -121,7 +123,7 @@ class Room(object):
                 return 'Poker small than last shot'
 
             if spec == 'bomb' or spec == 'rocket':
-                self.multiple *= 2
+                self.multiple *= self.bomb_multiple
 
             self.last_shot_seat = seat
             self.last_shot_poker = pokers
@@ -149,6 +151,12 @@ class Room(object):
             return False
 
     def on_game_over(self, winner: Player):
+
+        spring = self.is_spring(winner)
+        anti_spring = self.anti_spring(winner)
+        if spring or anti_spring:
+            self.multiple *= 3
+
         point = self.base * self.multiple
         response = [Pt.RSP_GAME_OVER, {
             'winner': winner.uid,
@@ -256,14 +264,25 @@ class Room(object):
             return False
 
         for i in range(3):
-            # 每人抢地主, 第一个人是地主
+            # 每个人都抢地主, 第一个人是地主
             if self.turn_player.rob == 1 or i == 2:
                 self.turn_player.landlord = 1
                 self.turn_player.push_pokers(self.pokers)
                 self.last_shot_seat = self.whose_turn
+                self.re_multiple()
                 return True
             self.go_prev_turn()
         return True
+
+    def re_multiple(self):
+        joker_number = rule.count_joker(self.pokers)
+        if joker_number > 0:
+            self.multiple = self.multiple * 2 * joker_number
+            return
+
+        if rule.is_same_color(self.pokers):
+            self.multiple *= 2
+            self.bomb_multiple = 4
 
     def _is_rob_end(self) -> bool:
         """

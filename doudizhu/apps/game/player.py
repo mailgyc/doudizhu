@@ -183,6 +183,7 @@ class Player(object):
                 'uid': self.uid,
                 'rob': self.rob,
                 'landlord': self.room.landlord.uid if is_end else -1,
+                'multiple': self.room.multiple,
                 'pokers': self.room.pokers if is_end else [],
             }]
             self.room.broadcast(response)

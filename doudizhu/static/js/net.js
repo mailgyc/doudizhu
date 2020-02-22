@@ -92,7 +92,8 @@ PG.Protocol = {
      * [RSP_CALL_SCORE, {
      *      "room_id": 叫地主用户ID,
      *      "rob": int 是否抢地主,
-     *      "landlord": 用户ID, -1表示继续抢地主, 否则返回地主用户ID
+     *      "landlord": 用户ID, -1表示继续抢地主, 否则返回地主用户ID,
+     *      "multiple": int 当前倍数,
      *      "pokers": [int 抢地主结束时返回三张底牌]}
      *      }]
      */

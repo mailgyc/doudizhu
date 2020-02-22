@@ -136,7 +136,7 @@ class Rule(object):
 
         for i, spec in enumerate(self.rules[card_type]):
             if i > card_value and self.is_contains(hand_cards, spec):
-                if follow and i*1.0/len(self.rules[card_type]) > 0.8:
+                if follow and i * 1.0 / len(self.rules[card_type]) > 0.8:
                     return []
                 cards = self._to_pokers(hand_pokers, spec)
                 return cards
@@ -234,6 +234,20 @@ class Rule(object):
     @staticmethod
     def count_single(hand_cards: List[str]) -> int:
         return sum(v for _, v in Counter(hand_cards).items() if v == 1)
+
+    @staticmethod
+    def is_same_color(hand_pokers: List[int]) -> bool:
+        colors = [(poker - 1) // 13 for poker in hand_pokers]
+        return set(colors) == 1
+
+    @staticmethod
+    def count_joker(hand_pokers: List[str]) -> int:
+        cnt = 0
+        if 53 in hand_pokers:
+            cnt += 1
+        if 54 in hand_pokers:
+            cnt += 1
+        return cnt
 
     @staticmethod
     def _index_of(array: List[str], ele: str) -> int:
