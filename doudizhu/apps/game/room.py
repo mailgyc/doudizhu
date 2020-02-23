@@ -222,14 +222,14 @@ class Room(object):
             self._multiple_details['di'] *= 3
 
     def get_point(self, winner: Player, player: Player) -> int:
-        point = reduce(mul, self._multiple_details.values(), 1)
+        point = reduce(mul, self._multiple_details.values(), 10)
         if self.landlord == winner:
             if winner == player:
                 return point * 2
             else:
                 return -point
         else:
-            if winner == player:
+            if player.landlord == 0:
                 return point
             else:
                 return -point * 2
