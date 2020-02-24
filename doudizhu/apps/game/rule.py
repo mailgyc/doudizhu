@@ -160,7 +160,7 @@ class Rule(object):
         if follow:
             return []
 
-        if card_value < 10000:
+        if card_value < 20000:
             for spec in self.rules['bomb']:
                 if self.is_contains(hand_cards, spec):
                     return self._to_pokers(hand_pokers, spec)
@@ -182,7 +182,7 @@ class Rule(object):
         if a_card_type == b_card_type:
             return a_card_value - b_card_value
 
-        if a_card_value >= 10000:
+        if a_card_value >= 20000:
             return 1
         else:
             return 0
@@ -190,11 +190,11 @@ class Rule(object):
     def _get_cards_value(self, cards: List[str]) -> Tuple[str, int]:
         cards = ''.join(cards)
         if cards == 'wW':
-            return 'rocket', 20000
+            return 'rocket', 22000
 
         value = self._index_of(self.rules['bomb'], cards)
         if value >= 0:
-            return 'bomb', 10000 + value
+            return 'bomb', 20000 + value
 
         return self._get_card_value(cards)
 

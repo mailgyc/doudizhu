@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Optional, List, Union, Any
+from typing import Optional, List, Union, Any, Dict
 
 from tornado.escape import json_decode
 from tornado.web import authenticated
@@ -20,14 +20,6 @@ class SocketHandler(WebSocketHandler, JwtMixin):
         super().__init__(application, request, **kwargs)
         self.db: AsyncConnection = self.application.db
         self.player: Optional[Player] = None
-
-    async def get(self, *args: Any, **kwargs: Any) -> None:
-        self.request.headers['origin'] = None
-        self.request.headers['Sec-Websocket-Origin'] = None
-        await super().get(*args, **kwargs)
-
-    def data_received(self, chunk):
-        logging.info('socket data_received')
 
     def get_current_user(self):
         token = self.get_argument('token', None)
@@ -50,14 +42,18 @@ class SocketHandler(WebSocketHandler, JwtMixin):
     def allow_robot(self) -> bool:
         return self.application.allow_robot
 
+    async def data_received(self, chunk):
+        logging.info('Received stream data')
+
     @authenticated
-    def open(self):
+    async def open(self):
         user = self.current_user
         self.player = Storage.find_or_create_player(user['uid'], user['username'])
         self.player.socket = self
+        self.player.set_left(False)
         logging.info('SOCKET[%s] OPEN', self.player.uid)
 
-    def on_message(self, message):
+    async def on_message(self, message):
         if message == 'ping':
             self._write_message('pong')
         else:
@@ -67,7 +63,13 @@ class SocketHandler(WebSocketHandler, JwtMixin):
 
     def on_close(self):
         self.player.on_disconnect()
-        logging.info('SOCKET[%s] CLOSE', self.player.uid)
+        logging.info('SOCKET[%s] CLOSED[%s %s]', self.player.uid, self.close_code, self.close_reason)
+
+    def check_origin(self, origin: str) -> bool:
+        return True
+
+    def get_compression_options(self) -> Optional[Dict[str, Any]]:
+        return {'compression_level': 6, 'mem_level': 9}
 
     def write_message(self, message: List[Union[Protocol, Any]], binary=False):
         packet = json.dumps(message)

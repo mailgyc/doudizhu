@@ -97,6 +97,10 @@ class Player(object):
             if self.handle_leave(code, packet):
                 return
 
+        if code == Pt.REQ_LEAVE_ROOM:
+            self.on_disconnect()
+            return
+
         if self.state == State.INIT:
             self.handle_init(code, packet)
         elif self.state == State.WAITING:
@@ -110,6 +114,17 @@ class Player(object):
 
     def on_disconnect(self):
         self.set_left()
+
+    def on_timeout(self):
+        if not self.is_left():
+            return
+        if self.state == State.CALL_SCORE:
+            self.on_message([Pt.REQ_CALL_SCORE, {'rob': 0}])
+        elif self.state == State.PLAYING:
+            if not self.room.last_shot_poker or self.room.last_shot_seat == self.seat:
+                self.on_message([Pt.REQ_SHOT_POKER, rule.find_best_shot(self.hand_pokers)])
+            else:
+                self.on_message([Pt.REQ_SHOT_POKER, {'pokers': []}])
 
     def handle_leave(self, code: int, packet: Dict[str, Any]):
         from .storage import Storage
@@ -160,9 +175,7 @@ class Player(object):
             self.ready = packet.get('ready')
             if self.room.is_ready():
                 self.change_state(State.CALL_SCORE)
-                self.room.deal_poker()
-        elif code == Pt.REQ_LEAVE_ROOM:
-            self.leave_room()
+                self.room.on_deal_poker()
         else:
             self.write_error('STATE[%s]' % self.state)
 
@@ -184,8 +197,6 @@ class Player(object):
                 'pokers': self.room.pokers if is_end else [],
             }]
             self.room.broadcast(response)
-        elif code == Pt.REQ_LEAVE_ROOM:
-            self.set_left()
         else:
             self.write_error('STATE[%s]' % self.state)
 
@@ -214,8 +225,6 @@ class Player(object):
             else:
                 self.change_state(State.GAME_OVER)
                 self.room.on_game_over(self)
-        elif code == Pt.REQ_LEAVE_ROOM:
-            self.set_left()
         else:
             self.write_error('STATE[%s]' % self.state)
 
@@ -246,6 +255,10 @@ class Player(object):
 
     def is_left(self) -> bool:
         return self._leave == 1
+
+    @property
+    def timeout(self):
+        return 2 if self.is_left() else 20
 
     def set_left(self, is_left=1):
         self._leave = is_left

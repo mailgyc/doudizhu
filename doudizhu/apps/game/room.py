@@ -11,6 +11,7 @@ from tornado.ioloop import IOLoop
 
 from .protocol import Protocol as Pt
 from .rule import rule
+from .timer import Timer
 
 if TYPE_CHECKING:
     from .player import Player
@@ -34,7 +35,7 @@ class Room(object):
         self.players: List[Optional[Player]] = [None, None, None]
         self.pokers: List[int] = []
 
-        self.timer = 30
+        self.timer = Timer(self.on_timeout)
         self.whose_turn = 0
         self.landlord_seat = 0
         self.bomb_multiple = 2
@@ -53,7 +54,7 @@ class Room(object):
 
         self.pokers: List[int] = []
 
-        self.timer = 30
+        self.timer.stop_timing()
         self.whose_turn = 0
         self.landlord_seat = (self.landlord_seat + 1) % 3
         self.bomb_multiple = 2
@@ -76,7 +77,7 @@ class Room(object):
             'state': self.players[0].state,
             'landlord_uid': self.seat_to_uid(self.landlord_seat),
             'whose_turn': self.seat_to_uid(self.whose_turn),
-            'timer': self.timer,
+            'timer': self.timer.timeout,
             'last_shot_uid': self.seat_to_uid(self.last_shot_seat),
             'last_shot_poker': self.last_shot_poker,
         }
@@ -105,20 +106,14 @@ class Room(object):
             return
 
         from .components.simple import RobotPlayer
-        p1 = RobotPlayer(10 + nth, f'IDIOT-{nth}', self)
+        p1 = RobotPlayer(10000 + nth, f'IDIOT-{nth}', self)
         p1.to_server([Pt.REQ_JOIN_ROOM, {'room': self.room_id, 'level': 1}])
 
         if nth == 1:
             IOLoop.current().call_later(1, self.add_robot, nth=2)
 
-    def _on_join(self, target: Player):
-        for i, player in enumerate(self.players):
-            if player:
-                continue
-            target.seat = i
-            self.players[i] = target
-            return True
-        return False
+    def on_timeout(self):
+        self.turn_player.on_timeout()
 
     def on_join(self, target: Player):
         if self._on_join(target):
@@ -145,6 +140,32 @@ class Room(object):
                 return True
             self.go_prev_turn()
         return True
+
+    def on_deal_poker(self):
+        try:
+            from .dealer import generate_pokers
+            self.pokers = generate_pokers(self.allow_robot)
+        except ModuleNotFoundError:
+            self.pokers = list(range(1, 55))
+            random.shuffle(self.pokers)
+            logging.info('RANDOM POKERS')
+
+        for i in range(3):
+            self.players[i].push_pokers(self.pokers[i * 17: (i + 1) * 17])
+
+        self.pokers = self.pokers[51:]
+
+        self.whose_turn = self.landlord_seat
+        self.timer.start_timing(self.turn_player.timeout)
+        for player in self.players:
+            response = [Pt.RSP_DEAL_POKER, {
+                'uid': self.turn_player.uid,
+                'timer': self.timer.timeout,
+                'pokers': player.hand_pokers
+            }]
+            if not player.is_left():
+                player.write_message(response)
+            logging.info('ROOM[%s] DEAL[%s]', self.room_id, response)
 
     def on_shot(self, seat: int, pokers: List[int]) -> str:
         if pokers:
@@ -184,7 +205,6 @@ class Room(object):
             return False
 
     def on_game_over(self, winner: Player):
-
         spring = self.is_spring(winner)
         anti_spring = self.anti_spring(winner)
         if spring or anti_spring:
@@ -206,6 +226,7 @@ class Room(object):
         self.broadcast(response)
         logging.info('Room[%d] GameOver', self.room_id)
 
+        self.timer.stop_timing()
         IOLoop.current().add_callback(self.restart)
 
     @property
@@ -255,35 +276,20 @@ class Room(object):
                 return False
         return True
 
-    def deal_poker(self):
-        try:
-            from .dealer import generate_pokers
-            self.pokers = generate_pokers(self.allow_robot)
-        except ModuleNotFoundError:
-            self.pokers = list(range(1, 55))
-            random.shuffle(self.pokers)
-            logging.info('RANDOM POKERS')
-
-        for i in range(3):
-            self.players[i].push_pokers(self.pokers[i * 17: (i + 1) * 17])
-
-        self.pokers = self.pokers[51:]
-
-        self.whose_turn = self.landlord_seat
-        for player in self.players:
-            response = [Pt.RSP_DEAL_POKER, {
-                'uid': self.turn_player.uid,
-                'timer': self.timer,
-                'pokers': player.hand_pokers
-            }]
-            if not player.is_left():
-                player.write_message(response)
-            logging.info('ROOM[%s] DEAL[%s]', self.room_id, response)
+    def _on_join(self, target: Player):
+        for i, player in enumerate(self.players):
+            if player:
+                continue
+            target.seat = i
+            self.players[i] = target
+            return True
+        return False
 
     def go_next_turn(self):
         self.whose_turn += 1
         if self.whose_turn == 3:
             self.whose_turn = 0
+        self.timer.start_timing(self.turn_player.timeout)
 
     def go_prev_turn(self):
         self.whose_turn -= 1
