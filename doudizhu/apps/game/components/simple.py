@@ -35,33 +35,35 @@ class RobotPlayer(Player):
             self.auto_ready()
         elif code == Pt.RSP_DEAL_POKER:
             if self.uid == packet[1]['uid']:
-                self.auto_call_score()
+                self.auto_rob()
         elif code == Pt.RSP_CALL_SCORE:
             if self.room.turn_player == self:
                 landlord = packet[1]['landlord']
                 if landlord == -1:
-                    self.auto_call_score()
+                    self.auto_rob()
                 elif self.room.turn_player == self:
-                    IOLoop.current().call_later(1, self.auto_shot_poker)
+                    IOLoop.current().call_later(1, self.auto_shot)
         elif code == Pt.RSP_SHOT_POKER:
             if self.room.turn_player == self and self.hand_pokers:
-                self.auto_shot_poker()
+                self.auto_shot()
         elif code == Pt.RSP_GAME_OVER:
             self.auto_ready()
 
     def auto_ready(self):
         IOLoop.current().add_callback(self.to_server, [Pt.REQ_READY, {'ready': 1}])
 
-    def auto_call_score(self):
-        packet = [Pt.REQ_CALL_SCORE, {'rob': randint(0, 1)}]
+    def auto_rob(self):
+        pokers = [poker for poker in (54, 53, 2, 15, 28, 41) if poker in self.hand_pokers]
+        rob = int(len(pokers) > 4)
+        packet = [Pt.REQ_CALL_SCORE, {'rob': rob}]
         IOLoop.current().call_later(1.5, self.to_server, packet)
 
-    def auto_shot_poker(self):
+    def auto_shot(self):
         if not self.room.last_shot_poker or self.room.last_shot_seat == self.seat:
             pokers = rule.find_best_shot(self.hand_pokers)
         else:
             follow = not self.room.players[self.room.last_shot_seat].landlord == 1
-            pokers = rule.cards_above(self.hand_pokers, self.room.last_shot_poker, follow)
+            pokers = rule.find_best_follow(self.hand_pokers, self.room.last_shot_poker, follow)
 
         packet = [Pt.REQ_SHOT_POKER, {'pokers': pokers}]
         IOLoop.current().call_later(2, self.to_server, packet)

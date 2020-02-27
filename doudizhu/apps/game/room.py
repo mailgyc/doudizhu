@@ -234,7 +234,7 @@ class Room(object):
         return reduce(mul, self._multiple_details.values(), 1) // self._multiple_details['origin']
 
     def re_multiple(self):
-        joker_number = rule.count_joker(self.pokers)
+        joker_number = rule.get_joker_no(self.pokers)
         if joker_number > 0:
             self._multiple_details['di'] *= 2 * joker_number
             return
