@@ -50,15 +50,14 @@ class SocketHandler(WebSocketHandler, JwtMixin):
         user = self.current_user
         self.player = Storage.find_or_create_player(user['uid'], user['username'])
         self.player.socket = self
-        self.player.set_left(False)
         logging.info('SOCKET[%s] OPEN', self.player.uid)
 
     async def on_message(self, message):
         if message == 'ping':
             self._write_message('pong')
         else:
-            packet = json.loads(message)
             logging.info('REQ[%d]: %s', self.uid, message)
+            packet = json.loads(message)
             self.player.on_message(packet)
 
     def on_close(self):

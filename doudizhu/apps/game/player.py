@@ -129,6 +129,7 @@ class Player(object):
     def handle_leave(self, code: int, packet: Dict[str, Any]):
         from .storage import Storage
         if code == Pt.REQ_JOIN_ROOM:
+            self.set_left(False)
             room_id, level = packet.get('room', -1), packet.get('level', 1)
             if room_id == -1:
                 self.restart()
@@ -258,7 +259,7 @@ class Player(object):
 
     @property
     def timeout(self):
-        return 2 if self.is_left() else 20
+        return 5 if self.is_left() else 20
 
     def set_left(self, is_left=1):
         self._leave = is_left

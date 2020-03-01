@@ -18,11 +18,12 @@ if TYPE_CHECKING:
 
 
 class Room(object):
+    robot_no = 0
 
     def __init__(self, room_id, level=1, allow_robot=True):
         self.room_id = room_id
         self._multiple_details: Dict[str, int] = {
-            'origin': 15,
+            'origin': 10,
             'di': 1,
             'ming': 1,
             'bomb': 1,
@@ -64,10 +65,10 @@ class Room(object):
         self.shot_round = []
 
         for player in self.players:
-            if not player.is_left():
-                player.restart()
+            if player.is_left():
+                IOLoop.current().add_callback(self.on_leave, player, True)
             else:
-                IOLoop.current().add_callback(player.leave_room)
+                player.restart()
 
     def sync_data(self):
         return {
@@ -105,12 +106,17 @@ class Room(object):
             # only allow [human robot robot]
             return
 
+        if nth == 1 and self.robot_no > 5:
+            # limit robot number
+            return
+
         from .components.simple import RobotPlayer
         p1 = RobotPlayer(10000 + nth, f'IDIOT-{nth}', self)
         p1.to_server([Pt.REQ_JOIN_ROOM, {'room': self.room_id, 'level': 1}])
 
         if nth == 1:
-            IOLoop.current().call_later(1, self.add_robot, nth=2)
+            IOLoop.current().call_later(3, self.add_robot, nth=2)
+            self.robot_no += 1
 
     def on_timeout(self):
         self.turn_player.on_timeout()
@@ -118,7 +124,7 @@ class Room(object):
     def on_join(self, target: Player):
         if self._on_join(target):
             if self.allow_robot:
-                IOLoop.current().call_later(0.1, self.add_robot, nth=1)
+                IOLoop.current().call_later(10, self.add_robot, nth=1)
             return True
         return False
 
@@ -188,16 +194,19 @@ class Room(object):
         self.shot_round.append(pokers)
         return ''
 
-    def on_leave(self, target: Player):
+    def on_leave(self, target: Player, is_restart=False):
         from .components.simple import RobotPlayer
         from .storage import Storage
         try:
+            free_robot = 0
             for i, player in enumerate(self.players):
                 if player == target:
                     self.players[i] = None
-                elif isinstance(player, RobotPlayer):
+                elif is_restart and isinstance(player, RobotPlayer):
                     self.players[i] = None
+                    free_robot = 1
 
+            self.robot_no -= free_robot
             Storage.on_room_changed(self)
             return True
         except ValueError:
@@ -231,7 +240,7 @@ class Room(object):
 
     @property
     def multiple(self) -> int:
-        return reduce(mul, self._multiple_details.values(), 1) // self._multiple_details['origin']
+        return reduce(mul, self._multiple_details.values(), 15) // self._multiple_details['origin']
 
     def re_multiple(self):
         joker_number = rule.get_joker_no(self.pokers)
@@ -243,7 +252,7 @@ class Room(object):
             self._multiple_details['di'] *= 3
 
     def get_point(self, winner: Player, player: Player) -> int:
-        point = reduce(mul, self._multiple_details.values(), 10)
+        point = reduce(mul, self._multiple_details.values(), 15)
         if self.landlord == winner:
             if winner == player:
                 return point * 2
