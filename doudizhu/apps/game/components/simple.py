@@ -64,7 +64,7 @@ class RobotPlayer(Player):
         else:
             ally = self.room.players[self.room.last_shot_seat].landlord == 0
             left_pokers = len(self.room.players[self.room.last_shot_seat].hand_pokers)
-            if ally and left_pokers <= 4:
+            if ally and left_pokers <= 4 and len(self.hand_pokers) - len(self.room.last_shot_poker) > 4:
                 pokers = []
             else:
                 pokers = rule.find_best_follow(self.hand_pokers, self.room.last_shot_poker, ally)
