@@ -54,7 +54,7 @@ class RobotPlayer(Player):
 
     def auto_rob(self):
         pokers = [poker for poker in (54, 53, 2, 15, 28, 41) if poker in self.hand_pokers]
-        rob = int(len(pokers) > 4)
+        rob = int(len(pokers) >= 4)
         packet = [Pt.REQ_CALL_SCORE, {'rob': rob}]
         IOLoop.current().call_later(1.5, self.to_server, packet)
 
@@ -62,8 +62,14 @@ class RobotPlayer(Player):
         if not self.room.last_shot_poker or self.room.last_shot_seat == self.seat:
             pokers = rule.find_best_shot(self.hand_pokers)
         else:
-            follow = not self.room.players[self.room.last_shot_seat].landlord == 1
-            pokers = rule.find_best_follow(self.hand_pokers, self.room.last_shot_poker, follow)
+            ally = self.room.players[self.room.last_shot_seat].landlord == 0
+            left_pokers = len(self.room.players[self.room.last_shot_seat].hand_pokers)
+            if ally and left_pokers <= 4:
+                pokers = []
+            else:
+                pokers = rule.find_best_follow(self.hand_pokers, self.room.last_shot_poker, ally)
+                if 53 in pokers and 54 in pokers and left_pokers > 10:
+                    pokers = []
 
         packet = [Pt.REQ_SHOT_POKER, {'pokers': pokers}]
         IOLoop.current().call_later(2, self.to_server, packet)
