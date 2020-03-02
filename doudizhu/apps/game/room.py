@@ -250,7 +250,10 @@ class Room(object):
             return
 
         if rule.is_same_color(self.pokers):
-            self._multiple_details['di'] *= 3
+            self._multiple_details['di'] *= 2
+
+        if rule.is_same_color(self.pokers):
+            self._multiple_details['di'] *= 2
 
     def get_point(self, winner: Player, player: Player) -> int:
         point = reduce(mul, self._multiple_details.values(), 1)

@@ -71,7 +71,13 @@ class Rule(object):
             for i, spec in enumerate(self.rules[turn_card_type]):
                 if i > turn_card_value and self.is_contains(cards, spec):
                     left_cards = self.minus(cards, spec)
-                    if self._find_one_shot(left_cards) or total_single_no - self.get_single_no(left_cards) >= reduce:
+                    if self._find_one_shot(left_cards):
+                        return spec
+                    if total_single_no - self.get_single_no(left_cards) >= reduce:
+                        return spec
+                    if turn_card_type == 'single' and spec == '2':
+                        return spec
+                    if turn_card_type == 'pair' and (spec == '22' or spec == 'AA'):
                         return spec
             if ally and len(hand_cards) - len(turn_cards) >= 2:
                 break
@@ -298,8 +304,21 @@ class Rule(object):
 
     @staticmethod
     def is_same_color(hand_pokers: List[int]) -> bool:
-        colors = [(poker - 1) // 13 for poker in hand_pokers]
-        return set(colors) == 1
+        colors = map(lambda poker: (poker - 1) // 13, hand_pokers)
+        return len(set(colors)) == 1
+
+    @staticmethod
+    def is_short_seq(hand_pokers: List[int]) -> bool:
+        if any(map(lambda p: p in hand_pokers,  [2, 15, 28, 41, 53, 54])):
+            return False
+        pokers = []
+        for poker in hand_pokers:
+            poker = poker % 13
+            if poker == 0 or poker == 1:
+                poker += 13
+            pokers.append(poker)
+        pokers.sort()
+        return sum(pokers) == (pokers[0] + pokers[-1]) * len(pokers) // 2
 
     @staticmethod
     def get_joker_no(hand_pokers: List[str]) -> int:
@@ -345,5 +364,7 @@ with open('static/rule.json', 'r') as f:
     # from random import sample
     # print(rule._find_best_shot([c for c in 'KKKKwW']))
     # print(rule._find_follow_shot([c for c in 'KKKKAA22'], [c for c in '22'], False))
+    # print(rule._find_follow_shot([c for c in 'A22'], [c for c in 'A'], False))
+    # print(rule._find_follow_shot([c for c in 'KA222'], [c for c in 'AA'], False))
     # rnd = sample(list(range(1, 55)), k=17)
     # print(''.join(rule._to_cards(rnd)), ''.join(rule._to_cards(rule.find_best_shot(rnd))))
