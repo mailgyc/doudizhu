@@ -24,6 +24,7 @@ class Room(object):
         self.room_id = room_id
         self._multiple_details: Dict[str, int] = {
             'origin': 10,
+            'origin_multiple': 15,
             'di': 1,
             'ming': 1,
             'bomb': 1,
@@ -49,7 +50,7 @@ class Room(object):
 
     def restart(self):
         for key, val in self._multiple_details.items():
-            if key == 'origin':
+            if key.startswith('origin'):
                 continue
             self._multiple_details[key] = 1
 
@@ -240,7 +241,7 @@ class Room(object):
 
     @property
     def multiple(self) -> int:
-        return reduce(mul, self._multiple_details.values(), 15) // self._multiple_details['origin']
+        return reduce(mul, self._multiple_details.values(), 1) // self._multiple_details['origin']
 
     def re_multiple(self):
         joker_number = rule.get_joker_no(self.pokers)
@@ -252,7 +253,7 @@ class Room(object):
             self._multiple_details['di'] *= 3
 
     def get_point(self, winner: Player, player: Player) -> int:
-        point = reduce(mul, self._multiple_details.values(), 15)
+        point = reduce(mul, self._multiple_details.values(), 1)
         if self.landlord == winner:
             if winner == player:
                 return point * 2

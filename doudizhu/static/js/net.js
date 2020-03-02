@@ -119,7 +119,7 @@ PG.Protocol = {
      *      "spring": int 是否春天 1/0,
      *      "antispring": int 是否反春 1/0,
      *      "multiple": {
-     *         "origin": int 初始,
+     *         "origin": int 初始倍数,
      *         "di": int   底牌,
      *         "ming": int 明牌,
      *         "bomb": int 炸弹,
