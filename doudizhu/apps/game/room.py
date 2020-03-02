@@ -252,7 +252,7 @@ class Room(object):
         if rule.is_same_color(self.pokers):
             self._multiple_details['di'] *= 2
 
-        if rule.is_same_color(self.pokers):
+        if rule.is_short_seq(self.pokers):
             self._multiple_details['di'] *= 2
 
     def get_point(self, winner: Player, player: Player) -> int:
