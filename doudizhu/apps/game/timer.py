@@ -14,7 +14,7 @@ class Timer(object):
 
     @property
     def timeout(self) -> int:
-        return max(int(time.time() - self._last_time), self._timeout)
+        return max(self._timeout - int(time.time() - self._last_time), 0)
 
     def start_timing(self, timeout: int = 20):
         if timeout:
