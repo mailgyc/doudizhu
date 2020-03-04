@@ -43,11 +43,13 @@ class RestfulHandler(RequestHandler):
     required_fields = []
 
     def prepare(self):
-        if self.required_fields and self.request.headers.get('Content-Type') == 'application/json':
+        self.request.remote_ip = self.client_ip
+        if self.request.body and self.request.headers.get('Content-Type') == 'application/json':
             args = json_decode(self.request.body)
-            for field in self.required_fields:
-                if field not in args:
-                    raise HTTPError(403, reason=f'The field "{field}" is required')
+            if self.required_fields:
+                for field in self.required_fields:
+                    if field not in args:
+                        raise HTTPError(403, reason=f'The field "{field}" is required')
             setattr(self, '_post_json', args)
 
     def set_default_headers(self):

@@ -29,6 +29,7 @@ class Application(tornado.web.Application):
         'template_path': TEMPLATE_ROOT,
         'static_path': STATIC_ROOT,
         'static_url_prefix': STATIC_URL,
+        'login_url': '/login',
     }
 
     def __init__(self):
