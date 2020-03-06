@@ -3,6 +3,7 @@ from __future__ import annotations
 import functools
 import logging
 from enum import IntEnum
+from random import randint
 from typing import TYPE_CHECKING, List, Optional, Dict, Any
 
 from .protocol import Protocol as Pt
@@ -10,6 +11,7 @@ from .rule import rule
 
 if TYPE_CHECKING:
     from .room import Room
+    from .views import SocketHandler
 
 logger = logging.getLogger(__file__)
 
@@ -38,6 +40,8 @@ class Player(object):
     def __init__(self, uid: int, name: str):
         self.uid = uid
         self.name = name
+        self.sex = randint(0, 1)
+        self.point = 1000
         self.room: Optional[Room] = None
         self.seat = -1
         self.state = State.INIT
@@ -49,7 +53,7 @@ class Player(object):
         self.landlord = 0
         self._hand_pokers: List[int] = []
 
-        self.socket = None
+        self.socket: Optional[SocketHandler] = None
 
     def restart(self):
         self._ready = 0
@@ -63,11 +67,13 @@ class Player(object):
         return {
             'uid': self.uid,
             'name': self.name,
+            'sex': self.sex,
             'icon': '',
             'ready': self.ready,
             'rob': self.rob,
             'leave': self._leave,
             'landlord': self.landlord,
+            'point': self.point,
             'pokers': self.hand_pokers if real else [0] * len(self.hand_pokers),
         }
 
@@ -87,12 +93,7 @@ class Player(object):
     def hand_pokers(self) -> List[int]:
         return self._hand_pokers
 
-    def on_message(self, message):
-        if len(message) < 2 or not (isinstance(message[0], int) and isinstance(message[1], dict)):
-            self.write_error('Protocol cannot be resolved.')
-            return
-
-        code, packet = message[0], message[1]
+    def on_message(self, code: int, packet: Dict[str, Any]):
         if self.is_left():
             if self.handle_leave(code, packet):
                 return
@@ -149,14 +150,7 @@ class Player(object):
 
     def handle_init(self, code: int, packet: Dict[str, Any]):
         from .storage import Storage
-
-        if code == Pt.REQ_ROOM_LIST:
-            pass
-
-        elif code == Pt.REQ_NEW_ROOM:
-            pass
-
-        elif code == Pt.REQ_JOIN_ROOM:
+        if code == Pt.REQ_JOIN_ROOM:
             room_id, level = packet.get('room', -1), packet.get('level', 1)
             room = Storage.find_room(room_id, level, self.allow_robot)
 
@@ -236,7 +230,7 @@ class Player(object):
         for player in self.room.players:
             player.state = state
 
-    def write_message(self, packet: List[int, Dict[str, Any]]):
+    def write_message(self, packet):
         self.socket.write_message(packet)
 
     def write_error(self, reason: str):

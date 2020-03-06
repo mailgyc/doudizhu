@@ -4,7 +4,16 @@ PG.Protocol = {
      */
     ERROR: 0,
 
+    /**
+     * 请求房间列表
+     * [REQ_ROOM_LIST, {}]
+     */
     REQ_ROOM_LIST: 1001,
+    /**
+     * [RSP_ROOM_LIST, {
+     *     "rooms": [{"level": int 房间等级, "number": int 房间人数}]
+     * }]
+     */
     RSP_ROOM_LIST: 1002,
 
     REQ_NEW_ROOM: 1003,
@@ -32,9 +41,11 @@ PG.Protocol = {
      *          "last_shot_poker": int 房间状态,
      *      },
      *      "players": [{
-     *          "uid": 用户ID,
+     *          "uid": int 用户ID,
      *          "name": 用户名,
      *          "icon": 头像,
+     *          "sex": int 0 男 1 女
+     *          "point": int 分数
      *          "ready": int 是否准备(1 准备 0 未准备),
      *          "rob":  int 是否抢地主 (-1/0/1),
      *          "leave": int 是否离开房间 (1 离开离开 0 在房间)
@@ -140,7 +151,7 @@ PG.Socket = {
 };
 
 const logging_pretty = function (tag, packet) {
-    for (key in PG.Protocol) {
+    for (let key in PG.Protocol) {
         if (packet[0] === PG.Protocol[key])
             console.log(`${tag}: ${key} ${JSON.stringify(packet.slice(1))}`)
     }

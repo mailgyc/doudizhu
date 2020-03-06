@@ -75,15 +75,16 @@ class Rule(object):
                         return spec
                     if total_single_no - self.get_single_no(left_cards) >= reduce:
                         return spec
-                    if turn_card_type == 'single' and spec == '2':
-                        return spec
-                    if turn_card_type == 'pair' and (spec == '22' or spec == 'AA'):
-                        return spec
             if ally and len(hand_cards) - len(turn_cards) >= 2:
                 break
 
         if ally:
             return ''
+
+        for cards in (big_cards, hand_cards):
+            for i, spec in enumerate(self.rules[turn_card_type]):
+                if i > turn_card_value and self.is_contains(cards, spec):
+                    return spec
 
         if bombs:
             return bombs[0]

@@ -12,6 +12,16 @@ class Storage(object):
     __playing_rooms__: Dict[int, Room] = {}
 
     @classmethod
+    def room_list(cls):
+        rooms = {1: 33, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0}
+        for room in cls.__playing_rooms__.values():
+            if room.level in rooms:
+                rooms[room.level] += 3
+            else:
+                rooms[room.level] = 0
+        return [{'level': k, 'number': v} for k, v in rooms.items()]
+
+    @classmethod
     def find_or_create_player(cls, uid: int, *args, **kwargs) -> Player:
         if uid not in cls.__players__:
             cls.__players__[uid] = Player(uid, *args, **kwargs)
@@ -44,7 +54,7 @@ class Storage(object):
             return cls.__playing_rooms__[room_id]
 
         for _, room in cls.__waiting_rooms__.items():
-            if room.has_robot():
+            if room.level != level or room.has_robot():
                 continue
             return room
         return cls.new_room(level, allow_robot)

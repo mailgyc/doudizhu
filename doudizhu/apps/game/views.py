@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Optional, List, Union, Any, Dict
+from typing import Optional, Any, Dict, List, Union
 
 from tornado.escape import json_decode
 from tornado.web import authenticated
@@ -52,13 +52,33 @@ class SocketHandler(WebSocketHandler, JwtMixin):
         self.player.socket = self
         logging.info('SOCKET[%s] OPEN', self.player.uid)
 
-    async def on_message(self, message):
+    def on_message(self, message):
         if message == 'ping':
             self._write_message('pong')
-        else:
-            logging.info('REQ[%d]: %s', self.uid, message)
-            packet = json.loads(message)
-            self.player.on_message(packet)
+            return
+
+        code, packet = self.decode_message(message)
+        if code is None:
+            self.write_message([Protocol.ERROR, {'reason': 'Protocol cannot be resolved'}])
+            return
+
+        logging.info('REQ[%d]: %s', self.uid, message)
+
+        if code == Protocol.REQ_ROOM_LIST:
+            self.write_message([Protocol.RSP_ROOM_LIST, {'rooms': Storage.room_list()}])
+            return
+
+        self.player.on_message(code, packet)
+
+    @staticmethod
+    def decode_message(message):
+        try:
+            code, packet = json.loads(message)
+            if isinstance(code, int) and isinstance(packet, dict):
+                return code, packet
+        except (json.decoder.JSONDecodeError, ValueError):
+            logging.error('ERROR MESSAGE: %s', message)
+        return None, None
 
     def on_close(self):
         self.player.on_disconnect()
@@ -70,7 +90,7 @@ class SocketHandler(WebSocketHandler, JwtMixin):
     def get_compression_options(self) -> Optional[Dict[str, Any]]:
         return {'compression_level': 6, 'mem_level': 9}
 
-    def write_message(self, message: List[Union[Protocol, Any]], binary=False):
+    def write_message(self, message: List[Union[Protocol, Dict[str, Any]]], binary=False):
         packet = json.dumps(message)
         self._write_message(packet, binary)
 

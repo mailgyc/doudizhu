@@ -41,6 +41,7 @@ class LoginHandler(RestfulHandler, JwtMixin):
             'uid': uid,
             'username': username,
             'room': Storage.find_player_room_id(uid),
+            'rooms': Storage.room_list(),
             'token': self.jwt_encode({'uid': uid, 'username': username})
         })
 

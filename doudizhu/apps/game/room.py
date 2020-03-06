@@ -22,6 +22,7 @@ class Room(object):
 
     def __init__(self, room_id, level=1, allow_robot=True):
         self.room_id = room_id
+        self.level = level
         self._multiple_details: Dict[str, int] = {
             'origin': 10,
             'origin_multiple': 15,
@@ -124,7 +125,7 @@ class Room(object):
 
     def on_join(self, target: Player):
         if self._on_join(target):
-            if self.allow_robot:
+            if self.allow_robot and self.level == 1:
                 IOLoop.current().call_later(10, self.add_robot, nth=1)
             return True
         return False
@@ -228,9 +229,10 @@ class Room(object):
             'players': [],
         }]
         for player in self.players:
+            point = self.get_point(winner, player),
             response[1]['players'].append({
                 'uid': player.uid,
-                'point': self.get_point(winner, player),
+                'point': point,
                 'pokers': player.hand_pokers,
             })
         self.broadcast(response)

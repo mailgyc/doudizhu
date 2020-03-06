@@ -121,6 +121,7 @@ PG.Game.prototype = {
 
     onopen: function () {
         console.log('socket onopen');
+        PG.Socket.send([PG.Protocol.REQ_ROOM_LIST, {}]);
         PG.Socket.send([PG.Protocol.REQ_JOIN_ROOM, {"room": -1, "level": observer.get('baseScore')}]);
     },
 
@@ -136,6 +137,9 @@ PG.Game.prototype = {
     onmessage: function (message) {
         const code = message[0], packet = message[1];
         switch (code) {
+            case PG.Protocol.RSP_ROOM_LIST:
+                console.log(code, packet);
+                break;
             case PG.Protocol.RSP_JOIN_ROOM:
                 observer.set('room', packet['room']);
                 const syncInfo = packet['players'];
