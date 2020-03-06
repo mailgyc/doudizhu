@@ -13,7 +13,7 @@ class Storage(object):
 
     @classmethod
     def room_list(cls):
-        rooms = {1: 33, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0}
+        rooms = {1: 33, 2: 0, 3: 0}
         for room in cls.__playing_rooms__.values():
             if room.level in rooms:
                 rooms[room.level] += 3
