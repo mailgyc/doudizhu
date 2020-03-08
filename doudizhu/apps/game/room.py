@@ -72,12 +72,20 @@ class Room(object):
             else:
                 player.restart()
 
+    @property
+    def room_state(self):
+        from .player import State
+        for player in self.players:
+            if player and not player.is_left():
+                return player.state
+        return State.INIT
+
     def sync_data(self):
         return {
             'id': self.room_id,
             'origin': self._multiple_details['origin'],
             'multiple': self.multiple,
-            'state': self.players[0].state,
+            'state': self.room_state,
             'landlord_uid': self.seat_to_uid(self.landlord_seat),
             'whose_turn': self.seat_to_uid(self.whose_turn),
             'timer': self.timer.timeout,
