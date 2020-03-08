@@ -237,7 +237,7 @@ class Room(object):
             'players': [],
         }]
         for player in self.players:
-            point = self.get_point(winner, player),
+            point = self.get_point(winner, player)
             response[1]['players'].append({
                 'uid': player.uid,
                 'point': point,
