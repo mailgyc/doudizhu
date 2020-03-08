@@ -120,17 +120,17 @@ class Player(object):
         if not self.is_left():
             return
         if self.state == State.CALL_SCORE:
-            self.on_message([Pt.REQ_CALL_SCORE, {'rob': 0}])
+            self.on_message(Pt.REQ_CALL_SCORE, {'rob': 0})
         elif self.state == State.PLAYING:
             if not self.room.last_shot_poker or self.room.last_shot_seat == self.seat:
-                self.on_message([Pt.REQ_SHOT_POKER, rule.find_best_shot(self.hand_pokers)])
+                self.on_message(Pt.REQ_SHOT_POKER, rule.find_best_shot(self.hand_pokers))
             else:
-                self.on_message([Pt.REQ_SHOT_POKER, {'pokers': []}])
+                self.on_message(Pt.REQ_SHOT_POKER, {'pokers': []})
 
     def handle_leave(self, code: int, packet: Dict[str, Any]):
         from .storage import Storage
         if code == Pt.REQ_JOIN_ROOM:
-            self.set_left(False)
+            self.set_left(0)
             room_id, level = packet.get('room', -1), packet.get('level', 1)
             if room_id == -1:
                 self.restart()

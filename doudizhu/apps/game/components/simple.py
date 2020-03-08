@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from random import randint
 from typing import TYPE_CHECKING
 
 from tornado.ioloop import IOLoop
@@ -23,8 +22,8 @@ class RobotPlayer(Player):
     def allow_robot(self) -> bool:
         return True
 
-    def to_server(self, packet):
-        IOLoop.current().add_callback(self.on_message, packet)
+    def to_server(self, code, packet):
+        IOLoop.current().add_callback(self.on_message, code, packet)
 
     def write_message(self, packet):
         IOLoop.current().add_callback(self._write_message, packet)
@@ -50,13 +49,12 @@ class RobotPlayer(Player):
             self.auto_ready()
 
     def auto_ready(self):
-        IOLoop.current().add_callback(self.to_server, [Pt.REQ_READY, {'ready': 1}])
+        IOLoop.current().add_callback(self.to_server, Pt.REQ_READY, {'ready': 1})
 
     def auto_rob(self):
         pokers = [poker for poker in (54, 53, 2, 15, 28, 41) if poker in self.hand_pokers]
         rob = int(len(pokers) >= 4)
-        packet = [Pt.REQ_CALL_SCORE, {'rob': rob}]
-        IOLoop.current().call_later(1.5, self.to_server, packet)
+        IOLoop.current().call_later(1.5, self.to_server, Pt.REQ_CALL_SCORE, {'rob': rob})
 
     def auto_shot(self):
         if not self.room.last_shot_poker or self.room.last_shot_seat == self.seat:
@@ -71,5 +69,4 @@ class RobotPlayer(Player):
                 if 53 in pokers and 54 in pokers and left_pokers > 10:
                     pokers = []
 
-        packet = [Pt.REQ_SHOT_POKER, {'pokers': pokers}]
-        IOLoop.current().call_later(2, self.to_server, packet)
+        IOLoop.current().call_later(2, self.to_server, Pt.REQ_SHOT_POKER, {'pokers': pokers})
