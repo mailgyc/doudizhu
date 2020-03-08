@@ -122,7 +122,7 @@ class Room(object):
 
         from .components.simple import RobotPlayer
         p1 = RobotPlayer(10000 + nth, f'IDIOT-{nth}', self)
-        p1.to_server([Pt.REQ_JOIN_ROOM, {'room': self.room_id, 'level': 1}])
+        p1.to_server(Pt.REQ_JOIN_ROOM, {'room': self.room_id, 'level': 1})
 
         if nth == 1:
             IOLoop.current().call_later(3, self.add_robot, nth=2)
