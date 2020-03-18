@@ -26,16 +26,14 @@ class LoginHandler(RestfulHandler, JwtMixin):
         if not account:
             uid = await self.db.insert(
                 'INSERT INTO account (openid, username, sex, avatar) VALUES (%s,%s,%s,%s)', username, username, 1, '')
-            account = {'id': uid, 'username': username}
+            account = {'id': uid, 'username': username, 'avatar': ''}
 
-        uid, username = account.get('id'), account.get('username')
-        self.set_secure_cookie('user', json_encode({'uid': uid, 'username': username}))
+        self.set_secure_cookie('user', json_encode(account))
         self.write({
-            'uid': uid,
-            'username': username,
-            'room': Storage.find_player_room_id(uid),
+            **account,
+            'room': Storage.find_player_room_id(account['uid']),
             'rooms': Storage.room_list(),
-            'token': self.jwt_encode({'uid': uid, 'username': username})
+            'token': self.jwt_encode(account)
         })
 
 
