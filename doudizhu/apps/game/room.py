@@ -121,7 +121,7 @@ class Room(object):
             return
 
         from .components.simple import RobotPlayer
-        p1 = RobotPlayer(10000 + nth, f'IDIOT-{nth}', self)
+        p1 = RobotPlayer(10000 + self.robot_no + nth, f'IDIOT-{nth}', self)
         p1.to_server(Pt.REQ_JOIN_ROOM, {'room': self.room_id, 'level': 1})
 
         if nth == 1:
