@@ -1,12 +1,10 @@
 from typing import Optional, Awaitable
 
-import bcrypt
-import pymysql
 from tornado.escape import json_encode
 from tornado.web import authenticated, RequestHandler
 
 from apps.game.storage import Storage
-from contrib.handlers import RestfulHandler, JwtMixin
+from contrib.handlers import RestfulHandler
 
 
 class IndexHandler(RequestHandler):
@@ -18,7 +16,7 @@ class IndexHandler(RequestHandler):
         self.render('poker.html')
 
 
-class LoginHandler(RestfulHandler, JwtMixin):
+class LoginHandler(RestfulHandler):
     required_fields = ('username', )
 
     async def post(self):
@@ -37,7 +35,6 @@ class LoginHandler(RestfulHandler, JwtMixin):
             'username': username,
             'room': Storage.find_player_room_id(uid),
             'rooms': Storage.room_list(),
-            'token': self.jwt_encode({'uid': uid, 'username': username})
         })
 
 
