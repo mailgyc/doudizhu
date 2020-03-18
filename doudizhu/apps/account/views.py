@@ -26,7 +26,7 @@ class LoginHandler(RestfulHandler, JwtMixin):
         if not account:
             uid = await self.db.insert(
                 'INSERT INTO account (openid, username, sex, avatar) VALUES (%s,%s,%s,%s)', username, username, 1, '')
-            account = {'id': uid, 'username': username, 'avatar': ''}
+            account = {'uid': uid, 'username': username, 'sex': 1, 'avatar': ''}
 
         self.set_secure_cookie('user', json_encode(account))
         self.write({
