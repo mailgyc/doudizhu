@@ -26,7 +26,7 @@ class JwtMixin(object):
         try:
             return jwt.decode(token, SECRET_KEY)
         except jwt.PyJWTError as e:
-            logging.exception('JWT AUTH', e)
+            logging.error('JWT', e)
             return None
 
     @staticmethod
