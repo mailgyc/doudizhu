@@ -3,7 +3,6 @@ from __future__ import annotations
 import functools
 import logging
 from enum import IntEnum
-from random import randint
 from typing import TYPE_CHECKING, List, Optional, Dict, Any
 
 from .protocol import Protocol as Pt
@@ -37,10 +36,11 @@ class State(IntEnum):
 
 class Player(object):
 
-    def __init__(self, uid: int, name: str):
+    def __init__(self, uid: int, name: str, sex: int, avatar: str):
         self.uid = uid
         self.name = name
-        self.sex = randint(0, 1)
+        self.sex = sex
+        self.avatar = avatar
         self.point = 1000
         self.room: Optional[Room] = None
         self.seat = -1
@@ -68,7 +68,7 @@ class Player(object):
             'uid': self.uid,
             'name': self.name,
             'sex': self.sex,
-            'icon': '',
+            'avatar': self.avatar,
             'ready': self.ready,
             'rob': self.rob,
             'leave': self._leave,

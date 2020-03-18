@@ -48,7 +48,7 @@ class SocketHandler(WebSocketHandler, JwtMixin):
     @authenticated
     async def open(self):
         user = self.current_user
-        self.player = Storage.find_or_create_player(user['uid'], user['username'])
+        self.player = Storage.find_player(user['uid'], user['username'], user.get('sex', 1), user.get('avatar', ''))
         self.player.socket = self
         logging.info('SOCKET[%s] OPEN', self.player.uid)
 

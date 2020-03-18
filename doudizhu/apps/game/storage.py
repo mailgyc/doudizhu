@@ -22,7 +22,7 @@ class Storage(object):
         return [{'level': k, 'number': v} for k, v in rooms.items()]
 
     @classmethod
-    def find_or_create_player(cls, uid: int, *args, **kwargs) -> Player:
+    def find_player(cls, uid: int, *args, **kwargs) -> Player:
         if uid not in cls.__players__:
             cls.__players__[uid] = Player(uid, *args, **kwargs)
         return cls.__players__[uid]
