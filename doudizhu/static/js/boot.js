@@ -162,58 +162,33 @@ PG.Login = {
         let bg = this.game.add.sprite(this.game.width / 2, 0, 'bg');
         bg.anchor.set(0.5, 0);
 
-        let style = {
-            font: '24px Arial', fill: '#000', width: 300, padding: 12,
-            borderWidth: 1, borderColor: '#c8c8c8', borderRadius: 2,
-            textAlign: 'center', placeHolder: '姓名'
-        };
         this.game.add.plugin(PhaserInput.Plugin);
+        const style = {
+            font: '32px Arial', fill: '#000', width: 300, padding: 12,
+            borderWidth: 1, borderColor: '#c8c8c8', borderRadius: 2,
+            textAlign: 'center', placeHolder: '请输入用户名'
+        };
+        this.username = this.game.add.inputField((this.game.world.width - 300) / 2, this.game.world.centerY - 40, style);
 
-        this.username = this.game.add.inputField((this.game.world.width - 300) / 2, this.game.world.centerY - 160, style);
-
-        style.placeHolder = '密码';
-        this.password = this.game.add.inputField((this.game.world.width - 300) / 2, this.game.world.centerY - 90, style);
-
-        style.placeHolder = '再次输入密码';
-        this.passwordAgain = this.game.add.inputField((this.game.world.width - 300) / 2, this.game.world.centerY - 15, style);
-
-        const errorStyle = {font: "22px Arial", fill: "#f00", align: "center"};
-        this.errorText = this.game.add.text(this.game.world.centerX, this.game.world.centerY + 45, '', errorStyle);
+        this.errorText = this.game.add.text(this.game.world.centerX, this.game.world.centerY + 24, '', {font: "24px Arial", fill: "#f00", align: "center"});
         this.errorText.anchor.set(0.5, 0);
 
-        let login = this.game.add.button(this.game.world.centerX, this.game.world.centerY + 100, 'btn', this.onLogin, this, 'register.png', 'register.png', 'register.png');
+        let login = this.game.add.button(this.game.world.centerX, this.game.world.centerY + 100, 'btn', this.onLogin, this, 'login.png', 'login.png', 'login.png');
         login.anchor.set(0.5);
     },
 
     onLogin: function () {
+        this.errorText.text = '';
         if (!this.username.value) {
             this.username.startFocus();
             this.errorText.text = '请输入用户名';
             return;
         }
-        if (!this.password.value) {
-            this.password.startFocus();
-            this.errorText.text = '请输入密码';
-            return;
-        }
-        if (!this.passwordAgain.value) {
-            this.passwordAgain.startFocus();
-            this.errorText.text = '请再次输入密码';
-            return;
-        }
-        if (this.password.value !== this.passwordAgain.value) {
-            this.errorText.text = "两次输入的密码不一致";
-            return;
-        }
-
         let that = this;
         const payload = {
-            "email": this.username.value,
             "username": this.username.value,
-            "password": this.password.value,
-            "password_repeat": this.password.value
         };
-        post('/signup', payload, function(status, response) {
+        post('/login', payload, function(status, response) {
             if (status === 200) {
                 PG.playerInfo = response;
                 that.state.start('MainMenu');

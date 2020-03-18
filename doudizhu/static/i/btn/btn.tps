@@ -220,6 +220,21 @@
                 <key>scale9FromFile</key>
                 <false/>
             </struct>
+            <key type="filename">login.png</key>
+            <key type="filename">register.png</key>
+            <key type="filename">signup.png</key>
+            <struct type="IndividualSpriteSettings">
+                <key>pivotPoint</key>
+                <point_f>0.5,0.5</point_f>
+                <key>scale9Enabled</key>
+                <false/>
+                <key>scale9Borders</key>
+                <rect>40,15,80,30</rect>
+                <key>scale9Paddings</key>
+                <rect>40,15,80,30</rect>
+                <key>scale9FromFile</key>
+                <false/>
+            </struct>
             <key type="filename">ready.png</key>
             <struct type="IndividualSpriteSettings">
                 <key>pivotPoint</key>
@@ -230,19 +245,6 @@
                 <rect>32,12,64,24</rect>
                 <key>scale9Paddings</key>
                 <rect>32,12,64,24</rect>
-                <key>scale9FromFile</key>
-                <false/>
-            </struct>
-            <key type="filename">register.png</key>
-            <struct type="IndividualSpriteSettings">
-                <key>pivotPoint</key>
-                <point_f>0.5,0.5</point_f>
-                <key>scale9Enabled</key>
-                <false/>
-                <key>scale9Borders</key>
-                <rect>40,15,80,30</rect>
-                <key>scale9Paddings</key>
-                <rect>40,15,80,30</rect>
                 <key>scale9FromFile</key>
                 <false/>
             </struct>
