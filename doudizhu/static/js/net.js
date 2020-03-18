@@ -43,8 +43,8 @@ PG.Protocol = {
      *      "players": [{
      *          "uid": int 用户ID,
      *          "name": 用户名,
-     *          "icon": 头像,
      *          "sex": int 0 男 1 女
+     *          "avatar": 头像,
      *          "point": int 分数
      *          "ready": int 是否准备(1 准备 0 未准备),
      *          "rob":  int 是否抢地主 (-1/0/1),

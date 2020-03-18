@@ -36,9 +36,9 @@ class State(IntEnum):
 
 class Player(object):
 
-    def __init__(self, uid: int, name: str, sex: int, avatar: str):
+    def __init__(self, uid: int, username: str, sex: int = 1, avatar: str = ''):
         self.uid = uid
-        self.name = name
+        self.name = username
         self.sex = sex
         self.avatar = avatar
         self.point = 1000
@@ -87,6 +87,7 @@ class Player(object):
             if poker <= 2:
                 return poker + 13
             return poker
+
         self._hand_pokers.sort(key=compare_single_poker)
 
     @property

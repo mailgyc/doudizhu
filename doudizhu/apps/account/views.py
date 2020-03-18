@@ -17,18 +17,18 @@ class IndexHandler(RequestHandler):
 
 
 class LoginHandler(RestfulHandler, JwtMixin):
-    required_fields = ('username', )
+    required_fields = ('username',)
 
     async def post(self):
         username = self.json.get('username')
 
-        account = await self.db.fetchone('SELECT id, username, avatar FROM account WHERE username=%s', username)
+        account = await self.db.fetchone('SELECT id uid, username, sex, avatar FROM account WHERE username=%s', username)
         if not account:
             uid = await self.db.insert(
                 'INSERT INTO account (openid, username, sex, avatar) VALUES (%s,%s,%s,%s)', username, username, 1, '')
             account = {'uid': uid, 'username': username, 'sex': 1, 'avatar': ''}
 
-        self.set_secure_cookie('user', json_encode(account))
+        self.set_secure_cookie('userinfo', json_encode(account))
         self.write({
             **account,
             'room': Storage.find_player_room_id(account['uid']),
@@ -41,20 +41,24 @@ class UserInfoHandler(RestfulHandler):
 
     @authenticated
     async def get(self):
-        account = await self.db.fetchone('SELECT id, username FROM account WHERE id=%s', self.current_user['uid'])
+        account = await self.db.fetchone('SELECT id uid, username, sex, avatar FROM account WHERE id=%s',
+                                         self.current_user['uid'])
         if not account:
-            self.clear_cookie('user')
+            self.clear_cookie('userinfo')
             self.send_error(404, reason='User not found')
             return
 
-        uid, username = account.get('id'), account.get('username')
-        self.set_secure_cookie('user', json_encode({'uid': uid, 'username': username}))
-        self.write({'uid': uid, 'username': username, 'room': Storage.find_player_room_id(uid)})
+        self.set_secure_cookie('user', json_encode(account))
+        self.write({
+            **account,
+            'room': Storage.find_player_room_id(account['uid']),
+            'rooms': Storage.room_list()
+        })
 
 
 class LogoutHandler(RestfulHandler):
 
     @authenticated
     def post(self):
-        self.clear_cookie('user')
+        self.clear_cookie('userinfo')
         self.write({})

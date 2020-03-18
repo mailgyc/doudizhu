@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 class RobotPlayer(Player):
 
-    def __init__(self, uid: int, username: str, sex: int, avatar: str, room: Room):
+    def __init__(self, uid: int, username: str, sex: int = 1, avatar: str = 0, room: Room = None):
         super().__init__(uid, username, sex, avatar)
         self.room = room
 

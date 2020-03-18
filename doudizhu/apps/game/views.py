@@ -25,7 +25,7 @@ class SocketHandler(WebSocketHandler, JwtMixin):
         token = self.get_argument('token', None)
         if token:
             return self.jwt_decode(token)
-        cookie = self.get_secure_cookie("user")
+        cookie = self.get_secure_cookie("userinfo")
         if cookie:
             return json_decode(cookie)
         return None
@@ -47,8 +47,7 @@ class SocketHandler(WebSocketHandler, JwtMixin):
 
     @authenticated
     async def open(self):
-        user = self.current_user
-        self.player = Storage.find_player(user['uid'], user['username'], user.get('sex', 1), user.get('avatar', ''))
+        self.player = Storage.find_player(**self.current_user)
         self.player.socket = self
         logging.info('SOCKET[%s] OPEN', self.player.uid)
 

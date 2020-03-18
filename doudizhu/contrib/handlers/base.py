@@ -67,9 +67,9 @@ class RestfulHandler(RequestHandler):
         self.set_status(204)
 
     def get_current_user(self):
-        user = self.get_secure_cookie('user')
-        if user:
-            return json_decode(user)
+        cookie = self.get_secure_cookie('userinfo')
+        if cookie:
+            return json_decode(cookie)
         return None
 
     def data_received(self, chunk: bytes) -> Optional[Awaitable[None]]:
