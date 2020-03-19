@@ -36,7 +36,7 @@ class State(IntEnum):
 
 class Player(object):
 
-    def __init__(self, uid: int, username: str, sex: int = 1, avatar: str = ''):
+    def __init__(self, uid: int, username: str, sex: int = 1, avatar: str = '', **kwargs):
         self.uid = uid
         self.name = username
         self.sex = sex
