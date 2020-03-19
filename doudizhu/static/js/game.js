@@ -76,37 +76,59 @@ PG.Game.prototype = {
         this.players[0].updateInfo(PG.playerInfo.uid, PG.playerInfo.username);
         PG.Socket.connect(this.onopen.bind(this), this.onmessage.bind(this), this.onerror.bind(this));
 
-        let style = {font: "22px Arial", fill: "#fff", align: "center"};
-        let titleBar = this.game.add.text(this.game.world.centerX, 0, `房间号:${0} 底分: 0 倍数: 0`, style);
+        const width = this.game.world.width;
+        const height = this.game.world.height;
+
+        const titleBar = this.game.add.text(width / 2, 0, `房间号:${0} 底分: 0 倍数: 0`, {
+            font: "22px",
+            fill: "#fff",
+            align: "center"
+        });
         titleBar.anchor.set(0.5, 0);
         observer.subscribe('room', function (room) {
             titleBar.text = `房间号:${room.id} 底分: ${room.origin} 倍数: ${room.multiple}`;
         });
 
         // 创建准备按钮
-        const sx = this.game.world.width / 2;
-        const sy = this.game.world.height * 0.6;
+        const that = this;
+        const countdown = this.game.add.text(width / 2, height / 2, '10', {
+            font: "80px",
+            fill: "#fff",
+            align: "center"
+        });
+        countdown.anchor.set(0.5);
+        countdown.visible = false;
+        observer.subscribe('countdown', function (timer) {
+            countdown.visible = timer >= 0;
+            if (timer >= 0) {
+                countdown.text = timer;
+                that.game.time.events.add(1000, function () {
+                    observer.set('countdown', observer.get('countdown') - 1);
+                }, that);
+            }
+        });
 
-        let ready = this.game.make.button(sx, sy, "btn", function() {
+        const ready = this.game.make.button(width / 2, height * 0.6, "btn", function () {
             this.send_message([PG.Protocol.REQ_READY, {"ready": 1}]);
+            observer.set('countdown', 10);
         }, this, 'ready.png', 'ready.png', 'ready.png');
         ready.anchor.set(0.5, 0);
         this.game.world.add(ready);
 
-        observer.subscribe('ready', function(is_ready) {
+        observer.subscribe('ready', function (is_ready) {
             ready.visible = !is_ready;
         });
 
         // 创建抢地主按钮
         const group = this.game.add.group();
-        let pass = this.game.make.button(this.game.world.width * 0.4, sy, "btn", function () {
+        let pass = this.game.make.button(width * 0.4, height * 0.6, "btn", function () {
             this.game.add.audio('f_score_0').play();
             this.send_message([PG.Protocol.REQ_CALL_SCORE, {"rob": 0}]);
         }, this, 'score_0.png', 'score_0.png', 'score_0.png');
         pass.anchor.set(0.5, 0);
         group.add(pass);
 
-        const rob = this.game.make.button(this.game.world.width * 0.6, sy, "btn", function() {
+        const rob = this.game.make.button(width * 0.6, height * 0.6, "btn", function () {
             this.game.add.audio('f_score_1').play();
             this.send_message([PG.Protocol.REQ_CALL_SCORE, {"rob": 1}]);
         }, this, 'score_1.png', 'score_1.png', 'score_1.png');
@@ -114,8 +136,9 @@ PG.Game.prototype = {
         group.add(rob);
         group.visible = false;
 
-        observer.subscribe('rob', function(is_rob) {
+        observer.subscribe('rob', function (is_rob) {
             group.visible = is_rob;
+            observer.set('countdown', -1);
         });
     },
 
@@ -198,7 +221,7 @@ PG.Game.prototype = {
             case PG.Protocol.RSP_GAME_OVER: {
                 const winner = packet['winner'];
                 const that = this;
-                packet['players'].forEach(function(player){
+                packet['players'].forEach(function (player) {
                     const seat = that.uidToSeat(player['uid']);
                     if (seat > 0) {
                         that.players[seat].replacePoker(player['pokers'], 0);
@@ -207,11 +230,13 @@ PG.Game.prototype = {
                 });
 
                 this.whoseTurn = this.uidToSeat(winner);
+
                 function gameOver() {
                     alert(that.players[that.whoseTurn].isLandlord ? "地主赢" : "农民赢");
                     observer.set('ready', false);
                     this.cleanWorld();
                 }
+
                 this.game.time.events.add(2000, gameOver, this);
                 break;
             }
@@ -226,7 +251,7 @@ PG.Game.prototype = {
     },
 
     cleanWorld: function () {
-        this.players.forEach(function(player) {
+        this.players.forEach(function (player) {
             player.cleanPokers();
             // player.uiLeftPoker.kill();
             player.uiHead.frameName = 'icon_farmer.png';
@@ -319,6 +344,7 @@ PG.Game.prototype = {
                 function adjust(p) {
                     that.game.add.tween(p).to({y: that.game.world.height - PG.PH / 2}, 400, Phaser.Easing.Default, true, 400);
                 }
+
                 tween.onComplete.add(adjust, this, p);
             }
         } else {

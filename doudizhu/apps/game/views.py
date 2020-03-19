@@ -51,7 +51,7 @@ class SocketHandler(WebSocketHandler, JwtMixin):
         self.player.socket = self
         logging.info('SOCKET[%s] OPEN', self.player.uid)
 
-    def on_message(self, message):
+    async def on_message(self, message):
         if message == 'ping':
             self._write_message('pong')
             return
@@ -67,17 +67,7 @@ class SocketHandler(WebSocketHandler, JwtMixin):
             self.write_message([Protocol.RSP_ROOM_LIST, {'rooms': Storage.room_list()}])
             return
 
-        self.player.on_message(code, packet)
-
-    @staticmethod
-    def decode_message(message):
-        try:
-            code, packet = json.loads(message)
-            if isinstance(code, int) and isinstance(packet, dict):
-                return code, packet
-        except (json.decoder.JSONDecodeError, ValueError):
-            logging.error('ERROR MESSAGE: %s', message)
-        return None, None
+        await self.player.on_message(code, packet)
 
     def on_close(self):
         self.player.on_disconnect()
@@ -89,7 +79,7 @@ class SocketHandler(WebSocketHandler, JwtMixin):
     def get_compression_options(self) -> Optional[Dict[str, Any]]:
         return {'compression_level': 6, 'mem_level': 9}
 
-    def write_message(self, message: List[Union[Protocol, Dict[str, Any]]], binary=False):
+    def write_message(self, message: List[Union[Protocol, Dict[str, Any]]], binary=False) -> Optional[None]:
         packet = json.dumps(message)
         self._write_message(packet, binary)
 
@@ -101,6 +91,16 @@ class SocketHandler(WebSocketHandler, JwtMixin):
             logging.info('RSP[%d]: %s', self.uid, message)
         except WebSocketClosedError:
             logging.error('WebSockedClosed[%s][%s]', self.uid, message)
+
+    @staticmethod
+    def decode_message(message):
+        try:
+            code, packet = json.loads(message)
+            if isinstance(code, int) and isinstance(packet, dict):
+                return code, packet
+        except (json.decoder.JSONDecodeError, ValueError):
+            logging.error('ERROR MESSAGE: %s', message)
+        return None, None
 
 
 class AdminHandler(RestfulHandler):

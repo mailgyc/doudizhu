@@ -8,7 +8,7 @@ class Timer(object):
 
     def __init__(self, callback: Callable, timeout: int = 20):
         self._callback = callback
-        self._timeout = timeout
+        self._timeout = timeout * 2
         self._is_running = False
         self._last_time = time.time()
 
@@ -18,7 +18,7 @@ class Timer(object):
 
     def start_timing(self, timeout: int = 20):
         if timeout:
-            self._timeout = timeout
+            self._timeout = timeout * 2
 
         self._last_time = time.time()
         if not self._is_running:

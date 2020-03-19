@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import functools
+import json
 import logging
 from enum import IntEnum
 from typing import TYPE_CHECKING, List, Optional, Dict, Any
@@ -15,11 +16,11 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__file__)
 
 
-def shot_turn(method):
-    @functools.wraps(method)
-    def wrapper(player, *args, **kwargs):
+def shot_turn(func):
+    @functools.wraps(func)
+    async def wrapper(player, *args, **kwargs):
         if player.room and player.room.whose_turn == player.seat:
-            method(player, *args, **kwargs)
+            return await func(player, *args, **kwargs)
         else:
             player.write_error('TURN ERROR')
 
@@ -94,7 +95,7 @@ class Player(object):
     def hand_pokers(self) -> List[int]:
         return self._hand_pokers
 
-    def on_message(self, code: int, packet: Dict[str, Any]):
+    async def on_message(self, code: int, packet: Dict[str, Any]):
         if self.is_left():
             if self.handle_leave(code, packet):
                 return
@@ -108,9 +109,9 @@ class Player(object):
         elif self.state == State.WAITING:
             self.handle_waiting(code, packet)
         elif self.state == State.CALL_SCORE:
-            self.handle_call_score(code, packet)
+            await self.handle_call_score(code, packet)
         elif self.state == State.PLAYING:
-            self.handle_playing(code, packet)
+            await self.handle_playing(code, packet)
         elif self.state == State.GAME_OVER:
             self.handle_game_over(code, packet)
 
@@ -176,7 +177,7 @@ class Player(object):
             self.write_error('STATE[%s]' % self.state)
 
     @shot_turn
-    def handle_call_score(self, code: int, packet: Dict[str, Any]):
+    async def handle_call_score(self, code: int, packet: Dict[str, Any]):
         if code == Pt.REQ_CALL_SCORE:
             self.rob = packet.get('rob')
 
@@ -197,7 +198,7 @@ class Player(object):
             self.write_error('STATE[%s]' % self.state)
 
     @shot_turn
-    def handle_playing(self, code, packet):
+    async def handle_playing(self, code, packet):
         if code == Pt.REQ_SHOT_POKER:
             pokers = packet.get('pokers')
 
@@ -221,6 +222,7 @@ class Player(object):
             else:
                 self.change_state(State.GAME_OVER)
                 self.room.on_game_over(self)
+                await self.save_shot_round()
         else:
             self.write_error('STATE[%s]' % self.state)
 
@@ -238,6 +240,16 @@ class Player(object):
         if self.socket:
             self.socket.write_message([Pt.ERROR, {'reason': reason}])
         logger.error('USER[%d][%s] %s', self.uid, self.state, reason)
+
+    async def save_shot_round(self):
+        robot = self.room.has_robot()
+        record = {
+            'left': {player.seat: player.hand_pokers for player in self.room.players},
+            'round': self.room.shot_round,
+            'lord': self.room.landlord.seat,
+        }
+        db = self.socket.db
+        await db.insert('INSERT INTO record(round, robot) VALUES(%s, %s)', json.dumps(record), robot)
 
     @property
     def ready(self) -> int:
