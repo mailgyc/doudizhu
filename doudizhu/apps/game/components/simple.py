@@ -46,7 +46,7 @@ class RobotPlayer(Player):
             if self.room.turn_player == self and self.hand_pokers:
                 self.auto_shot()
         elif code == Pt.RSP_GAME_OVER:
-            self.auto_ready()
+            IOLoop.current().call_later(5, self.auto_ready)
 
     def auto_ready(self):
         IOLoop.current().add_callback(self.to_server, Pt.REQ_READY, {'ready': 1})
