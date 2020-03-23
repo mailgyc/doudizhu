@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import functools
-import json
 import logging
 from enum import IntEnum
 from typing import TYPE_CHECKING, List, Optional, Dict, Any
@@ -222,7 +221,6 @@ class Player(object):
             else:
                 self.change_state(State.GAME_OVER)
                 self.room.on_game_over(self)
-                await self.save_shot_round()
         else:
             self.write_error('STATE[%s]' % self.state)
 
@@ -240,16 +238,6 @@ class Player(object):
         if self.socket:
             self.socket.write_message([Pt.ERROR, {'reason': reason}])
         logger.error('USER[%d][%s] %s', self.uid, self.state, reason)
-
-    async def save_shot_round(self):
-        robot = self.room.has_robot()
-        record = {
-            'left': {player.seat: player.hand_pokers for player in self.room.players},
-            'round': self.room.shot_round,
-            'lord': self.room.landlord.seat,
-        }
-        db = self.socket.db
-        await db.insert('INSERT INTO record(round, robot) VALUES(%s, %s)', json.dumps(record), robot)
 
     @property
     def ready(self) -> int:

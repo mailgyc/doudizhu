@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import logging
 import random
 from functools import reduce
@@ -248,6 +249,20 @@ class Room(object):
 
         self.timer.stop_timing()
         IOLoop.current().add_callback(self.restart)
+
+    async def save_shot_round(self):
+        for player in self.players:
+            if not player.socket:
+                continue
+            robot = self.has_robot()
+            record = {
+                'left': {player.seat: player.hand_pokers for player in self.players},
+                'round': self.shot_round,
+                'lord': self.landlord.seat,
+            }
+            db = player.socket.db
+            await db.insert('INSERT INTO record(round, robot) VALUES(%s, %s)', json.dumps(record), robot)
+            break
 
     @property
     def multiple(self) -> int:
