@@ -36,7 +36,7 @@ LOGGING = {
     },
     'formatters': {
         'verbose': {
-            'format': '%(asctime)s %(levelname)s %(module)s %(message)s'
+            'format': '%(asctime)s %(levelname)s %(module)s %(lineno)d %(message)s'
         },
     },
     'handlers': {
