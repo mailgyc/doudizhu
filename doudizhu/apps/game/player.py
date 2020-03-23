@@ -221,6 +221,7 @@ class Player(object):
             else:
                 self.change_state(State.GAME_OVER)
                 self.room.on_game_over(self)
+                await self.room.save_shot_round()
         else:
             self.write_error('STATE[%s]' % self.state)
 
