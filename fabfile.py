@@ -59,3 +59,4 @@ def deploy():
         run('git pull')
         # run('docker-compose restart')
         run('docker-compose up -d --build')
+        run('docker system prune -f')
