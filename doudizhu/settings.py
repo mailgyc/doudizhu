@@ -12,6 +12,13 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'fiDSpuZ7QFe8fm0XP9Jb7ZIPNsOegkHYtgKSd4I83H
 
 PORT = os.getenv('PORT', 8080)
 
+WECHAT_CONFIG = {
+    'appid': os.getenv('APPID'),
+    'appsecret': os.getenv('APPSECRET'),
+    'token': os.getenv('TOKEN'),
+    'encoding_aes_key': os.getenv('ENCODING_AES_KEY'),
+}
+
 
 def database_url(url):
     from urllib.parse import urlparse, ParseResult
@@ -53,7 +60,6 @@ LOGGING = {
         },
     }
 }
-
 
 if os.getenv('SENTRY_DSN'):
     import sentry_sdk

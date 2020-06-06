@@ -10,18 +10,18 @@ from tornado.web import RequestHandler
 from apps.game.storage import Storage
 from contrib.db import AsyncConnection
 from contrib.handlers import JwtMixin
+from settings import WECHAT_CONFIG
 from .message import Msg
 
 logger = logging.getLogger(__name__)
 
-APPID = 'wx48e8704e3acdbb9d'
-APPSECRET = 'd549ac4edb0a3c835264398886d4feff'
+appid = WECHAT_CONFIG['appid']
+appsecret = WECHAT_CONFIG['appsecret']
 
 
 class WechatConfig(RequestHandler):
-    # url = https://m.ihouser.com/social/config
-    token = '0re7LejEZ05ydfck'
-    encoding_aes_key = '73SVvJPl0nvQMIcdHLv6OrcJLq9anjd2FaFrNngZwOf'
+    token = WECHAT_CONFIG['token']
+    encoding_aes_key = WECHAT_CONFIG['encoding_aes_key']
 
     def data_received(self, chunk: bytes) -> Optional[Awaitable[None]]:
         pass
@@ -67,7 +67,7 @@ class WechatHandler(RequestHandler, JwtMixin):
         if code is None:
             self.clear_cookie('social')
             redirect = self.origin + '/social/index'
-            url = f'https://open.weixin.qq.com/connect/oauth2/authorize?appid={APPID}&redirect_uri={redirect}&response_type=code&scope=snsapi_userinfo#wechat_redirect'
+            url = f'https://open.weixin.qq.com/connect/oauth2/authorize?appid={appid}&redirect_uri={redirect}&response_type=code&scope=snsapi_userinfo#wechat_redirect'
             self.redirect(url)
         else:
             # 1. 从数据库获取用户信息
@@ -130,7 +130,7 @@ class WechatHandler(RequestHandler, JwtMixin):
         :param code:
         :return:
         """
-        url = f'https://api.weixin.qq.com/sns/oauth2/access_token?appid={APPID}&secret={APPSECRET}&code={code}&grant_type=authorization_code'
+        url = f'https://api.weixin.qq.com/sns/oauth2/access_token?appid={appid}&secret={appsecret}&code={code}&grant_type=authorization_code'
         r = await async_http(url)
         return r.get('access_token'), r.get('openid'), r.get('unionid')
 
@@ -138,18 +138,6 @@ class WechatHandler(RequestHandler, JwtMixin):
     async def fetch_userinfo(access_token, openid) -> Dict[str, Union[int, str]]:
         """
         第四步：拉取用户信息(需scope为 snsapi_userinfo)
-        {
-            'openid': 'o5Nrmv3dX2E4UO4dv4y8AMgJWcB8',
-            'nickname': '懿字尾',
-            'sex': 1,
-            'language': 'zh_CN',
-            'city': '广州',
-            'province': '广东',
-            'country': '中国',
-            'headimgurl': 'http://thirdwx.qlogo.cn/mmopen/vi_32/55lYKUdcPFgUHibRYmaRiaBVamhPRiawsGZKVG6xxkdSia6/132',
-            'privilege': [],
-            'unionid': 'orfFiw6XM0zO3OE9Iug5lqga9l_o'
-        }
         :param access_token:
         :param openid:
         :return:
