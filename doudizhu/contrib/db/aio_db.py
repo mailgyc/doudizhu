@@ -1,7 +1,7 @@
 import asyncio
 import functools
 import logging
-from typing import Dict, Union
+from typing import Dict, Optional, Union
 
 import aiomysql
 from aiomysql import Pool, DictCursor
@@ -22,7 +22,7 @@ class AsyncConnection(object):
             'autocommit': True,
         }
         self._loop = loop
-        self._conn_pool: Pool = None
+        self._conn_pool: Optional[Pool] = None
         self._async_wait = None
 
     @property
@@ -91,6 +91,6 @@ class AsyncConnection(object):
         try:
             return await cursor.execute(query, kwargs or args)
         except aiomysql.OperationalError:
-            logging.exception("Error connecting to MySQL on %s", self.host)
+            logging.exception("Error connecting to MySQL on %s", self._db_args['host'])
             await self.close()
             raise
