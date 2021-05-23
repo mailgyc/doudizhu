@@ -42,8 +42,6 @@ class Observer {
             if (index > -1) {
                 subscribers.splice(index, 1);
             }
-        } else {
-            subscribers[key] = [cb];
         }
     }
 }
