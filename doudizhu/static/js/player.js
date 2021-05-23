@@ -151,7 +151,7 @@ PG.Player.prototype.onShot = function (btn) {
     if (this.hintPoker.length == 0) {
         return;
     }
-    let code = this.canPlay(this.game.isLastShotPlayer() ? [] : this.game.tablePoker, this.hintPoker);
+    let code = this.canPlay(this.game.isLastShotPlayer() ? [] : this.lastTurnPoker, this.hintPoker);
     if (code) {
         this.say(code);
         return;
