@@ -47,6 +47,7 @@ class Room(object):
         self.last_shot_seat = 0
         self.last_shot_poker: List[int] = []
         self.shot_round: List[List[int]] = []
+        self._rob_record = []
 
         self.allow_robot = allow_robot
 
@@ -66,6 +67,7 @@ class Room(object):
         self.last_shot_seat = 0
         self.last_shot_poker = []
         self.shot_round = []
+        self._rob_record = []
 
         for player in self.players:
             if player.is_left():
@@ -143,6 +145,7 @@ class Room(object):
         if target.rob == 1:
             self._multiple_details['rob'] *= 2
 
+        self._rob_record.append(target.rob)
         if not self._is_rob_end():
             self.go_next_turn()
             return False
@@ -365,29 +368,12 @@ class Room(object):
         每人都可以抢一次地主, 第一个人可以多抢一次
         :return: 抢地主是否结束
         """
-        # 下一个人没有抢地主, 继续抢地主
-        if self.next_player.rob == -1:
+        if len(self._rob_record) < 3:
+            return False
+        if len(self._rob_record) == 3 and self._rob_record[0] == 1:
             return False
 
-        # 抢了一圈, 处理第一个人多抢一次
-        if self.next_player.seat == self.landlord_seat:
-            # 第一个人第一次没有抢, 结束
-            if self.next_player.rob == 0:
-                return True
-
-            if self.turn_player.rob == 0:
-                # 当前用户没有抢
-                if self.prev_player.rob == 0:
-                    # 前一个用户也没有抢, 第一个人是地主, 结束
-                    return True
-                else:
-                    # 前一个用户抢了, 第一个人可以多抢一次, 继续抢
-                    return False
-            else:
-                # 当前用户抢了, 第一个人可以多抢一次, 继续抢
-                return False
-
-        # 第一个人也抢了, 结束
+        self._rob_record = []
         return True
 
     def is_ready(self) -> bool:

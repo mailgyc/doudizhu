@@ -42,8 +42,6 @@ class Observer {
             if (index > -1) {
                 subscribers.splice(index, 1);
             }
-        } else {
-            subscribers[key] = [cb];
         }
     }
 }
@@ -348,7 +346,7 @@ PG.Game.prototype = {
                 tween.onComplete.add(adjust, this, p);
             }
         } else {
-            let first = turnPlayer.findAPoker(54);
+            let first = turnPlayer.findAPoker(55);
             for (let i = 0; i < 3; i++) {
                 let p = this.tablePoker[i + 3];
                 p.frame = 55 - 1;
