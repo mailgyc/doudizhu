@@ -1,5 +1,4 @@
-aiomysql~=0.0.20
-pyjwt~=1.7
-sentry-sdk~=0.15
+aiomysql~=0.0.21
+pyjwt~=2.1
 tornado~=6.0
 #uvloop~=0.12

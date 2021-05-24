@@ -60,11 +60,3 @@ LOGGING = {
         },
     }
 }
-
-if os.getenv('SENTRY_DSN'):
-    import sentry_sdk
-    from sentry_sdk.integrations.tornado import TornadoIntegration
-    sentry_sdk.init(
-        dsn=os.getenv('SENTRY_DSN'),
-        integrations=[TornadoIntegration()]
-    )
