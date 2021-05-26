@@ -292,13 +292,10 @@ PG.Game.prototype = {
     },
 
     dealPoker: function (pokers) {
-
-        for (let i = 0; i < 3; i++) {
-            let p = new PG.Poker(this, 55, 55);
-            this.game.world.add(p);
-            this.tablePoker[i] = p.id;
-            this.tablePoker[i + 3] = p;
-        }
+        // 添加一张底牌
+        let p = new PG.Poker(this, 55, 55);
+        this.tablePokerPic[55] = p;
+        this.game.world.add(p);
 
         for (let i = 0; i < 17; i++) {
             this.players[2].pokerInHand.push(55);
@@ -312,11 +309,15 @@ PG.Game.prototype = {
     },
 
     showLastThreePoker: function () {
+        // 删除底牌
+        this.tablePokerPic[55].destroy();
+        delete this.tablePokerPic[55];
+
         for (let i = 0; i < 3; i++) {
             let pokerId = this.tablePoker[i];
-            let p = this.tablePoker[i + 3];
-            p.id = pokerId;
-            p.frame = pokerId - 1;
+            let p = new PG.Poker(this, pokerId, pokerId);
+            this.tablePokerPic[pokerId] = p;
+            this.game.world.add(p);
             this.game.add.tween(p).to({x: this.game.world.width / 2 + (i - 1) * 60}, 600, Phaser.Easing.Default, true);
         }
         this.game.time.events.add(1500, this.dealLastThreePoker, this);
@@ -327,7 +328,7 @@ PG.Game.prototype = {
 
         for (let i = 0; i < 3; i++) {
             let pid = this.tablePoker[i];
-            let poker = this.tablePoker[i + 3];
+            let poker = this.tablePokerPic[pid]
             turnPlayer.pokerInHand.push(pid);
             turnPlayer.pushAPoker(poker);
         }
@@ -336,7 +337,8 @@ PG.Game.prototype = {
             turnPlayer.arrangePoker();
             const that = this;
             for (let i = 0; i < 3; i++) {
-                let p = this.tablePoker[i + 3];
+                let pid = this.tablePoker[i];
+                let p = this.tablePokerPic[pid];
                 let tween = this.game.add.tween(p).to({y: this.game.world.height - PG.PH * 0.8}, 400, Phaser.Easing.Default, true);
 
                 function adjust(p) {
@@ -348,8 +350,8 @@ PG.Game.prototype = {
         } else {
             let first = turnPlayer.findAPoker(55);
             for (let i = 0; i < 3; i++) {
-                let p = this.tablePoker[i + 3];
-                p.frame = 55 - 1;
+                let pid = this.tablePoker[i];
+                let p = this.tablePokerPic[pid];
                 p.frame = 55 - 1;
                 this.game.add.tween(p).to({x: first.x, y: first.y}, 200, Phaser.Easing.Default, true);
             }
