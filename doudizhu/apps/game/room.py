@@ -370,7 +370,7 @@ class Room(object):
         """
         if len(self._rob_record) < 3:
             return False
-        if len(self._rob_record) == 3 and self._rob_record[0] == 1:
+        if len(self._rob_record) == 3 and self._rob_record[0] == 1 and sum(self._rob_record) > 1:
             return False
 
         self._rob_record = []
