@@ -16,8 +16,7 @@ class JwtMixin(object):
     @staticmethod
     def jwt_encode(payload: Dict[str, Union[str, int]]) -> str:
         expires = datetime.utcnow() + timedelta(seconds=3600)
-        token = jwt.encode({'exp': expires, **payload}, SECRET_KEY, algorithm='HS256')
-        return token.decode('ascii')
+        return jwt.encode({'exp': expires, **payload}, SECRET_KEY, algorithm='HS256')
 
     @staticmethod
     def jwt_decode(token) -> Optional[Dict[str, Union[str, int]]]:
