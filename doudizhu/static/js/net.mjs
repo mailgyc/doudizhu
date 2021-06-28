@@ -1,4 +1,4 @@
-PG.Protocol = {
+export const Protocol = {
     /**
      * [ERROR, {"reason": 错误原因}]
      */
@@ -145,52 +145,46 @@ PG.Protocol = {
     RSP_GAME_OVER: 4002,
 };
 
-PG.Socket = {
-    websocket: null,
-    onmessage: null
-};
-
-const logging_pretty = function (tag, packet) {
-    for (let key in PG.Protocol) {
-        if (packet[0] === PG.Protocol[key])
+function pretty_log(tag, packet) {
+    for (let key in Protocol) {
+        if (packet[0] === Protocol[key])
             console.log(`${tag}: ${key} ${JSON.stringify(packet.slice(1))}`)
     }
-};
+}
 
-PG.Socket.connect = function (onopen, onmessage, onerror) {
+export class Socket {
+    constructor(url, onopen, onmessage, onerror) {
+        this.websocket = new WebSocket(url);
+        this.websocket.binaryType = "arraybuffer";
+        this.websocket.onopen = function (evt) {
+            console.log("CONNECTED");
+            onopen();
+        };
 
-    if (this.websocket != null) {
-        return;
+        this.websocket.onerror = function (evt) {
+            console.log("CONNECT ERROR: " + evt.data);
+            this.websocket = null;
+            onerror();
+        };
+
+        this.websocket.onclose = function (evt) {
+            console.log("DISCONNECTED");
+            this.websocket = null;
+            onerror();
+        };
+
+        this.websocket.onmessage = function (evt) {
+            const packet = JSON.parse(evt.data);
+            pretty_log("RSP", packet);
+            onmessage(packet);
+        };
     }
 
-    const protocol = location.protocol.startsWith("https") ? "wss://" : "ws://";
-    this.websocket = new WebSocket(protocol + location.host + "/ws");
-    this.websocket.binaryType = "arraybuffer";
-    this.websocket.onopen = function (evt) {
-        console.log("CONNECTED");
-        onopen();
-    };
+    send (packet) {
+        pretty_log("REQ", packet);
+        this.websocket.send(JSON.stringify(packet));
+    }
 
-    this.websocket.onerror = function (evt) {
-        console.log("CONNECT ERROR: " + evt.data);
-        this.websocket = null;
-        onerror();
-    };
+}
 
-    this.websocket.onclose = function (evt) {
-        console.log("DISCONNECTED");
-        this.websocket = null;
-        onerror();
-    };
 
-    this.websocket.onmessage = function (evt) {
-        const packet = JSON.parse(evt.data);
-        logging_pretty("RSP", packet);
-        onmessage(packet);
-    };
-};
-
-PG.Socket.send = function (packet) {
-    logging_pretty("REQ", packet);
-    this.websocket.send(JSON.stringify(packet));
-};

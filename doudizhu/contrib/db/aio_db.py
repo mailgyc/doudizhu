@@ -18,6 +18,7 @@ class AsyncConnection(object):
             'port': kwargs.get('port', 3306),
             'minsize': kwargs.get('min_connections', 1),
             'maxsize': kwargs.get('max_connections', 10),
+            'charset': 'utf8mb4',
             'cursorclass': DictCursor,
             'autocommit': True,
         }

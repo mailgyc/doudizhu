@@ -19,7 +19,7 @@ appid = WECHAT_CONFIG['appid']
 appsecret = WECHAT_CONFIG['appsecret']
 
 
-class WechatConfig(RequestHandler):
+class WeChatConfig(RequestHandler):
     token = WECHAT_CONFIG['token']
     encoding_aes_key = WECHAT_CONFIG['encoding_aes_key']
 
@@ -34,9 +34,7 @@ class WechatConfig(RequestHandler):
         params = sorted([self.token, timestamp, nonce])
         sha = hashlib.sha1()
         sha.update(''.join(params).encode('utf-8'))
-        if signature != sha.hexdigest():
-            return False
-        return True
+        return signature == sha.hexdigest()
 
     async def get(self):
         signature = self.get_query_argument('signature')
@@ -56,7 +54,7 @@ class WechatConfig(RequestHandler):
         self.write(response)
 
 
-class WechatHandler(RequestHandler, JwtMixin):
+class AuthHandler(RequestHandler, JwtMixin):
 
     @property
     def origin(self):

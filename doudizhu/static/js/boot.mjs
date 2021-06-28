@@ -1,14 +1,4 @@
-PG = {
-    music: null,
-    playerInfo: {},
-    orientated: false
-};
-
-PG.getCookie = function (name) {
-    let r = document.cookie.match("\\b" + name + "=([^;]*)\\b");
-    return r ? r[1] : undefined;
-};
-
+﻿
 function get(url, payload, callback) {
     http('GET', url, payload, callback);
 }
@@ -31,14 +21,12 @@ function http(method, url, payload, callback) {
     xhr.send(JSON.stringify(payload));
 }
 
-PG.PW = 90;
-PG.PH = 120;
-
-PG.Boot = {
-    preload: function () {
+export class Boot {
+    preload() {
         this.load.image('preloaderBar', 'static/i/preload.png');
-    },
-    create: function () {
+    }
+
+    create() {
         this.input.maxPointers = 1;
         this.stage.disableVisibilityChange = true;
         this.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
@@ -46,8 +34,9 @@ PG.Boot = {
         this.scale.leaveIncorrectOrientation.add(this.leaveIncorrectOrientation, this);
         this.onSizeChange();
         this.state.start('Preloader');
-    },
-    onSizeChange: function () {
+    }
+
+    onSizeChange() {
         this.scale.minWidth = 480;
         this.scale.minHeight = 270;
         let device = this.game.device;
@@ -61,20 +50,22 @@ PG.Boot = {
         this.scale.pageAlignHorizontally = true;
         this.scale.pageAlignVertically = true;
         this.scale.forceOrientation(true);
-    },
-    enterIncorrectOrientation: function () {
-        PG.orientated = false;
+    }
+
+    enterIncorrectOrientation() {
+        // orientated = false;
         document.getElementById('orientation').style.display = 'block';
-    },
-    leaveIncorrectOrientation: function () {
-        PG.orientated = true;
+    }
+
+    leaveIncorrectOrientation() {
+        // orientated = true;
         document.getElementById('orientation').style.display = 'none';
     }
-};
+}
 
-PG.Preloader = {
+export class Preloader {
 
-    preload: function () {
+    preload() {
         this.preloadBar = this.game.add.sprite(120, 200, 'preloaderBar');
         this.load.setPreloadSprite(this.preloadBar);
 
@@ -89,16 +80,14 @@ PG.Preloader = {
         this.load.image('bg', 'static/i/bg.png');
         this.load.spritesheet('poker', 'static/i/poker.png', 90, 120);
         this.load.json('rule', 'static/rule.json');
-    },
+    }
 
-    create: function () {
-        PG.RuleList = this.cache.getJSON('rule');
-
+    create() {
         const that = this;
-        get('/userinfo', {}, function(status, response){
+        get('/userinfo', {}, function (status, response) {
             if (status === 200) {
-                PG.playerInfo = response;
-                if (PG.playerInfo['uid']) {
+                window.playerInfo = response;
+                if (response['uid']) {
                     that.state.start('MainMenu');
                 } else {
                     that.state.start('Login');
@@ -107,15 +96,15 @@ PG.Preloader = {
                 that.state.start('Login');
             }
         });
-        PG.music = this.game.add.audio('music_room');
-        PG.music.loop = true;
-        PG.music.loopFull();
-        PG.music.play();
+        const music = this.game.add.audio('music_room');
+        music.loop = true;
+        music.loopFull();
+        music.play();
     }
-};
+}
 
-PG.MainMenu = {
-    create: function () {
+export class MainMenu {
+    create() {
         this.stage.backgroundColor = '#182d3b';
         let bg = this.game.add.sprite(this.game.width / 2, 0, 'bg');
         bg.anchor.set(0.5, 0);
@@ -133,31 +122,33 @@ PG.MainMenu = {
         this.game.world.add(setting);
 
         let style = {font: "28px Arial", fill: "#fff", align: "right"};
-        let text = this.game.add.text(this.game.world.width - 4, 4, "欢迎回来 " + PG.playerInfo.username, style);
+        let text = this.game.add.text(this.game.world.width - 4, 4, "欢迎回来 " + window.playerInfo.username, style);
         text.addColor('#cc00cc', 4);
         text.anchor.set(1, 0);
-    },
 
-    gotoAiRoom: function () {
+        this.state.start('Game', true, false, 1);
+    }
+
+    gotoAiRoom() {
         // start(key, clearWorld, clearCache, parameter)
         this.state.start('Game', true, false, 1);
         // this.music.stop();
-    },
+    }
 
-    gotoRoom: function () {
+    gotoRoom() {
         this.state.start('Game', true, false, 2);
-    },
+    }
 
-    gotoSetting: function () {
+    gotoSetting() {
         let style = {font: "22px Arial", fill: "#fff", align: "center"};
         let text = this.game.add.text(0, 0, "hei hei hei hei", style);
         let tween = this.game.add.tween(text).to({x: 600, y: 450}, 2000, "Linear", true);
         tween.onComplete.add(Phaser.Text.prototype.destroy, text);
     }
-};
+}
 
-PG.Login = {
-    create: function () {
+export class Login {
+    create() {
         this.stage.backgroundColor = '#182d3b';
         let bg = this.game.add.sprite(this.game.width / 2, 0, 'bg');
         bg.anchor.set(0.5, 0);
@@ -170,14 +161,18 @@ PG.Login = {
         };
         this.username = this.game.add.inputField((this.game.world.width - 300) / 2, this.game.world.centerY - 40, style);
 
-        this.errorText = this.game.add.text(this.game.world.centerX, this.game.world.centerY + 24, '', {font: "24px Arial", fill: "#f00", align: "center"});
+        this.errorText = this.game.add.text(this.game.world.centerX, this.game.world.centerY + 24, '', {
+            font: "24px Arial",
+            fill: "#f00",
+            align: "center"
+        });
         this.errorText.anchor.set(0.5, 0);
 
         let login = this.game.add.button(this.game.world.centerX, this.game.world.centerY + 100, 'btn', this.onLogin, this, 'login.png', 'login.png', 'login.png');
         login.anchor.set(0.5);
-    },
+    }
 
-    onLogin: function () {
+    onLogin() {
         this.errorText.text = '';
         if (!this.username.value) {
             this.username.startFocus();
@@ -188,13 +183,13 @@ PG.Login = {
         const payload = {
             "username": this.username.value,
         };
-        post('/login', payload, function(status, response) {
+        post('/login', payload, function (status, response) {
             if (status === 200) {
-                PG.playerInfo = response;
+                window.playerInfo = response;
                 that.state.start('MainMenu');
             } else {
                 that.errorText.text = response.detail;
             }
         })
     }
-};
+}

@@ -1,3 +1,7 @@
+import {Poker, Rule} from '/static/js/rule.mjs'
+import {Player, createPlay} from '/static/js/player.mjs'
+import {Protocol, Socket} from '/static/js/net.mjs'
+
 class Observer {
 
     constructor() {
@@ -48,31 +52,32 @@ class Observer {
 
 const observer = new Observer();
 
-PG.Game = function (game) {
-    this.players = [];
+export class Game {
+    constructor(game) {
+        this.players = [];
 
-    this.tablePoker = [];
-    this.tablePokerPic = {};
+        this.tablePoker = [];
+        this.tablePokerPic = {};
 
-    this.lastShotPlayer = null;
+        this.lastShotPlayer = null;
 
-    this.whoseTurn = 0;
-};
+        this.whoseTurn = 0;
+    }
 
-PG.Game.prototype = {
-
-    init: function (baseScore) {
+    init(baseScore) {
         observer.set('baseScore', baseScore);
-    },
+    }
 
-    create: function () {
+    create() {
+        Rule.RuleList = this.cache.getJSON('rule');
         this.stage.backgroundColor = '#182d3b';
 
-        this.players.push(PG.createPlay(0, this));
-        this.players.push(PG.createPlay(1, this));
-        this.players.push(PG.createPlay(2, this));
-        this.players[0].updateInfo(PG.playerInfo.uid, PG.playerInfo.username);
-        PG.Socket.connect(this.onopen.bind(this), this.onmessage.bind(this), this.onerror.bind(this));
+        this.players.push(createPlay(0, this));
+        this.players.push(createPlay(1, this));
+        this.players.push(createPlay(2, this));
+        this.players[0].updateInfo(window.playerInfo.uid, window.playerInfo.username);
+        const protocol = location.protocol.startsWith("https") ? "wss://" : "ws://";
+        this.socket = new Socket(protocol + location.host + "/ws", this.onopen.bind(this), this.onmessage.bind(this), this.onerror.bind(this));
 
         const width = this.game.world.width;
         const height = this.game.world.height;
@@ -107,7 +112,7 @@ PG.Game.prototype = {
         });
 
         const ready = this.game.make.button(width / 2, height * 0.6, "btn", function () {
-            this.send_message([PG.Protocol.REQ_READY, {"ready": 1}]);
+            this.send_message([Protocol.REQ_READY, {"ready": 1}]);
             observer.set('countdown', 10);
         }, this, 'ready.png', 'ready.png', 'ready.png');
         ready.anchor.set(0.5, 0);
@@ -121,14 +126,14 @@ PG.Game.prototype = {
         const group = this.game.add.group();
         let pass = this.game.make.button(width * 0.4, height * 0.6, "btn", function () {
             this.game.add.audio('f_score_0').play();
-            this.send_message([PG.Protocol.REQ_CALL_SCORE, {"rob": 0}]);
+            this.send_message([Protocol.REQ_CALL_SCORE, {"rob": 0}]);
         }, this, 'score_0.png', 'score_0.png', 'score_0.png');
         pass.anchor.set(0.5, 0);
         group.add(pass);
 
         const rob = this.game.make.button(width * 0.6, height * 0.6, "btn", function () {
             this.game.add.audio('f_score_1').play();
-            this.send_message([PG.Protocol.REQ_CALL_SCORE, {"rob": 1}]);
+            this.send_message([Protocol.REQ_CALL_SCORE, {"rob": 1}]);
         }, this, 'score_1.png', 'score_1.png', 'score_1.png');
         rob.anchor.set(0.5, 0);
         group.add(rob);
@@ -138,30 +143,30 @@ PG.Game.prototype = {
             group.visible = is_rob;
             observer.set('countdown', -1);
         });
-    },
+    }
 
-    onopen: function () {
+    onopen() {
         console.log('socket onopen');
-        PG.Socket.send([PG.Protocol.REQ_ROOM_LIST, {}]);
-        PG.Socket.send([PG.Protocol.REQ_JOIN_ROOM, {"room": -1, "level": observer.get('baseScore')}]);
-    },
+        this.socket.send([Protocol.REQ_ROOM_LIST, {}]);
+        this.socket.send([Protocol.REQ_JOIN_ROOM, {"room": -1, "level": observer.get('baseScore')}]);
+    }
 
-    onerror: function () {
+    onerror() {
         console.log('socket onerror, try reconnect.');
-        PG.Socket.connect(this.onopen.bind(this), this.onmessage.bind(this), this.onerror.bind(this));
-    },
+        this.socket.connect(this.onopen.bind(this), this.onmessage.bind(this), this.onerror.bind(this));
+    }
 
-    send_message: function (request) {
-        PG.Socket.send(request);
-    },
+    send_message(request) {
+        this.socket.send(request);
+    }
 
-    onmessage: function (message) {
+    onmessage(message) {
         const code = message[0], packet = message[1];
         switch (code) {
-            case PG.Protocol.RSP_ROOM_LIST:
+            case Protocol.RSP_ROOM_LIST:
                 console.log(code, packet);
                 break;
-            case PG.Protocol.RSP_JOIN_ROOM:
+            case Protocol.RSP_JOIN_ROOM:
                 observer.set('room', packet['room']);
                 const syncInfo = packet['players'];
                 for (let i = 0; i < syncInfo.length; i++) {
@@ -174,13 +179,13 @@ PG.Game.prototype = {
                     }
                 }
                 break;
-            case PG.Protocol.RSP_READY:
+            case Protocol.RSP_READY:
                 // TODO: 显示玩家已准备状态
                 if (packet['uid'] === this.players[0].uid) {
                     observer.set('ready', true);
                 }
                 break;
-            case PG.Protocol.RSP_DEAL_POKER: {
+            case Protocol.RSP_DEAL_POKER: {
                 const playerId = packet['uid'];
                 const pokers = packet['pokers'];
                 this.dealPoker(pokers);
@@ -188,7 +193,7 @@ PG.Game.prototype = {
                 this.startCallScore();
                 break;
             }
-            case PG.Protocol.RSP_CALL_SCORE: {
+            case Protocol.RSP_CALL_SCORE: {
                 const playerId = packet['uid'];
                 const rob = packet['rob'];
                 const landlord = packet['landlord'];
@@ -212,11 +217,11 @@ PG.Game.prototype = {
                 observer.set('room.multiple', packet['multiple']);
                 break;
             }
-            case PG.Protocol.RSP_SHOT_POKER:
+            case Protocol.RSP_SHOT_POKER:
                 this.handleShotPoker(packet);
                 observer.set('room.multiple', packet['multiple']);
                 break;
-            case PG.Protocol.RSP_GAME_OVER: {
+            case Protocol.RSP_GAME_OVER: {
                 const winner = packet['winner'];
                 const that = this;
                 packet['players'].forEach(function (player) {
@@ -238,7 +243,7 @@ PG.Game.prototype = {
                 this.game.time.events.add(2000, gameOver, this);
                 break;
             }
-            // case PG.Protocol.RSP_CHEAT:
+            // case Protocol.RSP_CHEAT:
             //     let seat = this.uidToSeat(packet[1]);
             //     this.players[seat].replacePoker(packet[2], 0);
             //     this.players[seat].reDealPoker();
@@ -246,9 +251,9 @@ PG.Game.prototype = {
             default:
                 console.log("UNKNOWN PACKET:", packet)
         }
-    },
+    }
 
-    cleanWorld: function () {
+    cleanWorld() {
         this.players.forEach(function (player) {
             player.cleanPokers();
             // player.uiLeftPoker.kill();
@@ -258,9 +263,9 @@ PG.Game.prototype = {
             let p = this.tablePokerPic[this.tablePoker[i]];
             p.destroy();
         }
-    },
+    }
 
-    restart: function () {
+    restart() {
         this.players = [];
 
         this.tablePoker = [];
@@ -271,29 +276,29 @@ PG.Game.prototype = {
         this.whoseTurn = 0;
 
         this.stage.backgroundColor = '#182d3b';
-        this.players.push(PG.createPlay(0, this));
-        this.players.push(PG.createPlay(1, this));
-        this.players.push(PG.createPlay(2, this));
+        this.players.push(createPlay(0, this));
+        this.players.push(createPlay(1, this));
+        this.players.push(createPlay(2, this));
         for (let i = 0; i < 3; i++) {
             //this.players[i].uiHead.kill();
         }
-    },
+    }
 
-    update: function () {
-    },
+    update() {
+    }
 
-    uidToSeat: function (uid) {
+    uidToSeat(uid) {
         for (let i = 0; i < 3; i++) {
             if (uid === this.players[i].uid)
                 return i;
         }
         console.log('ERROR uidToSeat:' + uid);
         return -1;
-    },
+    }
 
-    dealPoker: function (pokers) {
+    dealPoker(pokers) {
         // 添加一张底牌
-        let p = new PG.Poker(this, 55, 55);
+        let p = new Poker(this, 55, 55);
         this.tablePokerPic[55] = p;
         this.game.world.add(p);
 
@@ -306,24 +311,24 @@ PG.Game.prototype = {
         this.players[0].dealPoker();
         this.players[1].dealPoker();
         this.players[2].dealPoker();
-    },
+    }
 
-    showLastThreePoker: function () {
+    showLastThreePoker() {
         // 删除底牌
         this.tablePokerPic[55].destroy();
         delete this.tablePokerPic[55];
 
         for (let i = 0; i < 3; i++) {
             let pokerId = this.tablePoker[i];
-            let p = new PG.Poker(this, pokerId, pokerId);
+            let p = new Poker(this, pokerId, pokerId);
             this.tablePokerPic[pokerId] = p;
             this.game.world.add(p);
             this.game.add.tween(p).to({x: this.game.world.width / 2 + (i - 1) * 60}, 600, Phaser.Easing.Default, true);
         }
         this.game.time.events.add(1500, this.dealLastThreePoker, this);
-    },
+    }
 
-    dealLastThreePoker: function () {
+    dealLastThreePoker() {
         let turnPlayer = this.players[this.whoseTurn];
 
         for (let i = 0; i < 3; i++) {
@@ -339,10 +344,10 @@ PG.Game.prototype = {
             for (let i = 0; i < 3; i++) {
                 let pid = this.tablePoker[i];
                 let p = this.tablePokerPic[pid];
-                let tween = this.game.add.tween(p).to({y: this.game.world.height - PG.PH * 0.8}, 400, Phaser.Easing.Default, true);
+                let tween = this.game.add.tween(p).to({y: this.game.world.height - Poker.PH * 0.8}, 400, Phaser.Easing.Default, true);
 
                 function adjust(p) {
-                    that.game.add.tween(p).to({y: that.game.world.height - PG.PH / 2}, 400, Phaser.Easing.Default, true, 400);
+                    that.game.add.tween(p).to({y: that.game.world.height - Poker.PH / 2}, 400, Phaser.Easing.Default, true, 400);
                 }
 
                 tween.onComplete.add(adjust, this, p);
@@ -362,9 +367,9 @@ PG.Game.prototype = {
         if (this.whoseTurn === 0) {
             this.startPlay();
         }
-    },
+    }
 
-    handleShotPoker: function (packet) {
+    handleShotPoker(packet) {
         this.whoseTurn = this.uidToSeat(packet['uid']);
         let turnPlayer = this.players[this.whoseTurn];
         let pokers = packet['pokers'];
@@ -372,9 +377,9 @@ PG.Game.prototype = {
             this.players[this.whoseTurn].say("不出");
         } else {
             let pokersPic = {};
-            pokers.sort(PG.Poker.comparePoker);
+            pokers.sort(Poker.comparePoker);
             let count = pokers.length;
-            let gap = Math.min((this.game.world.width - PG.PW * 2) / count, PG.PW * 0.36);
+            let gap = Math.min((this.game.world.width - Poker.PW * 2) / count, Poker.PW * 0.36);
             for (let i = 0; i < count; i++) {
                 let p = turnPlayer.findAPoker(pokers[i]);
                 p.id = pokers[i];
@@ -405,35 +410,35 @@ PG.Game.prototype = {
                 this.game.time.events.add(1000, this.startPlay, this);
             }
         }
-    },
+    }
 
-    startCallScore: function () {
+    startCallScore() {
         if (this.whoseTurn === 0) {
             observer.set('rob', true);
         }
 
-    },
+    }
 
-    startPlay: function () {
+    startPlay() {
         if (this.isLastShotPlayer()) {
             this.players[0].playPoker([]);
         } else {
             this.players[0].playPoker(this.tablePoker);
         }
-    },
+    }
 
-    finishPlay: function (pokers) {
-        this.send_message([PG.Protocol.REQ_SHOT_POKER, {"pokers": pokers}]);
-    },
+    finishPlay(pokers) {
+        this.send_message([Protocol.REQ_SHOT_POKER, {"pokers": pokers}]);
+    }
 
-    isLastShotPlayer: function () {
+    isLastShotPlayer() {
         return this.players[this.whoseTurn] === this.lastShotPlayer;
-    },
+    }
 
-    quitGame: function () {
+    quitGame() {
         this.state.start('MainMenu');
     }
-};
+}
 
 
 

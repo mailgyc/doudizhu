@@ -53,15 +53,12 @@ class RestfulHandler(RequestHandler):
             setattr(self, '_post_json', args)
 
     def set_default_headers(self):
-        self.set_header('Content-Type', 'application/json')
-        self.set_header('Access-Control-Allow-Origin', self.request.headers.get('origin', '*'))
+        self.set_header('Content-Type', 'application/json; charset=UTF-8')
+        self.set_header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
         self.set_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+        self.set_header('Access-Control-Allow-Origin', '*')
         self.set_header('Access-Control-Allow-Headers', 'X-PINGOTHER, Content-Type')
-        self.set_header('Access-Control-Allow-Credentials', "true")
-
-    @property
-    def json(self):
-        return getattr(self, '_post_json', {})
+        self.set_header('Access-Control-Allow-Credentials', 'true')
 
     def options(self):
         self.set_status(204)
@@ -77,6 +74,10 @@ class RestfulHandler(RequestHandler):
 
     def write_error(self, status_code: int, **kwargs: Any) -> None:
         self.finish(json_encode({"detail": self._reason}))
+
+    @property
+    def json(self):
+        return getattr(self, '_post_json', {})
 
     @property
     def db(self) -> AsyncConnection:
