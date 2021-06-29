@@ -126,7 +126,7 @@ export class MainMenu {
         text.addColor('#cc00cc', 4);
         text.anchor.set(1, 0);
 
-        this.state.start('Game', true, false, 1);
+        // this.state.start('Game', true, false, 1);
     }
 
     gotoAiRoom() {
