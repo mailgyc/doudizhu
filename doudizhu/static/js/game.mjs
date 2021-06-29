@@ -77,7 +77,8 @@ export class Game {
         this.players.push(createPlay(2, this));
         this.players[0].updateInfo(window.playerInfo.uid, window.playerInfo.username);
         const protocol = location.protocol.startsWith("https") ? "wss://" : "ws://";
-        this.socket = new Socket(protocol + location.host + "/ws", this.onopen.bind(this), this.onmessage.bind(this), this.onerror.bind(this));
+        this.socket = new Socket(protocol + location.host + "/ws");
+        this.socket.connect(this.onopen.bind(this), this.onmessage.bind(this), this.onerror.bind(this));
 
         const width = this.game.world.width;
         const height = this.game.world.height;
