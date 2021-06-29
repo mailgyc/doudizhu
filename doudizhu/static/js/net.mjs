@@ -153,9 +153,11 @@ function pretty_log(tag, packet) {
 }
 
 export class Socket {
-    constructor(url, onopen, onmessage, onerror) {
+    constructor(url) {
         this.websocket = new WebSocket(url);
         this.websocket.binaryType = "arraybuffer";
+    }
+    connect(onopen, onmessage, onerror) {
         this.websocket.onopen = function (evt) {
             console.log("CONNECTED");
             onopen();
