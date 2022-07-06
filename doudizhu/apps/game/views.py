@@ -6,7 +6,6 @@ from tornado.escape import json_decode
 from tornado.web import authenticated
 from tornado.websocket import WebSocketHandler, WebSocketClosedError
 
-from contrib.db import AsyncConnection
 from contrib.handlers import RestfulHandler, JwtMixin
 from .player import Player
 from .protocol import Protocol
@@ -18,7 +17,6 @@ class SocketHandler(WebSocketHandler, JwtMixin):
 
     def __init__(self, application, request, **kwargs):
         super().__init__(application, request, **kwargs)
-        self.db: AsyncConnection = self.application.db
         self.player: Optional[Player] = None
 
     def get_current_user(self):

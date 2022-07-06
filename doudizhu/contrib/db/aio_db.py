@@ -43,7 +43,7 @@ class AsyncConnection(object):
     async def reconnect(self):
         if self._conn_pool:
             return
-        elif self._async_wait:
+        if self._async_wait:
             await self._async_wait
         else:
             self._async_wait = self.loop.create_future()

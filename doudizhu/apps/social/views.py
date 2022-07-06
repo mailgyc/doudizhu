@@ -3,15 +3,18 @@ import json
 import logging
 from typing import Optional, Awaitable, Dict, Union
 
+from sqlalchemy import select
+from sqlalchemy.dialects.mysql import insert
 from tornado import httpclient
 from tornado.escape import json_decode, json_encode
 from tornado.web import RequestHandler
 
 from apps.game.storage import Storage
-from contrib.db import AsyncConnection
+from contrib.db.orm import SessionMixin
 from contrib.handlers import JwtMixin
 from settings import WECHAT_CONFIG
 from .message import Msg
+from ..account.models import Account
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +22,7 @@ appid = WECHAT_CONFIG['appid']
 appsecret = WECHAT_CONFIG['appsecret']
 
 
-class WeChatConfig(RequestHandler):
+class WechatConfig(RequestHandler):
     token = WECHAT_CONFIG['token']
     encoding_aes_key = WECHAT_CONFIG['encoding_aes_key']
 
@@ -54,7 +57,7 @@ class WeChatConfig(RequestHandler):
         self.write(response)
 
 
-class AuthHandler(RequestHandler, JwtMixin):
+class WechatHandler(RequestHandler, SessionMixin, JwtMixin):
 
     @property
     def origin(self):
@@ -90,8 +93,8 @@ class AuthHandler(RequestHandler, JwtMixin):
         current_user = json_decode(cookie)
         if not current_user or not current_user.get('uid'):
             return {}
-        db: AsyncConnection = self.application.db
-        return await db.fetchone('SELECT id uid, username, sex, avatar FROM account WHERE id=%s', current_user['uid'])
+        account: Account = await self.get_one_or_none(select(Account).where(Account.id == current_user['uid']))
+        return account.to_dict() if account else {}
 
     async def fetch_user_from_net(self, code) -> Dict[str, Union[int, str]]:
         access_token, openid, unionid = await self.fetch_access_token(code)
@@ -100,13 +103,15 @@ class AuthHandler(RequestHandler, JwtMixin):
         sex = response_json.get('sex')
         avatar = response_json.get('headimgurl')
 
-        sql = '''INSERT INTO account (openid, username, sex, avatar) VALUES (%s,%s,%s,%s)
-                ON DUPLICATE KEY UPDATE username=%s, sex=%s, avatar=%s'''
-
-        db: AsyncConnection = self.application.db
-        uid = await db.insert(sql, openid, username, sex, avatar, username, sex, avatar)
+        insert_stmt = insert(Account).values(openid=openid, username=username, sex=sex, avatar=avatar)
+        uid = await self.insert_or_update(
+            insert_stmt,
+            username=insert_stmt.inserted.username,
+            sex=insert_stmt.inserted.sex,
+            avatar=insert_stmt.inserted.avatar,
+        )
         if uid == 0:
-            return await db.fetchone('SELECT id uid, username, sex, avatar FROM account WHERE openid=%s', openid)
+            uid = (await self.get_one_or_none(select(Account).where(Account.openid == openid))).id
         return {'uid': uid, 'username': username, 'sex': sex, 'avatar': avatar}
 
     def data_received(self, chunk: bytes) -> Optional[Awaitable[None]]:

@@ -1,8 +1,10 @@
 from typing import Optional, Awaitable
 
+from sqlalchemy import select
 from tornado.escape import json_encode
 from tornado.web import authenticated, RequestHandler
 
+from apps.account.models import Account
 from apps.game.storage import Storage
 from contrib.handlers import RestfulHandler, JwtMixin
 
@@ -21,13 +23,15 @@ class LoginHandler(RestfulHandler, JwtMixin):
 
     async def post(self):
         username = self.json.get('username')
+        async with self.session as session:
+            async with session.begin():
+                account = await self.get_one_or_none(select(Account).where(Account.username == username))
+                if not account:
+                    account = Account(openid=username, username=username, sex=1, avatar='')
+                    session.add(account)
+                    await session.commit()
 
-        account = await self.db.fetchone('SELECT id uid, username, sex, avatar FROM account WHERE username=%s', username)
-        if not account:
-            uid = await self.db.insert(
-                'INSERT INTO account (openid, username, sex, avatar) VALUES (%s,%s,%s,%s)', username, username, 1, '')
-            account = {'uid': uid, 'username': username, 'sex': 1, 'avatar': ''}
-
+        account = account.to_dict()
         self.set_secure_cookie('userinfo', json_encode(account))
         self.write({
             **account,
@@ -41,19 +45,18 @@ class UserInfoHandler(RestfulHandler):
 
     @authenticated
     async def get(self):
-        account = await self.db.fetchone('SELECT id uid, username, sex, avatar FROM account WHERE id=%s',
-                                         self.current_user['uid'])
-        if not account:
+        account: Account = await self.get_one_or_none(select(Account).where(Account.id == self.current_user['uid']))
+        if account:
+            account = account.to_dict()
+            self.set_secure_cookie('user', json_encode(account))
+            self.write({
+                **account,
+                'room': Storage.find_player_room_id(account['uid']),
+                'rooms': Storage.room_list()
+            })
+        else:
             self.clear_cookie('userinfo')
             self.send_error(404, reason='User not found')
-            return
-
-        self.set_secure_cookie('user', json_encode(account))
-        self.write({
-            **account,
-            'room': Storage.find_player_room_id(account['uid']),
-            'rooms': Storage.room_list()
-        })
 
 
 class LogoutHandler(RestfulHandler):
