@@ -1,5 +1,6 @@
-SQLAlchemy==1.4.39
-aiomysql==0.1.1
-pyjwt==2.4.0
 tornado==6.2
-uvloop==0.16
+aiomysql==0.1.1
+alembic==1.8.0
+SQLAlchemy==1.4.39
+pyjwt==2.4.0
+uvloop==0.16.0

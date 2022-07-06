@@ -8,23 +8,21 @@
 
 **Dependencies**
 
-* Python3.6+
+* Python3.8+
 * Mysql5.7+
 
 
 Quick Start
-
+```shell
     git clone https://github.com/mailgyc/doudizhu
     cd doudizhu
     mysql --user=root -p < schema.sql
     pip3 install -r requirements.txt
     cd doudizhu
-    python3 app.py --password=your_database_password
+    export DATABASE_URI=mysql+aiomysql://root:123456@127.0.0.1:3306/ddz
+    python3 app.py
     Now visit http://127.0.0.1:8080
-
-
-Online Demo  
-<http://m.ihouser.com/>  
+```
 
 
 运行截图

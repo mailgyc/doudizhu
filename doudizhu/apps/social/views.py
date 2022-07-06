@@ -14,7 +14,6 @@ from contrib.db.orm import SessionMixin
 from contrib.handlers import JwtMixin
 from settings import WECHAT_CONFIG
 from .message import Msg
-from ..account.models import Account
 
 logger = logging.getLogger(__name__)
 
@@ -87,6 +86,7 @@ class WechatHandler(RequestHandler, SessionMixin, JwtMixin):
             await self.render('index.html', payload=json.dumps(payload, ensure_ascii=False))
 
     async def fetch_user_from_database(self) -> Dict[str, Union[int, str]]:
+        from apps.account.models import Account
         cookie = self.get_secure_cookie('social')
         if not cookie:
             return {}
@@ -97,6 +97,7 @@ class WechatHandler(RequestHandler, SessionMixin, JwtMixin):
         return account.to_dict() if account else {}
 
     async def fetch_user_from_net(self, code) -> Dict[str, Union[int, str]]:
+        from apps.account.models import Account
         access_token, openid, unionid = await self.fetch_access_token(code)
         response_json = await self.fetch_userinfo(access_token, openid)
         username = response_json.get('nickname')

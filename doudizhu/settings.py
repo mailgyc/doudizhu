@@ -19,19 +19,7 @@ WECHAT_CONFIG = {
     'encoding_aes_key': os.getenv('ENCODING_AES_KEY'),
 }
 
-
-def database_url(url):
-    from urllib.parse import urlparse, ParseResult
-    pr: ParseResult = urlparse(url)
-    return {
-        'host': pr.hostname,
-        'database': pr.path[1:],
-        'user': pr.username,
-        'password': pr.password,
-    }
-
-
-DATABASE = database_url(os.getenv('DATABASE_URL', 'mysql://root:123456@127.0.0.1:3306/ddz'))
+DATABASE_URI = os.getenv('DATABASE_URI', 'mysql+aiomysql://root:123456@127.0.0.1:3306/ddz')
 
 LOGGING = {
     'version': 1,
