@@ -18,7 +18,7 @@ Quick Start
     cd doudizhu
     mysql --user=root -p < schema.sql
     pip3 install -r requirements.txt
-    cd doudizhu
+    cd server
     export DATABASE_URI=mysql+aiomysql://root:123456@127.0.0.1:3306/ddz
     python3 app.py
     Now visit http://127.0.0.1:8080
