@@ -21,8 +21,11 @@ class IndexHandler(RequestHandler):
 class LoginHandler(RestfulHandler, JwtMixin):
     required_fields = ('name',)
 
+    async def get(self):
+        self.write({'detail': 'welcome'})
+
     async def post(self):
-        name = self.json.get('name')
+        name = self.get_json_data()['name']
         async with self.session as session:
             async with session.begin():
                 account = await self.get_one_or_none(select(User).where(User.name == name))

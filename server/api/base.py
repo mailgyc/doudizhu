@@ -1,10 +1,11 @@
 import asyncio
 import logging
 from datetime import datetime, timedelta
+from http import HTTPStatus
 from typing import Optional, Awaitable, Dict, Union, Any
 
 import jwt
-from tornado.escape import json_encode, json_decode
+import orjson
 from tornado.web import RequestHandler, HTTPError
 
 from config import SECRET_KEY
@@ -39,17 +40,10 @@ class JwtMixin(object):
 
 
 class RestfulHandler(RequestHandler, AlchemyMixin):
-    required_fields = []
+    required_fields = ()
 
     def prepare(self):
         self.request.remote_ip = self.client_ip
-        if self.request.body and self.request.headers.get('Content-Type') == 'application/json':
-            args = json_decode(self.request.body)
-            if self.required_fields:
-                for field in self.required_fields:
-                    if field not in args:
-                        raise HTTPError(403, reason=f'The field "{field}" is required')
-            setattr(self, '_post_json', args)
 
     def set_default_headers(self):
         self.set_header('Content-Type', 'application/json')
@@ -59,24 +53,25 @@ class RestfulHandler(RequestHandler, AlchemyMixin):
         self.set_header('Access-Control-Allow-Headers', 'X-PINGOTHER, Content-Type')
         self.set_header('Access-Control-Allow-Credentials', 'true')
 
-    @property
-    def json(self):
-        return getattr(self, '_post_json', {})
+    def get_json_data(self) -> Dict[str, Any]:
+        json_data: Dict[str, Any] = orjson.loads(self.request.body)
+        if self.required_fields:
+            for field in self.required_fields:
+                if field not in json_data:
+                    raise HTTPError(HTTPStatus.BAD_REQUEST, reason=f'The field "{field}" is required')
+        return json_data
 
-    def options(self):
-        self.set_status(204)
-
-    def get_current_user(self):
+    def get_current_user(self) -> Optional[Dict[str, Any]]:
         cookie = self.get_secure_cookie('userinfo')
         if cookie:
-            return json_decode(cookie)
+            return orjson.loads(cookie)
         return None
 
     def data_received(self, chunk: bytes) -> Optional[Awaitable[None]]:
         pass
 
     def write_error(self, status_code: int, **kwargs: Any) -> None:
-        self.finish(json_encode({"detail": self._reason}))
+        self.finish(orjson.dumps({"detail": self._reason}))
 
     @property
     def client_ip(self) -> str:
