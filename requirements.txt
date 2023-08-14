@@ -1,4 +1,4 @@
-tornado==6.3.2
+tornado==6.3.3
 aiomysql==0.1.1
 alembic==1.8.0
 orjson==3.7.6
