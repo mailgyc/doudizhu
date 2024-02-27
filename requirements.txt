@@ -1,7 +1,7 @@
 tornado==6.3.3
 aiomysql==0.1.1
 alembic==1.8.0
-orjson==3.7.6
+orjson==3.9.15
 SQLAlchemy==1.4.39
 pyjwt==2.4.0
 uvloop==0.16.0
